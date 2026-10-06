@@ -1,0 +1,1807 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1016; --panel: #1a1c26; --line: #2c2f3d; --text: #e8e9ef; --muted: #9a9db0;
+    --accent: #b14cff; --ok: #3ccf8e; --warn: #ffb547;
+    --scale: 0.5;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Jost", system-ui, sans-serif; }
+
+  header {
+    position: sticky; top: 0; z-index: 20; background: rgba(15,16,22,.96); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+  }
+  header h1 { font-size: 18px; margin: 0 8px 0 0; font-weight: 600; }
+  .group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .group > span.lbl { color: var(--muted); font-size: 13px; margin-right: 2px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 999px;
+    padding: 4px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip .n { opacity: .65; font-size: 12px; margin-left: 4px; }
+  .chip.cold[aria-pressed="true"] { background: #2f8fd8; border-color: #2f8fd8; }
+  .cold-banner { display: none; max-width: 760px; margin: 0 auto 16px; padding: 10px 14px; border-radius: 10px; font-size: 14px;
+    background: rgba(47,143,216,.14); border: 1px solid rgba(47,143,216,.5); color: #cfe6ff; text-align: center; }
+  body.cold-view .cold-banner { display: block; }
+  .nosave-banner { max-width: 860px; margin: 0 auto 16px; padding: 12px 16px; border-radius: 10px; font-size: 14px; line-height: 1.5;
+    background: rgba(255,93,108,.14); border: 1px solid rgba(255,93,108,.6); color: #ffd6da; text-align: center; }
+  .nosave-banner[hidden] { display: none; }
+  .nosave-banner .btn { margin-left: 8px; }
+  body.cold-view .card-wrap { filter: saturate(.55); }
+  .meta .actions button.coldbtn { color: #7cc0ff; }
+  select, input[type=search] {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; font: inherit; font-size: 14px;
+  }
+  input[type=search] { width: 180px; }
+  button.btn {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  button.btn:hover { border-color: var(--muted); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.btn:disabled { opacity: .45; cursor: default; }
+  .status { font-size: 13px; color: var(--muted); }
+  .status.dirty { color: var(--warn); }
+  .status.saved { color: var(--ok); }
+  .spacer { flex: 1; }
+
+  main { padding: 18px 16px 60px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
+
+  /* ---------- card ---------- */
+  .slot { width: calc(744px * var(--scale)); display: flex; flex-direction: column; gap: 6px; }
+  .slot.changed .card-wrap { outline: 3px solid var(--warn); outline-offset: 2px; border-radius: 14px; }
+  .card-wrap { width: calc(744px * var(--scale)); height: calc(1039px * var(--scale)); position: relative; }
+  .card {
+    width: 744px; height: 1039px; position: absolute; left: 0; top: 0;
+    transform: scale(var(--scale)); transform-origin: 0 0;
+    background-size: 100% 100%; color: #000;
+    font-family: "Jost", "Futura", sans-serif; font-style: italic;
+  }
+  .card.creature { background-image: url("__IMG_CREATURE__"); }
+  .card.fusion   { background-image: url("__IMG_FUSION__"); }
+  .card.spell    { background-image: url("__IMG_SPELL__"); }
+
+  .card input, .card textarea {
+    font: inherit; color: inherit; background: transparent; border: 0; outline: none; padding: 0; margin: 0;
+    border-radius: 4px;
+  }
+  .card input:hover, .card textarea:hover { background: rgba(0,0,0,.04); }
+  .card input:focus, .card textarea:focus { background: rgba(177,76,255,.08); box-shadow: 0 0 0 2px rgba(177,76,255,.45); }
+
+  .card .f-name { position: absolute; left: 38px; top: 20px; width: 610px; height: 56px; font-size: 40px; font-weight: 500; }
+  .card.spell .f-name { width: 600px; }
+  .bolt { position: absolute; left: 666px; top: 26px; width: 52px; height: 52px; }
+
+  .art {
+    position: absolute; left: 40px; top: 80px; width: 665px; height: 460px; border-radius: 34px 34px 0 0;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    color: rgba(0,0,0,.25); font-size: 26px; text-align: center;
+  }
+  .art img { width: 100%; height: 100%; object-fit: fill; display: block; }
+  .art { position: absolute; }
+  .art.drag { background: rgba(177,76,255,.15); color: rgba(0,0,0,.5); outline: 6px dashed var(--accent); outline-offset: -6px; }
+  .art-tools { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; gap: 12px; justify-content: center;
+    opacity: 0; transition: opacity .15s; font-style: normal; }
+  .art:hover .art-tools, .art.drag .art-tools { opacity: 1; }
+  .art-tools button { font: 500 26px "Jost", sans-serif; padding: 8px 20px; border-radius: 30px; border: 0; cursor: pointer;
+    background: rgba(15,16,22,.82); color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+  .art-tools button:hover { background: var(--accent); }
+  @media print { .art-tools { display: none; } }
+
+  .typeline { position: absolute; left: 44px; top: 556px; width: 656px; text-align: center; font-size: 31px; font-weight: 500; white-space: nowrap; overflow: hidden; }
+  .card .f-attr { position: absolute; left: 60px; top: 598px; width: 624px; text-align: center; font-size: 22px; color: #555; }
+  .card .f-desc {
+    position: absolute; left: 44px; top: 632px; width: 656px; height: 300px; resize: none;
+    font-size: 26px; line-height: 1.3; font-weight: 500; overflow: hidden;
+  }
+  .card.spell .f-desc { top: 556px; height: 420px; }
+
+  .stats { position: absolute; right: 52px; top: 954px; font-size: 31px; font-weight: 500; display: flex; align-items: baseline; white-space: nowrap; }
+  .card .stats input { text-align: right; width: 1ch; min-width: 1ch; }
+  .stats .u { margin-right: 0; }
+
+  /* metadata row under each card */
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .meta input {
+    width: 100%; min-width: 0; background: var(--panel); color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 3px 6px; font: inherit; font-size: 12px;
+  }
+  .meta input:focus { outline: none; border-color: var(--accent); }
+  .meta label { font-size: 10px; color: var(--muted); display: block; text-transform: uppercase; letter-spacing: .04em; }
+  .meta .actions { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); }
+  .meta .actions button { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; font-size: 12px; padding: 0; }
+  .meta .actions button:hover { color: var(--text); text-decoration: underline; }
+
+  /* static (read-only) card faces, used for printing */
+  .card div.f-name { white-space: nowrap; overflow: hidden; line-height: 56px; }
+  .card div.f-attr { white-space: nowrap; overflow: hidden; }
+  .card div.f-desc { white-space: pre-wrap; overflow-wrap: break-word; }
+
+  /* ---------- deck builder ---------- */
+  .deckctl { display: none; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; }
+  body.deck-open .deckctl { display: flex; }
+  .deckctl.has { border-color: var(--accent); color: var(--text); }
+  .qbtn { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text);
+    font: inherit; font-size: 15px; line-height: 1; cursor: pointer; padding: 0; }
+  .qbtn:hover:not(:disabled) { border-color: var(--accent); }
+  .qbtn:disabled { opacity: .35; cursor: default; }
+  .deckctl b { min-width: 14px; text-align: center; }
+
+  #deckPanel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 100vw; z-index: 30;
+    background: var(--panel); border-left: 1px solid var(--line); display: none; flex-direction: column;
+  }
+  body.deck-open #deckPanel { display: flex; }
+  @media (min-width: 900px) { body.deck-open header, body.deck-open main { margin-right: 380px; } }
+  .dp-head { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .dp-row { display: flex; gap: 6px; align-items: center; }
+  .dp-row select, .dp-row input[type=text] { flex: 1; min-width: 0; }
+  #deckPanel input[type=text] { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 14px; }
+  #deckPanel .btn { padding: 5px 9px; font-size: 13px; }
+  .dp-title { font-weight: 600; font-size: 16px; flex: 1; }
+  .dp-body { flex: 1; overflow-y: auto; padding: 10px 14px; }
+  .dp-foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .meter { display: flex; justify-content: space-between; font-size: 13px; margin: 2px 0; }
+  .bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .bar > i { display: block; height: 100%; background: var(--accent); }
+  .bar.ok > i { background: var(--ok); } .bar.over > i { background: #ff5d6c; }
+  .issues { list-style: none; padding: 0; margin: 4px 0 10px; font-size: 12.5px; }
+  .issues li { color: var(--warn); padding: 2px 0; }
+  .issues li.good { color: var(--ok); }
+  .dp-sec { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 4px; display: flex; justify-content: space-between; }
+  .dl-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 14px; }
+  .dl-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .dl-row .nm:hover { text-decoration: underline; }
+  .dl-row .fx { color: var(--muted); font-size: 12px; }
+  .dl-row.missing .nm { color: #ff5d6c; }
+  .dl-row b { width: 16px; text-align: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .curve { display: flex; align-items: flex-end; gap: 4px; height: 60px; margin-top: 4px; }
+  .curve div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 10px; color: var(--muted); }
+  .curve i { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 1px; }
+  .opts { font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); }
+  .opts label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+  .dp-empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+
+  /* ---------- A4 print sheets ---------- */
+  #printRoot { position: absolute; left: -99999px; top: 0; }
+  .sheet { width: 210mm; height: 296mm; display: grid; align-content: center; justify-content: center; page-break-after: always; break-after: page; background: #fff; }
+  .sheet:last-child { page-break-after: auto; break-after: auto; }
+  .cell { width: 63mm; height: 88mm; position: relative; overflow: hidden; }
+  .cell.cut { outline: 0.2mm solid #bbb; }
+  .cell .card { transform: scale(0.320041); } /* 744px card -> 63mm */
+  .cell img.back { width: 100%; height: 100%; display: block; }
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    body > *:not(#printRoot) { display: none !important; }
+    #printRoot { position: static; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* ---------- analysis dialog ---------- */
+  #anaDlg { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px;
+    width: min(1200px, calc(100vw - 24px)); height: calc(100vh - 40px); max-height: none; padding: 0; }
+  #anaDlg[open] { display: flex; flex-direction: column; }
+  #anaDlg::backdrop { background: rgba(0,0,0,.6); }
+  .ana-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .ana-head .dp-title { flex: none; }
+  .ana-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  #anaBody { overflow: auto; padding: 14px 18px 30px; flex: 1; font-size: 14px; }
+  #anaBody h3 { font-size: 15px; margin: 22px 0 8px; }
+  #anaBody h3 .n, .ana-lead .n { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 4px; }
+  .ana-lead { color: var(--muted); line-height: 1.55; margin: 0 0 10px; }
+  .ana-lead b { color: var(--text); }
+  .ana-lead .btn { margin-left: 8px; }
+  .ana-lead select { max-width: 340px; }
+  label.inline { display: inline-flex; gap: 5px; align-items: center; margin-left: 10px; color: var(--text); cursor: pointer; }
+  ul.chk { list-style: none; margin: 0; padding: 0; }
+  ul.chk li { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  ul.chk .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; transform: translateY(-1px); }
+  ul.chk .who { min-width: 180px; max-width: 320px; font-weight: 500; }
+  ul.chk .what { flex: 1; min-width: 240px; color: #cfd1dc; }
+  ul.chk .btn { padding: 3px 9px; font-size: 12.5px; }
+  .sev-error .dot, b.sev-error { color: #ff5d6c; } .sev-error .dot { background: #ff5d6c; }
+  .sev-warn .dot { background: var(--warn); } b.sev-warn { color: var(--warn); }
+  .sev-info .dot { background: #7cc0ff; } span.sev-info { color: #7cc0ff; }
+  a.jump { color: #c9a6ff; text-decoration: none; } a.jump:hover { text-decoration: underline; }
+  .good { color: var(--ok); }
+  .tbl { overflow-x: auto; }
+  table.atable { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .atable th, .atable td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  .atable th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--panel); }
+  .atable td.hi, .hi { color: #ffb547; } .atable td.lo, .lo { color: #7cc0ff; }
+  .atable.xt td:nth-child(n+4), .atable.xt th:nth-child(n+4) { text-align: center; }
+  .atable.xt tr.cross td:first-child { font-weight: 600; }
+  .atable.xt tr.cross { background: rgba(177,76,255,.08); }
+  .atable .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+  .mini { display: inline-flex; align-items: flex-end; gap: 2px; height: 24px; }
+  .mini i { width: 7px; background: var(--accent); border-radius: 2px 2px 0 0; }
+  svg.chart { width: 100%; max-width: 760px; display: block; background: var(--bg); border-radius: 10px; }
+  svg.chart .gl { stroke: var(--line); stroke-width: 1; }
+  svg.chart .ax { fill: var(--muted); font-size: 11px; font-family: Jost, sans-serif; }
+  svg.chart .curve-line { stroke: #fff; stroke-width: 2; stroke-dasharray: 6 4; opacity: .7; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin: 8px 0; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .chg { margin: 2px 0; } .chg .from { color: #ff8a95; text-decoration: line-through; white-space: pre-wrap; } .chg .to { color: #7fe3b0; white-space: pre-wrap; }
+  .meta .bal { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); text-align: center; }
+  #dpSim { width: 100%; }
+
+  #ghDlg { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; width: min(520px, calc(100vw - 32px)); padding: 16px 18px; font-size: 14px; line-height: 1.5; }
+  #ghDlg::backdrop { background: rgba(0,0,0,.6); }
+  #ghDlg a { color: #c9a6ff; } #ghDlg ol { padding-left: 20px; margin: 6px 0 12px; }
+  #ghDlg input[type=password] { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; }
+
+  #verDlg { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px;
+    width: min(560px, calc(100vw - 32px)); max-height: 80vh; padding: 14px 16px; }
+  #verDlg::backdrop { background: rgba(0,0,0,.55); }
+  #verList { overflow-y: auto; max-height: 64vh; }
+  .ver-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .ver-row small { color: var(--muted); font-size: 12px; }
+
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+  .hint { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 16px; }
+  .overflow-warn { color: var(--warn); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Card Editor</h1>
+  <div class="group" id="typeFilters"><span class="lbl">Type</span></div>
+  <div class="group"><button class="chip cold" id="coldBtn" title="Show cards you've put away. They're hidden from the main tabs."></button></div>
+  <div class="group">
+    <span class="lbl">Faction</span>
+    <select id="factionFilter"></select>
+  </div>
+  <div class="group">
+    <input type="search" id="search" placeholder="Search name / text…">
+  </div>
+  <div class="group">
+    <span class="lbl">Size</span>
+    <input type="range" id="zoom" min="0.3" max="1" step="0.05" value="0.5">
+  </div>
+  <div class="spacer"></div>
+  <div class="group">
+    <span class="status" id="status"></span>
+    <button class="btn" id="openBtn" title="Open a CSV file (Chrome/Edge can save back into it directly)">Open CSV…</button>
+    <button class="btn" id="reopenBtn" hidden></button>
+    <button class="btn" id="folderBtn"></button>
+    <button class="btn" id="versionsBtn" hidden title="See and restore earlier saves">Versions</button>
+    <button class="btn" id="addBtn">+ New card</button>
+    <button class="btn" id="deckBtn">Deck builder</button>
+    <button class="btn" id="anaBtn" title="Card checker, balance, factions, version compare">📊 Analysis</button>
+    <button class="btn primary" id="saveBtn" title="Ctrl+S">Save CSV</button>
+  </div>
+</header>
+<main>
+  <div class="nosave-banner" id="noSaveBanner" hidden>
+    ⚠ <b>Saving is off.</b> You're seeing a built-in copy, which may be out of date, and Save can't reach the <b>saves</b> folder.
+    Double-click <b>start-editor.bat</b> in <code>X:\Projects\tcg\web viewing</code> and use the tab it opens (or reload this page while its window is open).
+    <button class="btn" id="retryHelper">I started it, reconnect</button>
+  </div>
+  <div class="cold-banner">❄ <b>Cold storage</b>: these cards are hidden from the main tabs. Use <b>Restore</b> under a card to bring it back. Click the ❄ Cold storage button again to go back.</div>
+  <p class="hint" id="hint"></p>
+  <div class="grid" id="grid"></div>
+</main>
+<input type="file" id="fileInput" accept=".csv,text/csv" hidden>
+<input type="file" id="deckFileInput" accept=".txt,text/plain" hidden>
+
+<aside id="deckPanel" aria-label="Deck builder">
+  <div class="dp-head">
+    <div class="dp-row"><span class="dp-title">Deck builder</span><button class="btn" id="dpClose" title="Close">✕</button></div>
+    <div class="dp-row">
+      <select id="dpSelect" title="Saved decks"></select>
+      <button class="btn" id="dpNew" title="Start a new empty deck">New</button>
+      <button class="btn" id="dpDup" title="Copy this deck">Copy</button>
+      <button class="btn" id="dpDel" title="Delete this deck">Delete</button>
+    </div>
+    <div class="dp-row"><input type="text" id="dpName" placeholder="Deck name"></div>
+  </div>
+  <div class="dp-body" id="dpBody"></div>
+  <div class="dp-foot">
+    <div class="opts">
+      <label><input type="checkbox" id="optFusion" checked> Include Fusion Deck</label>
+      <label><input type="checkbox" id="optCut" checked> Cut lines</label>
+      <label><input type="checkbox" id="optGap"> 3 mm gaps</label>
+      <label title="Adds a page of card backs after each page of fronts, mirrored for double-sided printing (flip on long edge)"><input type="checkbox" id="optBacks"> Card backs</label>
+    </div>
+    <div class="dp-row">
+      <button class="btn primary" id="dpPdf" style="flex:1">Export PDF (A4)</button>
+      <button class="btn" id="dpExport" title="Download the deck list as a .txt file">Save list</button>
+      <button class="btn" id="dpImport" title="Load a deck list .txt file">Load list</button>
+    </div>
+    <button class="btn" id="dpSim" title="Play out thousands of random openings with this deck">🎲 Test opening hands</button>
+  </div>
+</aside>
+<div id="printRoot"></div>
+<dialog id="anaDlg">
+  <div class="ana-head">
+    <span class="dp-title">📊 Analysis</span>
+    <div class="ana-tabs">
+      <button class="chip" data-t="check">Card checker</button>
+      <button class="chip" data-t="balance">Balance</button>
+      <button class="chip" data-t="factions">Factions</button>
+      <button class="chip" data-t="compare">Compare versions</button>
+      <button class="chip" data-t="sim">Hand test</button>
+    </div>
+    <button class="btn" onclick="this.closest('dialog').close()">✕</button>
+  </div>
+  <div id="anaBody"></div>
+</dialog>
+<dialog id="ghDlg">
+  <div class="dp-row" style="margin-bottom:8px"><span class="dp-title">🔑 Sign in to save</span>
+    <button class="btn" onclick="this.closest('dialog').close()">✕</button></div>
+  <p>Saving on the website commits your changes to <b id="ghRepoName"></b> on GitHub. You need a GitHub account that has been
+    added to the repo as a collaborator, and a personal access token:</p>
+  <ol>
+    <li>Open <a id="ghTokenLink" target="_blank" rel="noopener">GitHub → new fine-grained token</a>.</li>
+    <li><b>Repository access</b>: "Only select repositories" → pick this repo.</li>
+    <li><b>Permissions → Repository permissions → Contents</b>: "Read and write". Generate the token and copy it.</li>
+  </ol>
+  <input type="password" id="ghToken" placeholder="Paste token (github_pat_…)" autocomplete="off" spellcheck="false">
+  <label class="inline" style="margin:8px 0 0"><input type="checkbox" id="ghRemember" checked> Remember on this device (don't use on shared computers)</label>
+  <div class="dp-row" style="margin-top:12px"><span id="ghErr" class="lo" style="flex:1"></span><button class="btn primary" id="ghGo">Sign in</button></div>
+</dialog>
+<dialog id="verDlg">
+  <div class="dp-row" style="margin-bottom:10px"><span class="dp-title">Saved versions</span>
+    <button class="btn" onclick="this.closest('dialog').close()">✕</button></div>
+  <div id="verList"></div>
+</dialog>
+
+<script src="art/art.js"></script>
+<script>
+const EMBEDDED_CSV = __CSV_DATA__;
+const EMBEDDED_NAME = "Base set - Fusion Fuckery - v6.csv";
+
+/* ---------------- CSV ---------------- */
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = []; let row = [], field = "", i = 0, q = false;
+  while (i < text.length) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i += 2; continue; } q = false; i++; continue; }
+      field += c; i++; continue;
+    }
+    if (c === '"') { q = true; i++; continue; }
+    if (c === ',') { row.push(field); field = ""; i++; continue; }
+    if (c === '\r' && text[i + 1] === '\n') { row.push(field); rows.push(row); row = []; field = ""; i += 2; continue; }
+    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+    field += c; i++;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+function toCSV(rows) {
+  const esc = v => /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  return rows.map(r => r.map(v => esc(v ?? "")).join(",")).join("\r\n") + (trailingNewline ? "\r\n" : "");
+}
+let trailingNewline = true;
+
+/* ---------------- state ---------------- */
+let header = [];      // column names, original order
+let cards = [];       // { id, orig: {...}, data: {...} }
+let fileHandle = null, fileName = EMBEDDED_NAME, hadBOM = false;
+let nextId = 1;
+const artCache = new Map(); // card id -> object URL (session only)
+const filters = { type: "All", faction: "All", q: "", cold: false };
+const COLS = { name: "Name", type: "Type", atk: "ATK", hp: "HP", flux: "Flux Cost", desc: "Description", faction: "Faction", attr: "Attribute" };
+// Optional column, only added to the CSV the first time a card is put into cold storage.
+const COLD_COL = "Cold Storage";
+const isCold = c => /^(yes|y|true|1|x)$/i.test((c.data[COLD_COL] || "").trim());
+function setCold(c, on) {
+  if (!header.includes(COLD_COL)) {
+    header.push(COLD_COL);
+    cards.forEach(x => { x.data[COLD_COL] = ""; x.orig[COLD_COL] = ""; });
+  }
+  c.data[COLD_COL] = on ? "yes" : "";
+  render(); updateStatus();
+}
+
+function load(text, name, handle) {
+  hadBOM = text.charCodeAt(0) === 0xFEFF;
+  const rows = parseCSV(text).filter((r, i) => i === 0 || r.some(v => v.trim() !== ""));
+  header = rows[0];
+  for (const k of Object.values(COLS)) if (!header.includes(k)) header.push(k);
+  cards = rows.slice(1).map(r => {
+    const o = {}; header.forEach((h, i) => o[h] = r[i] ?? "");
+    return { id: nextId++, orig: { ...o }, data: o, artKey: o["Name"] };
+  });
+  // "v6(3).csv" from repeated browser downloads → "v6.csv", so saves keep one main file name
+  fileName = name.replace(/\s*\(\d+\)(?=\.csv$)/i, ""); fileHandle = handle || null;
+  trailingNewline = /\r?\n$/.test(text);
+  buildFilters(); render(); updateStatus();
+}
+
+function category(c) {
+  const t = c.data[COLS.type].toLowerCase();
+  if (t.includes("fusion")) return "Fusion";
+  if (t.includes("creature")) return "Creature";
+  return "Spell"; // spells, field/continuous/instant spells, equipment
+}
+const CATEGORY_WORDS = /^(creature|fusion|spell|instant spell|field spell|continues spell|contunious spell|continuous spell|equipment)$/i;
+const titleCase = s => s.replace(/\b\w/g, m => m.toUpperCase());
+function factions(c) {
+  const out = new Set();
+  c.data[COLS.faction].split("/").map(s => s.trim()).filter(Boolean).forEach(f => out.add(titleCase(f.toLowerCase())));
+  // faction implied by type, e.g. "Creature/Thiefling"
+  c.data[COLS.type].split("/").slice(1).map(s => s.trim()).filter(s => s && !CATEGORY_WORDS.test(s))
+    .forEach(f => out.add(titleCase(f.toLowerCase())));
+  return [...out];
+}
+const isDirty = c => header.some(h => c.data[h] !== c.orig[h]) || c.isNew;
+const anyDirty = () => cards.some(isDirty) || removed > 0 || decksDirty;
+let removed = 0;
+
+/* ---------------- filters ---------------- */
+function buildFilters() {
+  const tf = document.getElementById("typeFilters");
+  tf.querySelectorAll("button").forEach(b => b.remove());
+  for (const t of ["All", "Creature", "Fusion", "Spell"]) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.dataset.type = t;
+    b.onclick = () => { filters.type = t; render(); };
+    tf.appendChild(b);
+  }
+  const sel = document.getElementById("factionFilter");
+  const all = new Set(); cards.forEach(c => factions(c).forEach(f => all.add(f)));
+  const prev = filters.faction;
+  sel.innerHTML = "";
+  for (const f of ["All", ...[...all].sort(), "(No faction)"]) {
+    const o = document.createElement("option"); o.value = o.textContent = f; sel.appendChild(o);
+  }
+  sel.value = [...sel.options].some(o => o.value === prev) ? prev : "All";
+  filters.faction = sel.value;
+  updateChipCounts();
+}
+function updateChipCounts() {
+  document.querySelectorAll("#typeFilters button").forEach(b => {
+    const t = b.dataset.type;
+    const n = cards.filter(c => isCold(c) === filters.cold && (t === "All" || category(c) === t) && factionMatch(c)).length;
+    b.innerHTML = `${t}<span class="n">${n}</span>`;
+    b.setAttribute("aria-pressed", filters.type === t);
+  });
+  const cb = document.getElementById("coldBtn");
+  cb.innerHTML = `❄ Cold storage<span class="n">${cards.filter(isCold).length}</span>`;
+  cb.setAttribute("aria-pressed", filters.cold);
+  document.body.classList.toggle("cold-view", filters.cold);
+}
+function factionMatch(c) {
+  if (filters.faction === "All") return true;
+  const f = factions(c);
+  if (filters.faction === "(No faction)") return f.length === 0;
+  return f.includes(filters.faction);
+}
+function visible(c) {
+  if (isCold(c) !== filters.cold) return false;
+  if (filters.type !== "All" && category(c) !== filters.type) return false;
+  if (!factionMatch(c)) return false;
+  if (filters.q) {
+    const hay = Object.values(c.data).join(" ").toLowerCase();
+    if (!hay.includes(filters.q)) return false;
+  }
+  return true;
+}
+document.getElementById("coldBtn").onclick = () => { filters.cold = !filters.cold; render(); window.scrollTo(0, 0); };
+document.getElementById("factionFilter").onchange = e => { filters.faction = e.target.value; render(); };
+document.getElementById("search").oninput = e => { filters.q = e.target.value.trim().toLowerCase(); render(); };
+document.getElementById("zoom").oninput = e => {
+  document.documentElement.style.setProperty("--scale", e.target.value);
+  document.querySelectorAll(".f-desc").forEach(fitText);
+};
+
+/* ---------------- rendering ---------------- */
+const BOLT = `<svg class="bolt" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23.5" fill="#fff" stroke="#000" stroke-width="3"/><path d="M29 8 L15 29 h10 l-3 15 L37 22 h-10 l2-14z" fill="#000"/></svg>`;
+
+function render() {
+  BAL = balanceModel();
+  updateChipCounts();
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  const list = cards.filter(visible);
+  document.getElementById("hint").textContent =
+    `${list.length} card${list.length === 1 ? "" : "s"} shown · click any text on a card to edit it · hover the art and click "Change art" (or drop an image on it) to replace it`;
+  if (!list.length) { grid.innerHTML = `<div class="empty">No cards match these filters.</div>`; renderDeckPanel(); return; }
+  const frag = document.createDocumentFragment();
+  list.forEach(c => frag.appendChild(cardEl(c)));
+  grid.appendChild(frag);
+  grid.querySelectorAll(".f-desc").forEach(fitText);
+  grid.querySelectorAll(".stats input").forEach(sizeInput);
+  renderDeckPanel();
+}
+
+function cardEl(c) {
+  const cat = category(c);
+  const slot = document.createElement("div");
+  slot.className = "slot" + (isDirty(c) ? " changed" : "");
+  const wrap = document.createElement("div"); wrap.className = "card-wrap";
+  const card = document.createElement("div"); card.className = "card " + cat.toLowerCase();
+  wrap.appendChild(card); slot.appendChild(wrap);
+
+  const bind = (el, col, after) => {
+    el.value = c.data[col];
+    el.addEventListener("input", () => {
+      c.data[col] = el.value;
+      slot.classList.toggle("changed", isDirty(c));
+      updateStatus(); after && after();
+    });
+    return el;
+  };
+  const mk = (tag, cls, attrs = {}) => { const e = document.createElement(tag); e.className = cls; Object.assign(e, attrs); return e; };
+
+  card.appendChild(bind(mk("input", "f-name", { placeholder: "Card name", spellcheck: false }), COLS.name));
+  if (cat === "Spell") card.insertAdjacentHTML("beforeend", BOLT);
+
+  // art: click "Change art" or drop an image. Saved to the art folder when the helper is running.
+  const art = mk("div", "art");
+  const showArt = () => {
+    const src = artSrc(c);
+    art.innerHTML = (src ? `<img src="${encodeURI(src)}" alt="" loading="lazy">` : `<span>no art yet<br>drop an image here</span>`) +
+      `<div class="art-tools"><button data-a="change">🖼 Change art</button>${ART_OVERRIDES[c.artKey] ? `<button data-a="reset" title="Go back to the art from the card PNGs">↺ Reset</button>` : ""}</div>`;
+  };
+  showArt(); c._showArt = showArt;
+  art.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.a === "change") pickArt(c);
+    else if (b.dataset.a === "reset") resetArt(c);
+  });
+  art.addEventListener("dragover", e => { e.preventDefault(); art.classList.add("drag"); });
+  art.addEventListener("dragleave", () => art.classList.remove("drag"));
+  art.addEventListener("drop", e => {
+    e.preventDefault(); art.classList.remove("drag");
+    const f = [...e.dataTransfer.files].find(f => f.type.startsWith("image/"));
+    if (f) setArt(c, f);
+  });
+  card.appendChild(art);
+
+  const desc = mk("textarea", "f-desc", { placeholder: "Description…", spellcheck: true });
+  bind(desc, COLS.desc, () => fitText(desc));
+
+  if (cat !== "Spell") {
+    const tl = mk("div", "typeline");
+    const setTL = () => {
+      const f = c.data[COLS.faction].trim() || factions(c).join(" / ");
+      tl.textContent = `[Creature${f ? "/" + f : ""}]`;
+    };
+    setTL(); c._setTL = setTL;
+    card.appendChild(tl);
+    card.appendChild(bind(mk("input", "f-attr", { placeholder: "Attribute (e.g. Humanoid / Greedy)", spellcheck: false }), COLS.attr));
+    card.appendChild(desc);
+
+    const stats = mk("div", "stats");
+    const stat = (col, unit) => {
+      const inp = mk("input", "", { spellcheck: false, title: col });
+      bind(inp, col, () => { sizeInput(inp); c._updBal && c._updBal(); });
+      stats.appendChild(inp);
+      stats.appendChild(mk("span", "u", { textContent: unit }));
+    };
+    stat(COLS.atk, "ATK"); stats.appendChild(document.createTextNode("/"));
+    stat(COLS.hp, "HP");
+    if (cat === "Creature") { stats.appendChild(document.createTextNode("/")); stat(COLS.flux, "FLUX"); }
+    card.appendChild(stats);
+  } else {
+    card.appendChild(desc);
+  }
+
+  // metadata: type + faction (+ flux for fusions, kept so no column is hidden)
+  const meta = mk("div", "meta");
+  const metaField = (label, col, after) => {
+    const w = document.createElement("div");
+    w.innerHTML = `<label>${label}</label>`;
+    const inp = bind(mk("input", "", { spellcheck: false }), col, after);
+    w.appendChild(inp); meta.appendChild(w);
+  };
+  metaField("Type", COLS.type, () => { if (category(c) !== cat) { render(); } });
+  metaField("Faction", COLS.faction, () => { c._setTL && c._setTL(); });
+  const actions = mk("div", "actions");
+  const revert = mk("button", "", { textContent: "Revert", title: "Undo all unsaved edits to this card" });
+  revert.onclick = () => { if (c.isNew) return; Object.assign(c.data, c.orig); render(); updateStatus(); };
+  const del = mk("button", "", { textContent: "Delete", title: "Remove this card from the CSV" });
+  del.onclick = () => {
+    if (!confirm(`Delete "${c.data[COLS.name] || "untitled"}" from the CSV? (Only takes effect when you save.)`)) return;
+    cards = cards.filter(x => x !== c); if (!c.isNew) removed++; render(); updateStatus();
+  };
+  const cold = mk("button", "coldbtn", isCold(c)
+    ? { textContent: "Restore", title: "Take this card out of cold storage" }
+    : { textContent: "❄ Store", title: "Put this card in cold storage (hidden from the main tabs)" });
+  cold.onclick = () => setCold(c, !isCold(c));
+  actions.append(revert, mk("span", "", { textContent: cat }), cold, del);
+  meta.appendChild(actions);
+  if (cat === "Creature") {   // live "stats vs flux curve" readout while editing
+    const bal = mk("div", "bal");
+    c._updBal = () => { bal.innerHTML = balanceNote(c); };
+    c._updBal(); meta.appendChild(bal);
+  }
+  slot.appendChild(meta);
+
+  // deck builder quantity control (visible while the deck panel is open)
+  const ctl = mk("div", "deckctl");
+  ctl.innerHTML = `<span class="zone"></span><button class="qbtn" data-d="-1" title="Remove one">−</button><b></b><button class="qbtn" data-d="1" title="Add one">+</button>`;
+  ctl.onclick = e => { const b = e.target.closest("button"); if (b) addToDeck(cardKey(c), +b.dataset.d); };
+  c._ctl = ctl; updateDeckCtl(c);
+  slot.appendChild(ctl);
+  return slot;
+}
+
+/* ---------- card art ---------- */
+let ART_OVERRIDES = {};   // card name -> art path, from saves/art-overrides.json (helper mode)
+const artSrc = c => artCache.get(c.id) || ART_OVERRIDES[c.artKey] || (window.CARD_ART || {})[c.artKey];
+const ART_W = 1330, ART_H = 920;   // 2× the art box (665×460)
+
+// Center-crop any image to the art box shape so it fills the frame like the original cards.
+async function cropToArtBox(file) {
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Not a readable image")); i.src = URL.createObjectURL(file); });
+  const scale = Math.max(ART_W / img.naturalWidth, ART_H / img.naturalHeight);
+  const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+  const cv = document.createElement("canvas"); cv.width = ART_W; cv.height = ART_H;
+  const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, ART_W, ART_H);
+  g.drawImage(img, (ART_W - w) / 2, (ART_H - h) / 2, w, h);
+  URL.revokeObjectURL(img.src);
+  return new Promise(res => cv.toBlob(res, "image/jpeg", 0.9));
+}
+function pickArt(c) {
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = () => inp.files[0] && setArt(c, inp.files[0]);
+  inp.click();
+}
+async function setArt(c, file) {
+  try {
+    const blob = await cropToArtBox(file);
+    const name = cardKey(c);
+    if (!SERVER && !(await connectHelper())) {
+      artCache.set(c.id, URL.createObjectURL(blob)); c._showArt && c._showArt();
+      showNoSave(); alert("Showing the new art for now, but it can't be saved without the helper.\nOpen the editor with the 'Open Card Editor' shortcut to keep it.");
+      return;
+    }
+    const j = await (await api("api/art?name=" + encodeURIComponent(name), { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob })).json();
+    ART_OVERRIDES[name] = j.path; c.artKey = name; artCache.delete(c.id);
+    if (GH) artCache.set(c.id, URL.createObjectURL(blob));   // the website takes a minute to publish the new image
+    c._showArt && c._showArt(); renderDeckPanel();
+    const st = document.getElementById("status"); st.className = "status saved"; st.textContent = `Art saved for ${name} ✓`;
+  } catch (e) { if (!e.silent) alert("Could not change the art: " + e.message); }
+}
+async function resetArt(c) {
+  if (!confirm(`Go back to the original art for "${cardKey(c)}"? (Your custom image stays in art/custom.)`)) return;
+  try {
+    await api("api/art-reset?name=" + encodeURIComponent(c.artKey), { method: "POST" });
+    delete ART_OVERRIDES[c.artKey]; artCache.delete(c.id); c._showArt && c._showArt();
+  } catch (e) { if (!e.silent) alert("Could not reset the art: " + e.message); }
+}
+// After a save, carry art over to cards whose name changed, so renaming doesn't lose the picture.
+async function linkRenamedArt(renamed) {
+  for (const c of renamed) {
+    const src = ART_OVERRIDES[c.artKey] || (window.CARD_ART || {})[c.artKey];
+    const name = cardKey(c);
+    if (!src || !name || name === c.artKey) continue;
+    try { await api(`api/art-link?name=${encodeURIComponent(name)}&path=${encodeURIComponent(src)}`, { method: "POST" }); ART_OVERRIDES[name] = src; c.artKey = name; } catch {}
+  }
+}
+async function loadArtMap() { try { ART_OVERRIDES = await (await api("api/art-map")).json() || {}; } catch {} }
+
+// Shrink description font until the text fits the box.
+function fitText(ta) {
+  const base = 26, min = 14;
+  let size = base;
+  ta.style.fontSize = size + "px";
+  while (ta.scrollHeight > ta.clientHeight + 1 && size > min) { size -= 1; ta.style.fontSize = size + "px"; }
+  ta.classList.toggle("overflow-warn", ta.scrollHeight > ta.clientHeight + 1);
+}
+function sizeInput(inp) { inp.style.width = Math.max(1, inp.value.length) + "ch"; }
+
+/* ---------------- status / save / open ---------------- */
+function updateStatus() {
+  const st = document.getElementById("status");
+  const n = cards.filter(isDirty).length + removed + (decksDirty ? 1 : 0);
+  st.className = "status" + (n ? " dirty" : "");
+  if (GH && !ghToken) { st.textContent = (n ? `${n} unsaved change${n === 1 ? "" : "s"} · ` : "") + "Viewing online · sign in to save"; return; }
+  const where = saveDirLabel() ? saveDirLabel() + "/" + fileName : fileName + (fileHandle ? "" : " (built-in copy, not saved anywhere yet)");
+  st.textContent = n ? `${n} unsaved change${n === 1 ? "" : "s"} · ${where}` : where;
+}
+
+function serialize() {
+  return (hadBOM ? "﻿" : "") + toCSV([header, ...cards.map(c => header.map(h => c.data[h]))]);
+}
+function commitSaved(note = "") {
+  cards.forEach(c => { c.orig = { ...c.data }; delete c.isNew; });
+  removed = 0;
+  document.querySelectorAll(".slot.changed").forEach(s => s.classList.remove("changed"));
+  updateStatus();
+  const st = document.getElementById("status");
+  st.className = "status saved";
+  st.textContent = `Saved ✓ ${saveDirLabel() ? saveDirLabel() + "/" : ""}${fileName}${note} · ${new Date().toLocaleTimeString()}`;
+}
+const saveDirLabel = () => GH ? "GitHub" : SERVER ? "saves" : dirHandle ? dirHandle.name : "";
+
+/* ---------- helper mode (start-editor.bat → server.ps1) ----------
+   When the page is served by the local helper, it reads/writes the "saves" folder next to it.
+   Works in every browser, including Firefox. */
+let SERVER = false;
+// Served by the helper → same origin. Opened from disk → talk to the helper on localhost.
+const API = location.protocol.startsWith("http") ? "" : "http://localhost:8770/";
+async function api(path, opts = {}) {
+  if (GH) return ghApi(path, opts);
+  const r = await fetch(API + path, { ...opts, headers: { ...(opts.headers || {}), "X-Card-Editor": "1" } });
+  if (!r.ok) throw new Error(await r.text() || r.statusText);
+  return r;
+}
+
+/* ---------- website mode (GitHub Pages) ----------
+   On <owner>.github.io/<repo>/ the same api("api/...") calls are answered by the GitHub API instead of the
+   local helper: reads are public, saves commit to the repo using the editor's own GitHub token. */
+const GH = location.hostname.endsWith(".github.io")
+  ? { owner: location.hostname.split(".")[0], repo: location.pathname.split("/").filter(Boolean)[0], branch: "main" } : null;
+const GH_TOKEN_KEY = "card-editor-github-token";
+let ghToken = null, ghUser = null;
+try { ghToken = sessionStorage.getItem(GH_TOKEN_KEY) || localStorage.getItem(GH_TOKEN_KEY); } catch {}
+let decksDirty = false;   // website: decks are committed together with the next Save
+const ghVersionShas = new Map();
+
+const ghPath = p => p.split("/").map(encodeURIComponent).join("/");
+async function gh(url, opts = {}) {
+  const headers = { Accept: "application/vnd.github+json", ...(opts.headers || {}) };
+  if (ghToken) headers.Authorization = "Bearer " + ghToken;
+  const r = await fetch(url.startsWith("http") ? url : `https://api.github.com/repos/${GH.owner}/${GH.repo}/${url}`, { ...opts, headers, cache: "no-store" });
+  if (!r.ok) {
+    let msg = r.statusText; try { msg = (await r.json()).message || msg; } catch {}
+    const e = new Error(r.status === 401 ? "Your GitHub token isn't valid any more. Sign in again." :
+      r.status === 403 && /rate limit/i.test(msg) ? "GitHub's limit for visitors who aren't signed in was reached. Sign in or try again in an hour." :
+      r.status === 409 ? "Someone else saved at the same time. Reload the page to get their changes, then redo yours." : msg);
+    e.status = r.status; throw e;
+  }
+  return r;
+}
+function b64FromBytes(bytes) { let s = ""; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+const b64FromText = t => b64FromBytes(new TextEncoder().encode(t));
+const textFromB64 = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, "")), ch => ch.charCodeAt(0)));
+async function ghGet(path, ref) {   // -> { text, sha } or null if the file doesn't exist
+  try {
+    const j = await (await gh(`contents/${ghPath(path)}?ref=${encodeURIComponent(ref || GH.branch)}`)).json();
+    return { sha: j.sha, text: textFromB64(j.content || "") };
+  } catch (e) { if (e.status === 404) return null; throw e; }
+}
+async function ghPut(path, b64, message, sha) {
+  return (await gh(`contents/${ghPath(path)}`, { method: "PUT", body: JSON.stringify({ message, content: b64, branch: GH.branch, ...(sha ? { sha } : {}) }) })).json();
+}
+function needToken() {
+  if (ghToken) return;
+  openSignIn();
+  const e = new Error("Sign in with GitHub to save."); e.silent = true; throw e;
+}
+const respond = (body, headers = {}) => new Response(typeof body === "string" ? body : JSON.stringify(body), { headers });
+async function ghApi(path, opts = {}) {
+  const u = new URL(path, "https://x/"), q = k => u.searchParams.get(k), route = u.pathname.replace(/^\//, "");
+  const post = (opts.method || "GET") === "POST";
+  const csvPath = () => "saves/" + (q("name") || fileName);
+  const artMap = async () => { const f = await ghGet("saves/art-overrides.json"); return { map: f ? JSON.parse(f.text || "{}") : {}, sha: f && f.sha }; };
+  switch (route) {
+    case "api/ping": return respond({ ok: true });
+    case "api/latest": {
+      const f = await ghGet("saves/" + fileName);
+      if (!f) throw new Error("no saves yet");
+      let when = Date.now();
+      try { const c = await (await gh(`commits?path=${encodeURIComponent("saves/" + fileName)}&per_page=1&sha=${GH.branch}`)).json(); if (c[0]) when = Date.parse(c[0].commit.committer.date); } catch {}
+      return respond(f.text, { "X-File-Name": encodeURIComponent(fileName), "X-Modified": String(when) });
+    }
+    case "api/save": {
+      needToken();
+      const text = opts.body, cur = await ghGet(csvPath());
+      let version = null;
+      if (!cur || cur.text !== text) version = (await ghPut(csvPath(), b64FromText(text), `Update cards (${ghUser || "website"})`, cur && cur.sha)).commit.sha;
+      if (decksDirty) await ghSaveDecks();
+      return respond({ ok: true, version });
+    }
+    case "api/versions": {
+      const commits = await (await gh(`commits?path=${encodeURIComponent("saves/" + fileName)}&per_page=60&sha=${GH.branch}`)).json();
+      return respond(commits.map(c => { const name = `${c.commit.message.split("\n")[0]} (${c.sha.slice(0, 7)})`; ghVersionShas.set(name, c.sha);
+        return { name, modified: Date.parse(c.commit.committer.date), sha: c.sha }; }));
+    }
+    case "api/version": {
+      const f = await ghGet("saves/" + fileName, ghVersionShas.get(q("name")));
+      if (!f) throw new Error("version not found");
+      return respond(f.text);
+    }
+    case "api/art-map": { const { map } = await artMap(); return respond(map); }
+    case "api/art": {
+      needToken();
+      const safe = (q("name").replace(/[^\w\- ]/g, "").trim() || "card").slice(0, 60);
+      const file = `art/custom/${safe} ${stamp()}.jpg`;
+      await ghPut(file, b64FromBytes(new Uint8Array(await opts.body.arrayBuffer())), `New art for ${q("name")}`);
+      const { map, sha } = await artMap(); map[q("name")] = file;
+      await ghPut("saves/art-overrides.json", b64FromText(JSON.stringify(map, null, 1)), `Use new art for ${q("name")}`, sha);
+      return respond({ ok: true, path: file });
+    }
+    case "api/art-link": case "api/art-reset": {
+      needToken();
+      const { map, sha } = await artMap();
+      if (route === "api/art-link") { if (!/^art\//.test(q("path"))) throw new Error("bad art path"); map[q("name")] = q("path"); } else delete map[q("name")];
+      await ghPut("saves/art-overrides.json", b64FromText(JSON.stringify(map, null, 1)), route === "api/art-reset" ? `Reset art for ${q("name")}` : `Keep art for renamed ${q("name")}`, sha);
+      return respond({ ok: true });
+    }
+    case "api/decks": {
+      if (!post) { const f = await ghGet("saves/decks.json"); if (!f) throw new Error("none"); return respond(f.text); }
+      decksDirty = true; updateStatus(); return respond({ ok: true });   // committed on the next Save
+    }
+  }
+  throw new Error("Not available on the website: " + route);
+}
+// Decks: merge by deck name with what's on GitHub, so two people's decks don't overwrite each other.
+async function ghSaveDecks() {
+  const cur = await ghGet("saves/decks.json");
+  let remote = { decks: [] }; try { remote = JSON.parse(cur ? cur.text : "{}"); } catch {}
+  const byName = new Map((remote.decks || []).map(d => [d.name, d]));
+  deckState.decks.forEach(d => byName.set(d.name, d));
+  const merged = { decks: [...byName.values()], current: 0 };
+  merged.current = Math.max(0, merged.decks.findIndex(d => d.name === deck().name));
+  await ghPut("saves/decks.json", b64FromText(JSON.stringify(merged)), `Update decks (${ghUser || "website"})`, cur && cur.sha);
+  decksDirty = false;
+}
+async function ghCheckToken(token) {
+  const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}`, { headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + token } });
+  if (!r.ok) throw new Error(r.status === 401 ? "GitHub didn't accept that token." : `Couldn't open ${GH.owner}/${GH.repo} with that token (make sure it has access to this repository).`);
+  const j = await r.json();
+  if (j.permissions && !j.permissions.push) throw new Error(`That token can't write to ${GH.repo}. Ask ${GH.owner} to add you as a collaborator, and give the token "Contents: Read and write".`);
+  const me = await fetch("https://api.github.com/user", { headers: { Authorization: "Bearer " + token } });
+  return me.ok ? (await me.json()).login : null;
+}
+function openSignIn() {
+  const dlg = document.getElementById("ghDlg");
+  dlg.querySelector("#ghRepoName").textContent = `${GH.owner}/${GH.repo}`;
+  dlg.querySelector("#ghTokenLink").href = "https://github.com/settings/personal-access-tokens/new";
+  dlg.querySelector("#ghErr").textContent = "";
+  if (!dlg.open) dlg.showModal();
+}
+async function ghSignIn() {
+  const dlg = document.getElementById("ghDlg"), token = dlg.querySelector("#ghToken").value.trim(), err = dlg.querySelector("#ghErr");
+  if (!token) { err.textContent = "Paste your token first."; return; }
+  err.textContent = "Checking…";
+  try {
+    ghUser = await ghCheckToken(token); ghToken = token;
+    try {
+      sessionStorage.setItem(GH_TOKEN_KEY, token);
+      if (dlg.querySelector("#ghRemember").checked) localStorage.setItem(GH_TOKEN_KEY, token); else localStorage.removeItem(GH_TOKEN_KEY);
+    } catch {}
+    dlg.querySelector("#ghToken").value = ""; dlg.close(); updateFolderBtn(); updateStatus();
+  } catch (e) { err.textContent = e.message; }
+}
+function ghSignOut() {
+  if (!confirm("Sign out of GitHub on this browser?")) return;
+  ghToken = ghUser = null;
+  try { sessionStorage.removeItem(GH_TOKEN_KEY); localStorage.removeItem(GH_TOKEN_KEY); } catch {}
+  updateFolderBtn(); updateStatus();
+}
+async function connectHelper() {
+  if (SERVER) return true;
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 1500);
+    await api("api/ping", { signal: ctl.signal }); clearTimeout(t);
+    SERVER = true; updateFolderBtn(); document.getElementById("noSaveBanner").hidden = true;
+    return true;
+  } catch { return false; }
+}
+async function loadLatestFromServer() {
+  try {
+    const r = await api("api/latest");
+    const text = await r.text(), name = decodeURIComponent(r.headers.get("X-File-Name") || fileName);
+    load(text, name, null); syncedText = text;
+    const st = document.getElementById("status");
+    st.className = "status saved";
+    st.textContent = `Loaded latest save · saves/${name} (${new Date(+r.headers.get("X-Modified")).toLocaleString()})`;
+  } catch { updateStatus(); } // no saves yet: the first Save creates one
+}
+document.getElementById("retryHelper").onclick = async () => {
+  if (!(await connectHelper())) { alert("Still can't reach the helper. Is the start-editor window open?"); return; }
+  if (anyDirty()) { updateStatus(); alert("Connected. Press Save to write your edits to the saves folder."); }
+  else { await loadArtMap(); await loadLatestFromServer(); }
+  syncDecksWithServer();
+};
+function showNoSave() {
+  document.getElementById("noSaveBanner").hidden = false;
+  const st = document.getElementById("status");
+  st.className = "status dirty"; st.textContent = "Saving is OFF - start start-editor.bat";
+}
+
+/* ---------- save folder with version history ----------
+   Save folder layout:
+     <folder>/<file>.csv                          ← always the latest version
+     <folder>/versions/<file> 2026-10-05 14-32-07.csv   ← one copy per save (skipped if nothing changed) */
+let dirHandle = null;
+let syncedText = null;   // contents of the folder's main file as of our last load/save from it
+const hasFS = !!window.showDirectoryPicker;
+async function newestCsv(d) {
+  const csvs = [];
+  for await (const [name, h] of d.entries()) if (h.kind === "file" && /\.csv$/i.test(name)) csvs.push({ name, f: await h.getFile() });
+  csvs.sort((a, b) => b.f.lastModified - a.f.lastModified);
+  return csvs[0] || null;
+}
+async function loadFromFolder(d) {
+  const latest = await newestCsv(d);
+  if (!latest) return false;
+  const text = await latest.f.text();
+  load(text, latest.name, null);
+  syncedText = text;
+  const st = document.getElementById("status");
+  st.className = "status saved"; st.textContent = `Loaded latest save · ${d.name}/${latest.name} (${new Date(latest.f.lastModified).toLocaleString()})`;
+  return true;
+}
+async function ensurePerm(h) {
+  if ((await h.queryPermission({ mode: "readwrite" })) === "granted") return true;
+  return (await h.requestPermission({ mode: "readwrite" })) === "granted";
+}
+async function writeFile(dir, name, text) {
+  const fh = await dir.getFileHandle(name, { create: true });
+  const w = await fh.createWritable(); await w.write(text); await w.close();
+}
+const baseName = () => fileName.replace(/\.csv$/i, "");
+function stamp(d = new Date()) {
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+async function listVersions() {
+  const vd = await dirHandle.getDirectoryHandle("versions", { create: true });
+  const out = [];
+  for await (const [name, h] of vd.entries()) {
+    if (h.kind === "file" && name.toLowerCase().endsWith(".csv")) { const f = await h.getFile(); out.push({ name, file: f }); }
+  }
+  return out.sort((a, b) => b.file.lastModified - a.file.lastModified || b.name.localeCompare(a.name));
+}
+async function pickFolder() {
+  if (!hasFS) { alert("This browser can't write to folders from a page opened as a file.\n\nClose this tab and double-click start-editor.bat instead. It opens the editor with saving into the \"saves\" folder."); return false; }
+  try {
+    const d = await showDirectoryPicker({ id: "card-editor-saves", mode: "readwrite" });
+    dirHandle = d; rememberHandle(d, "dir"); updateFolderBtn();
+    // If the folder already has a CSV, offer to load the newest one.
+    const csvs = [];
+    for await (const [name, h] of d.entries()) if (h.kind === "file" && /\.csv$/i.test(name)) csvs.push({ name, f: await h.getFile() });
+    csvs.sort((a, b) => b.f.lastModified - a.f.lastModified);
+    if (csvs.length && confirm(`This folder already has "${csvs[0].name}". Load it now?` + (anyDirty() ? "\n(Your unsaved changes will be lost.)" : ""))) {
+      load(await csvs[0].f.text(), csvs[0].name, null);
+    }
+    updateStatus();
+    return true;
+  } catch (e) { if (e.name !== "AbortError") alert(e.message); return false; }
+}
+function updateFolderBtn() {
+  const b = document.getElementById("folderBtn");
+  b.onclick = pickFolder;
+  if (GH) {
+    b.hidden = false; document.getElementById("versionsBtn").hidden = false;
+    b.textContent = ghToken ? `✓ ${ghUser || "Signed in"}` : "🔑 Sign in to save";
+    b.title = ghToken ? "Signed in to GitHub: Save commits to the repo. Click to sign out." : "Sign in with a GitHub token to save changes to the repo";
+    b.onclick = ghToken ? ghSignOut : openSignIn;
+    return;
+  }
+  if (SERVER) { b.hidden = true; document.getElementById("versionsBtn").hidden = false; return; }
+  b.textContent = dirHandle ? "📁 " + dirHandle.name : "📁 Set save folder…";
+  b.title = dirHandle ? "Saves go to this folder (latest file + versions/ history). Click to change." : "Choose a folder to save into. Every save is also kept as a version.";
+  document.getElementById("versionsBtn").hidden = !dirHandle;
+}
+
+async function save() {
+  let text = serialize();
+  if (!SERVER && !hasFS && !(await connectHelper())) {
+    // Never fall back to downloading - that's what scattered copies across Downloads.
+    showNoSave();
+    alert("Not saved - this browser can't write to the saves folder by itself.\n\n" +
+          "Double-click start-editor.bat (in the web viewing folder), leave its window open, then press Save again. Your edits are still here.");
+    return;
+  }
+  if (SERVER) {
+    try {
+      const j = await (await api("api/save?name=" + encodeURIComponent(fileName), { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: text })).json();
+      syncedText = text;
+      await linkRenamedArt(cards.filter(c => c.artKey && cardKey(c) !== c.artKey));
+      commitSaved(j.version ? " + version" : " (no changes since last version)");
+      if (j.sync) { const st = document.getElementById("status"); st.textContent += " · " + j.sync; if (/fail|conflict/i.test(j.sync)) st.className = "status dirty"; }
+    } catch (e) {
+      if (!e.silent) alert((GH ? "Could not save to GitHub.\n\n" : "Could not save (is the start-editor window still open?)\n\n") + e.message);
+    }
+    return;
+  }
+  try {
+    if (!dirHandle && !fileHandle) { if (!(await pickFolder())) return; text = serialize(); }
+    let note = "";
+    if (dirHandle) {
+      if (!(await ensurePerm(dirHandle))) throw new Error("No permission to write to the save folder");
+      await writeFile(dirHandle, fileName, text);
+      const latest = (await listVersions())[0];
+      if (!latest || (await latest.file.text()) !== text) {
+        await writeFile(await dirHandle.getDirectoryHandle("versions"), `${baseName()} ${stamp()}.csv`, text);
+        note = " + version";
+      } else note = " (no changes since last version)";
+    }
+    if (fileHandle) {
+      if (!(await ensurePerm(fileHandle))) throw new Error("Permission denied");
+      const w = await fileHandle.createWritable(); await w.write(text); await w.close();
+    }
+    commitSaved(note);
+  } catch (e) {
+    if (e.name !== "AbortError") alert("Could not save: " + e.message);
+  }
+}
+
+// Version history dialog
+async function showVersions() {
+  // each entry: { name, modified (ms), size, text() }
+  let vs;
+  try {
+    if (SERVER) {
+      vs = (await (await api("api/versions")).json()).map(v => ({ ...v,
+        text: async () => (await api("api/version?name=" + encodeURIComponent(v.name))).text() }));
+    } else {
+      if (!dirHandle || !(await ensurePerm(dirHandle))) return;
+      vs = (await listVersions()).map(v => ({ name: v.name, modified: v.file.lastModified, size: v.file.size, text: () => v.file.text() }));
+    }
+  } catch (e) { alert("Could not list versions: " + e.message); return; }
+  const dlg = document.getElementById("verDlg"), list = document.getElementById("verList");
+  list.innerHTML = vs.length ? "" : `<div class="dp-empty">No versions yet. Every Save adds one.</div>`;
+  vs.forEach((v, i) => {
+    const row = document.createElement("div"); row.className = "ver-row";
+    row.innerHTML = `<div><div>${esc(v.name)}</div><small>${new Date(v.modified).toLocaleString()}${v.size ? ` · ${(v.size / 1024).toFixed(1)} KB` : ""}${i === 0 ? " · latest" : ""}</small></div>`;
+    const b = document.createElement("button"); b.className = "btn"; b.textContent = "Load";
+    b.onclick = async () => {
+      if (anyDirty() && !confirm("You have unsaved changes. Load this version anyway?")) return;
+      const keep = fileName;
+      load(await v.text(), keep, fileHandle);
+      dlg.close();
+      const st = document.getElementById("status");
+      st.className = "status dirty"; st.textContent = `Loaded version from ${new Date(v.modified).toLocaleString()} · Save to make it the latest`;
+    };
+    row.appendChild(b); list.appendChild(row);
+  });
+  dlg.showModal();
+}
+
+async function openFile() {
+  if (anyDirty() && !confirm("You have unsaved changes. Open another file anyway?")) return;
+  if (window.showOpenFilePicker) {
+    try {
+      const [h] = await showOpenFilePicker({ types: [{ description: "CSV", accept: { "text/csv": [".csv"] } }] });
+      const f = await h.getFile();
+      load(await f.text(), f.name, h); rememberHandle(h);
+    } catch (e) { if (e.name !== "AbortError") alert(e.message); }
+  } else {
+    document.getElementById("fileInput").click();
+  }
+}
+document.getElementById("fileInput").onchange = async e => {
+  const f = e.target.files[0]; if (f) load(await f.text(), f.name, null);
+};
+
+// Remember the last opened file between visits (Chrome/Edge).
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("card-editor", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function rememberHandle(h, key = "last") {
+  try { const db = await idb(); db.transaction("kv", "readwrite").objectStore("kv").put(h, key); } catch {}
+}
+async function lastHandle(key = "last") {
+  try {
+    const db = await idb();
+    return await new Promise(res => { const r = db.transaction("kv").objectStore("kv").get(key); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
+  } catch { return null; }
+}
+// On startup, always open the newest saved file so edits never start from a stale copy.
+(async () => {
+  const b = document.getElementById("reopenBtn");
+  // 0) Website: check a remembered GitHub token in the background
+  if (GH) {
+    document.getElementById("ghGo").onclick = ghSignIn;
+    document.getElementById("ghToken").onkeydown = e => { if (e.key === "Enter") ghSignIn(); };
+    document.getElementById("openBtn").hidden = true;
+    if (ghToken) ghCheckToken(ghToken).then(u => { ghUser = u; updateFolderBtn(); updateStatus(); })
+      .catch(() => { ghToken = null; try { sessionStorage.removeItem(GH_TOKEN_KEY); localStorage.removeItem(GH_TOKEN_KEY); } catch {} updateFolderBtn(); updateStatus(); });
+  }
+  // 1) Helper running (page served by it, or opened from disk while it runs): load the latest save.
+  if (await connectHelper()) { await loadArtMap(); await loadLatestFromServer(); syncDecksWithServer(); return; }
+  if (!hasFS) { showNoSave(); return; }
+  // 2) Chrome/Edge with a remembered save folder: load it now if allowed, otherwise after one click.
+  const d = await lastHandle("dir");
+  if (d) {
+    dirHandle = d; updateFolderBtn(); updateStatus();
+    try { if ((await d.queryPermission({ mode: "readwrite" })) === "granted" && (await loadFromFolder(d))) return; } catch {}
+    b.hidden = false; b.classList.add("primary"); b.textContent = "Load latest from 📁 " + d.name;
+    b.onclick = async () => {
+      if (anyDirty() && !confirm("You have unsaved changes. Load anyway?")) return;
+      try {
+        if (!(await ensurePerm(d))) return;
+        if (!(await loadFromFolder(d))) { alert("No CSV in that folder yet. Click Save to put one there."); return; }
+        b.hidden = true;
+      } catch (e) { alert("Could not load: " + e.message); }
+    };
+    return;
+  }
+  const h = await lastHandle();
+  if (!h) return;
+  b.hidden = false; b.textContent = "Reopen " + h.name;
+  b.onclick = async () => {
+    if (anyDirty() && !confirm("You have unsaved changes. Reopen anyway?")) return;
+    try {
+      if ((await h.requestPermission({ mode: "readwrite" })) !== "granted") return;
+      const f = await h.getFile(); load(await f.text(), f.name, h); b.hidden = true;
+    } catch (e) { alert("Could not reopen: " + e.message); }
+  };
+})();
+document.getElementById("folderBtn").onclick = pickFolder;
+document.getElementById("versionsBtn").onclick = showVersions;
+updateFolderBtn();
+
+document.getElementById("openBtn").onclick = openFile;
+document.getElementById("saveBtn").onclick = save;
+document.getElementById("addBtn").onclick = () => {
+  const o = {}; header.forEach(h => o[h] = "");
+  o[COLS.type] = filters.type === "All" ? "Creature" : filters.type;
+  if (filters.faction !== "All" && filters.faction !== "(No faction)") o[COLS.faction] = filters.faction;
+  o[COLS.name] = "New card";
+  const c = { id: nextId++, orig: { ...o }, data: o, isNew: true };
+  cards.push(c); filters.q = ""; filters.cold = false; document.getElementById("search").value = "";
+  render(); updateStatus();
+  const slots = document.querySelectorAll(".slot"); const last = slots[slots.length - 1];
+  last.scrollIntoView({ behavior: "smooth", block: "center" }); last.querySelector(".f-name").select();
+};
+window.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); } });
+window.addEventListener("beforeunload", e => { if (anyDirty()) { e.preventDefault(); e.returnValue = ""; } });
+document.fonts && document.fonts.ready.then(() => document.querySelectorAll(".f-desc").forEach(fitText));
+
+/* ---------------- deck builder ----------------
+   Rules (Rulebook v2.1, section 6): Main Deck exactly 30 cards; Fusion Deck up to 10
+   fusion cards (not counted in the 30); max 3 copies of any card by name, in both decks. */
+const RULES = { main: 30, fusion: 10, copies: 3 };
+const FACTION_COLORS = { Angel: "#f2cf5b", "Blood Demon": "#d23a3a", Dino: "#3fae5a", Goblin: "#9ccc3c", Mundane: "#9aa3ad",
+  Mutant: "#b05ae0", Parasite: "#e8873a", Thiefling: "#3d8fe0", Galorpian: "#2cc3d6" };
+const DECK_KEY = "fusion-fuckery-decks";
+let deckState = { decks: [{ name: "My deck", cards: {} }], current: 0 };
+try { const s = JSON.parse(localStorage.getItem(DECK_KEY)); if (s && s.decks && s.decks.length) deckState = s; } catch {}
+const deck = () => deckState.decks[deckState.current];
+let deckSyncTimer = null;
+function saveDecks() {
+  try { localStorage.setItem(DECK_KEY, JSON.stringify(deckState)); } catch {}
+  if (SERVER) { // also keep decks in saves/decks.json (debounced)
+    clearTimeout(deckSyncTimer);
+    deckSyncTimer = setTimeout(() => api("api/decks", { method: "POST", body: JSON.stringify(deckState) }).catch(() => {}), 400);
+  }
+}
+async function syncDecksWithServer() {
+  try {
+    const s = await (await api("api/decks")).json();
+    if (s && s.decks && s.decks.length) { deckState = s; refreshDeck(); }
+  } catch { if (!GH) saveDecks(); } // nothing on disk yet: upload what this browser has
+}
+
+const cardKey = c => c.data[COLS.name].trim();
+const cardByName = name => cards.find(c => cardKey(c) === name);
+// Fusion cards go in the Fusion Deck. Some fusions are typed "Creature/…" but start with {splices}.
+const isFusionCard = c => category(c) === "Fusion" || (category(c) === "Creature" && c.data[COLS.desc].trim().startsWith("{"));
+const fluxOf = c => { const n = parseInt(c.data[COLS.flux], 10); return isNaN(n) ? null : n; };
+
+function addToDeck(name, d) {
+  if (!name) return;
+  const q = Math.max(0, Math.min(RULES.copies, (deck().cards[name] || 0) + d));
+  if (q) deck().cards[name] = q; else delete deck().cards[name];
+  saveDecks(); refreshDeck();
+}
+function updateDeckCtl(c) {
+  const ctl = c._ctl; if (!ctl) return;
+  const q = deck().cards[cardKey(c)] || 0;
+  ctl.classList.toggle("has", q > 0);
+  ctl.querySelector(".zone").textContent = isFusionCard(c) ? "Fusion deck" : "Main deck";
+  ctl.querySelector("b").textContent = q;
+  ctl.querySelector('[data-d="-1"]').disabled = q === 0;
+  ctl.querySelector('[data-d="1"]').disabled = q >= RULES.copies;
+}
+function refreshDeck() { cards.forEach(updateDeckCtl); renderDeckPanel(); }
+
+function deckSummary() {
+  const main = [], fusion = [], missing = [];
+  for (const [name, qty] of Object.entries(deck().cards)) {
+    const c = cardByName(name);
+    if (!c) missing.push({ name, qty });
+    else (isFusionCard(c) ? fusion : main).push({ name, qty, c });
+  }
+  const sum = l => l.reduce((a, x) => a + x.qty, 0);
+  return { main, fusion, missing, nMain: sum(main), nFusion: sum(fusion) };
+}
+
+function renderDeckPanel() {
+  if (!document.body.classList.contains("deck-open")) return;
+  const sel = document.getElementById("dpSelect");
+  sel.innerHTML = deckState.decks.map((d, i) => `<option value="${i}">${esc(d.name || "Untitled")}</option>`).join("");
+  sel.value = deckState.current;
+  const nameInp = document.getElementById("dpName");
+  if (document.activeElement !== nameInp) nameInp.value = deck().name;
+
+  const s = deckSummary();
+  const issues = [];
+  if (s.nMain !== RULES.main) issues.push(s.nMain < RULES.main ? `Main Deck needs ${RULES.main - s.nMain} more card${RULES.main - s.nMain === 1 ? "" : "s"}.` : `Main Deck has ${s.nMain - RULES.main} too many cards.`);
+  if (s.nFusion > RULES.fusion) issues.push(`Fusion Deck has ${s.nFusion - RULES.fusion} too many cards.`);
+  if (s.missing.length) issues.push(`${s.missing.length} card name${s.missing.length === 1 ? "" : "s"} not found in the CSV (renamed or deleted?).`);
+  [...s.main, ...s.fusion].filter(x => x.qty > RULES.copies).forEach(x => issues.push(`${x.name}: more than ${RULES.copies} copies.`));
+
+  const meter = (label, n, max, exact) => {
+    const cls = exact ? (n === max ? "ok" : n > max ? "over" : "") : (n > max ? "over" : n ? "ok" : "");
+    return `<div class="meter"><span>${label}</span><span>${n} / ${exact ? "" : "max "}${max}</span></div>
+            <div class="bar ${cls}"><i style="width:${Math.min(100, n / max * 100)}%"></i></div>`;
+  };
+  const row = x => {
+    const f = x.c ? factions(x.c) : [];
+    const color = FACTION_COLORS[f[0]] || "#555";
+    const flux = x.c && !isFusionCard(x.c) && category(x.c) === "Creature" ? fluxOf(x.c) : null;
+    return `<div class="dl-row${x.c ? "" : " missing"}" data-name="${esc(x.name)}">
+      <span class="dot" style="background:${color}" title="${esc(f.join(" / ") || "No faction")}"></span>
+      <span class="nm" title="${x.c ? (isCold(x.c) ? "In cold storage" : "Show this card") : "Not in the CSV"}">${esc(x.name)}${x.c && isCold(x.c) ? " ❄" : ""}</span>
+      ${flux !== null ? `<span class="fx">${flux}⚡</span>` : ""}
+      <button class="qbtn" data-d="-1">−</button><b>${x.qty}</b><button class="qbtn" data-d="1" ${x.qty >= RULES.copies || !x.c ? "disabled" : ""}>+</button>
+    </div>`;
+  };
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  const creatures = s.main.filter(x => category(x.c) === "Creature").sort((a, b) => (fluxOf(a.c) ?? 99) - (fluxOf(b.c) ?? 99) || byName(a, b));
+  const spells = s.main.filter(x => category(x.c) !== "Creature").sort(byName);
+  const section = (title, list) => list.length
+    ? `<div class="dp-sec"><span>${title}</span><span>${list.reduce((a, x) => a + x.qty, 0)}</span></div>${list.map(row).join("")}` : "";
+
+  // flux curve of main-deck creatures
+  const curve = {}; creatures.forEach(x => { const f = fluxOf(x.c); const k = f === null ? "–" : f >= 7 ? "7+" : f; curve[k] = (curve[k] || 0) + x.qty; });
+  const keys = ["1", "2", "3", "4", "5", "6", "7+"]; if (curve["–"]) keys.push("–");
+  const peak = Math.max(1, ...Object.values(curve));
+  const curveHtml = creatures.length ? `<div class="dp-sec"><span>Creature flux curve</span></div><div class="curve">${keys.map(k =>
+    `<div title="${curve[k] || 0} creature(s) costing ${k}"><span>${curve[k] || ""}</span><i style="height:${(curve[k] || 0) / peak * 40}px"></i>${k}</div>`).join("")}</div>` : "";
+
+  const empty = !s.main.length && !s.fusion.length && !s.missing.length;
+  document.getElementById("dpBody").innerHTML =
+    meter("Main Deck", s.nMain, RULES.main, true) + meter("Fusion Deck", s.nFusion, RULES.fusion, false) +
+    `<ul class="issues">${issues.length ? issues.map(i => `<li>${esc(i)}</li>`).join("") : `<li class="good">Deck is legal ✓</li>`}</ul>` +
+    (empty ? `<div class="dp-empty">Use the − / + buttons under each card to add it to this deck. Max ${RULES.copies} copies per card.</div>` : "") +
+    section("Creatures", creatures) + section("Spells &amp; equipment", spells) + section("Fusion Deck", s.fusion.sort(byName)) +
+    section("Not found in CSV", s.missing.sort(byName)) + curveHtml;
+}
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+document.getElementById("dpBody").onclick = e => {
+  const r = e.target.closest(".dl-row"); if (!r) return;
+  const name = r.dataset.name;
+  const b = e.target.closest("button");
+  if (b) {
+    if (r.classList.contains("missing") && b.dataset.d === "-1") { delete deck().cards[name]; saveDecks(); refreshDeck(); }
+    else addToDeck(name, +b.dataset.d);
+  } else if (e.target.closest(".nm") && cardByName(name)) {
+    filters.cold = isCold(cardByName(name));
+    filters.type = "All"; filters.faction = "All"; filters.q = name.toLowerCase();
+    document.getElementById("factionFilter").value = "All"; document.getElementById("search").value = name;
+    render();
+  }
+};
+document.getElementById("deckBtn").onclick = () => { document.body.classList.toggle("deck-open"); refreshDeck(); };
+document.getElementById("dpClose").onclick = () => document.body.classList.remove("deck-open");
+document.getElementById("dpSelect").onchange = e => { deckState.current = +e.target.value; saveDecks(); refreshDeck(); };
+document.getElementById("dpName").oninput = e => { deck().name = e.target.value; saveDecks(); renderDeckPanel(); };
+document.getElementById("dpNew").onclick = () => {
+  deckState.decks.push({ name: "New deck " + (deckState.decks.length + 1), cards: {} });
+  deckState.current = deckState.decks.length - 1; saveDecks(); refreshDeck(); document.getElementById("dpName").select();
+};
+document.getElementById("dpDup").onclick = () => {
+  deckState.decks.push({ name: deck().name + " (copy)", cards: { ...deck().cards } });
+  deckState.current = deckState.decks.length - 1; saveDecks(); refreshDeck();
+};
+document.getElementById("dpDel").onclick = () => {
+  if (!confirm(`Delete deck "${deck().name}"?`)) return;
+  deckState.decks.splice(deckState.current, 1);
+  if (!deckState.decks.length) deckState.decks.push({ name: "My deck", cards: {} });
+  deckState.current = Math.max(0, deckState.current - 1); saveDecks(); refreshDeck();
+};
+
+// Deck list as text: "3x Cat" lines, grouped by deck.
+document.getElementById("dpExport").onclick = () => {
+  const s = deckSummary();
+  const lines = l => l.sort((a, b) => a.name.localeCompare(b.name)).map(x => `${x.qty}x ${x.name}`);
+  const text = [`# ${deck().name}`, "", `## Main Deck (${s.nMain})`, ...lines([...s.main, ...s.missing]), "", `## Fusion Deck (${s.nFusion})`, ...lines(s.fusion), ""].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+  a.download = (deck().name || "deck").replace(/[\\/:*?"<>|]/g, "") + ".txt"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+document.getElementById("dpImport").onclick = () => document.getElementById("deckFileInput").click();
+document.getElementById("deckFileInput").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const text = await f.text(); const list = {}; let name = f.name.replace(/\.txt$/i, "");
+  for (const line of text.split(/\r?\n/)) {
+    const h = line.match(/^#\s+(?!#)(.+)/); if (h) { name = h[1].trim(); continue; }
+    const m = line.match(/^\s*(\d+)\s*x?\s+(.+?)\s*$/i); if (m) list[m[2]] = (list[m[2]] || 0) + +m[1];
+  }
+  deckState.decks.push({ name, cards: list }); deckState.current = deckState.decks.length - 1;
+  saveDecks(); document.body.classList.add("deck-open"); refreshDeck();
+};
+
+/* ---------------- A4 PDF export (via the browser's print → Save as PDF) ---------------- */
+function staticCard(c) {
+  const cat = category(c);
+  const card = document.createElement("div"); card.className = "card " + cat.toLowerCase();
+  const div = (cls, text) => { const d = document.createElement("div"); d.className = cls; d.textContent = text; card.appendChild(d); return d; };
+  div("f-name", c.data[COLS.name]);
+  if (cat === "Spell") card.insertAdjacentHTML("beforeend", BOLT);
+  const art = div("art", "");
+  const src = artSrc(c);
+  if (src) art.innerHTML = `<img src="${encodeURI(src)}" alt="">`;
+  if (cat !== "Spell") {
+    const f = c.data[COLS.faction].trim() || factions(c).join(" / ");
+    div("typeline", `[Creature${f ? "/" + f : ""}]`);
+    div("f-attr", c.data[COLS.attr]);
+    div("f-desc", c.data[COLS.desc].trim());
+    const stats = [`${c.data[COLS.atk]}ATK`, `${c.data[COLS.hp]}HP`];
+    if (cat === "Creature") stats.push(`${c.data[COLS.flux]}FLUX`);
+    div("stats", stats.join("/"));
+  } else {
+    div("f-desc", c.data[COLS.desc].trim());
+  }
+  return card;
+}
+
+async function exportPdf() {
+  const s = deckSummary();
+  const opt = id => document.getElementById(id).checked;
+  const list = [];
+  const order = l => l.sort((a, b) => a.name.localeCompare(b.name));
+  for (const x of [...order(s.main), ...(opt("optFusion") ? order(s.fusion) : [])]) for (let i = 0; i < x.qty; i++) list.push(x.c);
+  if (!list.length) { alert("This deck is empty — add some cards first."); return; }
+  if (s.missing.length && !confirm(`${s.missing.length} card name(s) aren't in the CSV and will be left out. Continue?`)) return;
+
+  const root = document.getElementById("printRoot"); root.innerHTML = "";
+  const gap = opt("optGap") ? "3mm" : "0mm";
+  const mkSheet = () => { const sh = document.createElement("div"); sh.className = "sheet";
+    sh.style.gridTemplateColumns = "repeat(3, 63mm)"; sh.style.gridAutoRows = "88mm"; sh.style.gap = gap; root.appendChild(sh); return sh; };
+  for (let p = 0; p < list.length; p += 9) {
+    const page = list.slice(p, p + 9);
+    const sh = mkSheet();
+    page.forEach(c => { const cell = document.createElement("div"); cell.className = "cell" + (opt("optCut") ? " cut" : ""); cell.appendChild(staticCard(c)); sh.appendChild(cell); });
+    if (opt("optBacks")) {
+      // Mirror each row left-to-right so backs line up when printed double-sided (flip on long edge).
+      const bk = mkSheet();
+      for (let i = 0; i < 9; i++) {
+        const r = Math.floor(i / 3), col = 2 - (i % 3), idx = r * 3 + col;
+        const cell = document.createElement("div"); cell.className = "cell" + (opt("optCut") ? " cut" : "");
+        if (idx < page.length) cell.innerHTML = `<img class="back" src="art/card-back.jpg" alt="">`;
+        bk.appendChild(cell);
+      }
+    }
+  }
+  // wait for art + fonts, then shrink long descriptions to fit before printing
+  await Promise.all([...root.querySelectorAll("img")].map(img => img.complete ? 0 : new Promise(r => { img.onload = img.onerror = r; })));
+  if (document.fonts) await document.fonts.ready;
+  root.querySelectorAll(".f-desc").forEach(fitText);
+  root.querySelectorAll(".overflow-warn").forEach(el => el.classList.remove("overflow-warn"));
+
+  const prevTitle = document.title;
+  document.title = deck().name || "deck"; // Chrome/Edge use this as the PDF file name
+  window.print();
+  document.title = prevTitle;
+}
+document.getElementById("dpPdf").onclick = exportPdf;
+
+/* =====================================================================
+   ANALYSIS: card checker, balance, factions, version compare, hand test
+   ===================================================================== */
+const lc = s => String(s || "").toLowerCase();
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const attrsOf = c => c.data[COLS.attr].split("/").map(s => s.replace(/\s+/g, " ").trim()).filter(Boolean);
+const atkNum = c => { const m = String(c.data[COLS.atk]).match(/^\s*(\d+)/); return m ? +m[1] : null; };
+const hpNum = c => { const m = String(c.data[COLS.hp]).match(/^\s*(\d+)\s*$/); return m ? +m[1] : null; };
+const bleedOf = c => { const m = String(c.data[COLS.atk]).match(/bleed\s*(\d+)/i); return m ? +m[1] : 0; };
+const isBodyCard = c => category(c) !== "Spell";   // creatures + fusions carry stats/attributes
+function lev(a, b) {
+  a = lc(a); b = lc(b); const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function allFactionNames() { const s = new Set(); cards.forEach(c => factions(c).forEach(f => s.add(f))); return [...s]; }
+function attrCounts(list = cards) {
+  const m = new Map();   // lower -> { label, n }
+  list.forEach(c => attrsOf(c).forEach(a => { const k = lc(a); const e = m.get(k) || { label: a, n: 0 }; e.n++; m.set(k, e); }));
+  return m;
+}
+
+/* ---------- fusion recipes: "{3 Cats}", "{Chapel Guard + 2 Holy creatures}" ---------- */
+const STOP = new Set("any a an the with in their name names different creature creatures card cards fusion fusions of and combined flux cost".split(" "));
+function parseRecipe(c) {
+  const m = c.data[COLS.desc].match(/\{([^}\n]*)\}?/);
+  if (!m) return null;
+  const facs = allFactionNames().map(lc), attrs = [...attrCounts().keys()];
+  const names = [...new Set(cards.map(cardKey).filter(Boolean))].sort((a, b) => b.length - a.length);
+  const parts = m[1].split("+").map(s => s.replace(/\(.*$/, "").trim()).filter(Boolean).map(p => {
+    const lower = lc(p);
+    const count = +((p.match(/^(?:any\s+)?(\d+)/i) || [])[1] || 1);
+    const has = term => new RegExp(`(^|[^a-z])${reEsc(lc(term))}s?($|[^a-z])`).test(lower);
+    let kind = "unknown", value = null;
+    const nm = names.find(n => has(n));
+    if (nm && !facs.includes(lc(nm))) { kind = "card"; value = nm; }
+    else if (facs.find(f => has(f))) { kind = "faction"; value = facs.find(f => has(f)); }
+    else if (attrs.find(a => has(a))) { kind = "attr"; value = attrs.find(a => has(a)); }
+    // leftover capitalised words = probably a card that doesn't exist (e.g. "Queen Parasite")
+    let rest = p.replace(/['‘’]([^'‘’]+)['‘’]/g, (q, t) => cards.some(x => lc(cardKey(x)).includes(lc(t))) ? " " : q);
+    if (value) rest = rest.replace(new RegExp(reEsc(value) + "s?", "i"), " ");
+    const leftover = rest.split(/[^A-Za-z']+/).filter(w => w && /^[A-Z]/.test(w) && !STOP.has(lc(w)));
+    return { text: p, count, kind, value, fusionOnly: /fusion/i.test(p), leftover };
+  });
+  return { parts, distinct: /different names/i.test(m[1]) };
+}
+function cardFitsPart(x, part) {
+  if (part.fusionOnly ? !isFusionCard(x) : category(x) !== "Creature") return false;
+  if (part.kind === "card") return lc(cardKey(x)) === lc(part.value);
+  if (part.kind === "faction") return factions(x).map(lc).includes(part.value);
+  if (part.kind === "attr") return attrsOf(x).map(lc).includes(part.value);
+  return false;
+}
+// Can these cards (by name) make the recipe? Specific cards are assigned first.
+function recipeMet(recipe, pool) {
+  if (!recipe || recipe.parts.some(p => p.kind === "unknown")) return null;
+  const left = [...pool], used = new Set();
+  const order = [...recipe.parts].sort((a, b) => (a.kind === "card" ? 0 : 1) - (b.kind === "card" ? 0 : 1));
+  for (const part of order) {
+    for (let k = 0; k < part.count; k++) {
+      const i = left.findIndex(x => cardFitsPart(x, part) && !(recipe.distinct && used.has(cardKey(x))));
+      if (i < 0) return false;
+      used.add(cardKey(left[i])); left.splice(i, 1);
+    }
+  }
+  return true;
+}
+
+/* ---------- 1. card checker ---------- */
+const CANON_TYPES = ["Creature", "Fusion", "Spell", "Instant Spell", "Field Spell", "Continuous Spell", "Equipment"];
+function runChecks() {
+  const out = [];   // { sev: 'error'|'warn'|'info', group, card, msg, fix?: {label, apply()} }
+  const add = (sev, group, card, msg, fix) => out.push({ sev, group, card, msg, fix });
+  const names = cards.map(cardKey);
+  const facs = allFactionNames().map(lc);
+  const ac = attrCounts();
+
+  // duplicate names
+  const seen = {}; names.forEach(n => seen[lc(n)] = (seen[lc(n)] || 0) + 1);
+  Object.entries(seen).filter(([n, k]) => n && k > 1).forEach(([n, k]) => add("error", "Duplicate names", names.find(x => lc(x) === n), `${k} cards share this name (the deck builder and art go by name).`));
+
+  cards.forEach(c => {
+    const name = cardKey(c), cat = category(c);
+    if (!name) add("error", "Missing info", "(unnamed)", "A card has no name.");
+    // ---- numbers ----
+    if (isBodyCard(c)) {
+      const atk = c.data[COLS.atk], hp = c.data[COLS.hp];
+      if (!/^\s*\d+\s*(\(\s*bleed\s*\d+\s*\))?\s*$/i.test(atk)) add("error", "Broken numbers", name, `ATK is "${atk}" — expected a number like 4 or 4(bleed1).`);
+      if (!/^\s*\d+\s*$/.test(hp)) {
+        const clean = String(hp).replace(/[^\d]/g, "");
+        add("error", "Broken numbers", name, `HP is "${hp}" — expected a whole number.`,
+          clean ? { label: `Set HP to ${clean}`, apply: () => { c.data[COLS.hp] = clean; } } : null);
+      }
+      if (cat === "Creature" && !isFusionCard(c)) {
+        const f = String(c.data[COLS.flux]).trim();
+        if (f && f !== "N/A" && !/^\d+$/.test(f)) {
+          const clean = f.replace(/[^\d]/g, "");
+          add("error", "Broken numbers", name, `Flux cost is "${f}" — expected a whole number.`, clean ? { label: `Set flux to ${clean}`, apply: () => { c.data[COLS.flux] = clean; } } : null);
+        } else if (!/^\d+$/.test(f)) add("info", "Can't be materialized normally", name, "No flux cost, so it can only enter play through an effect. Fine if that's intended (like T-Rex).");
+      }
+      if (!attrsOf(c).length) add("warn", "Missing info", name, "No attributes. Fusions that need an attribute can't use it.");
+    }
+    if (!c.data[COLS.desc].trim() && cat !== "Fusion") add("warn", "Missing info", name, "No card text.");
+    // ---- type spelling ----
+    const [main, ...suffix] = c.data[COLS.type].split("/").map(s => s.replace(/\s+/g, " ").trim());
+    const canon = CANON_TYPES.find(t => lc(t) === lc(main)) || CANON_TYPES.map(t => [t, lev(t, main)]).filter(([, d]) => d <= 4).sort((a, b) => a[1] - b[1]).map(([t]) => t)[0];
+    const want = canon ? [canon, ...suffix.filter(Boolean).map(s => titleCase(lc(s)))].join("/") : null;
+    if (!canon) add("warn", "Type spelling", name, `Unknown type "${c.data[COLS.type]}".`);
+    else if (want !== c.data[COLS.type]) add("warn", "Type spelling", name, `Type "${c.data[COLS.type]}" → "${want}"`,
+      { label: "Fix", apply: () => { c.data[COLS.type] = want; } });
+    // ---- text references: 'Quoted' names that aren't a card/faction/attribute ----
+    const desc = c.data[COLS.desc];
+    for (const m of desc.matchAll(/(?:^|[\s(])['‘]([^'‘’\n]{2,40}?)['’](?=[\s.,;:)!?]|s\b|$)/g)) {
+      const t = lc(m[1]).replace(/s$/, "");
+      const ok = names.some(n => lc(n).includes(t)) || facs.some(f => f.startsWith(t)) || ac.has(t) || ac.has(t + "s");
+      if (!ok) add("warn", "References to missing cards", name, `Text mentions '${m[1]}', which isn't a card, faction or attribute.`);
+      else {
+        const ref = cards.find(x => lc(cardKey(x)) === lc(m[1]));
+        if (ref && isCold(ref) && !isCold(c)) add("info", "Depends on cold storage", name, `Mentions '${cardKey(ref)}', which is in cold storage.`);
+      }
+    }
+    // ---- fusion recipes ----
+    const r = isFusionCard(c) ? parseRecipe(c) : null;
+    if (r) r.parts.forEach(p => {
+      if (p.kind === "unknown") {
+        const sug = [...ac.values()].map(a => a.label).concat(allFactionNames(), names).map(t => [t, lev(t, p.text.replace(/^\s*(any\s+)?\d*\s*/i, "").replace(/s$/, ""))]).sort((a, b) => a[1] - b[1])[0];
+        add("error", "Fusion recipes", name, `Recipe part "${p.text}" doesn't match any card, faction or attribute${sug && sug[1] <= 2 ? ` (did you mean "${sug[0]}"?)` : ""}.`);
+      } else if (p.leftover.length) add("warn", "Fusion recipes", name, `Recipe part "${p.text}": "${p.leftover.join(" ")}" isn't a card in the sheet.`);
+      else if (p.kind === "card" && !isCold(c)) {
+        const ref = cardByName(p.value) || cards.find(x => lc(cardKey(x)) === lc(p.value));
+        if (ref && isCold(ref)) add("warn", "Depends on cold storage", name, `Needs ${p.value}, which is in cold storage, so this fusion can't be made right now.`);
+      }
+    });
+  });
+
+  // ---- attribute typos: rare attribute that is a near-miss of a common one ----
+  for (const [k, a] of ac) {
+    // only rare spellings (≤2 cards) of a clearly more common attribute; "(Un)Holy"-style notation is intentional
+    if (a.n > 2 || /[()]/.test(k)) continue;
+    const better = [...ac.entries()].filter(([k2, b]) => k2 !== k && b.n >= Math.max(3, a.n * 2) && !/[()]/.test(k2) && (lev(k, k2) <= 2 || (k.includes(" ") && k.split(" ").every(w => [...ac.keys()].some(x => lev(w, x) <= 2)))));
+    let target = null;
+    if (k.includes(" ") && !better.find(([k2]) => lev(k, k2) <= 2)) {
+      // "Small Greddy" → "Small / Greedy"
+      const words = k.split(" ").map(w => { const hit = [...ac.entries()].filter(([x, b]) => x !== k && !x.includes(" ") && lev(w, x) <= 2).sort((p, q) => q[1].n - p[1].n)[0]; return hit ? hit[1].label : null; });
+      if (words.every(Boolean)) target = words.join(" / ");
+    } else if (better.length) target = better.sort((p, q) => q[1].n - p[1].n)[0][1].label;
+    if (!target || lc(target) === k) continue;
+    const affected = cards.filter(c => attrsOf(c).some(x => lc(x) === k));
+    add("warn", "Attribute typos", affected.map(cardKey).join(", "), `"${a.label}" (${a.n} card${a.n > 1 ? "s" : ""}) → "${target}"?`, {
+      label: `Change to "${target}"`, apply: () => affected.forEach(c => {
+        c.data[COLS.attr] = attrsOf(c).map(x => lc(x) === k ? target : x).join(" / ");
+      })
+    });
+  }
+
+  // ---- text that doesn't fit on the card ----
+  const tmp = document.createElement("div"); tmp.style.cssText = "position:absolute;left:-99999px;top:0"; document.body.appendChild(tmp);
+  cards.forEach(c => { const el = staticCard(c); tmp.appendChild(el); const d = el.querySelector(".f-desc"); fitText(d);
+    if (d.classList.contains("overflow-warn")) add("warn", "Text too long", cardKey(c), "Card text doesn't fit even at the smallest font size."); el.remove(); });
+  tmp.remove();
+  return out;
+}
+
+/* ---------- 2. balance: stats vs flux curve (least-squares line through active creatures) ---------- */
+function balanceModel(includeCold = false) {
+  const pts = cards.filter(c => category(c) === "Creature" && !isFusionCard(c) && (includeCold || !isCold(c)))
+    .map(c => ({ c, flux: +c.data[COLS.flux], atk: atkNum(c), hp: hpNum(c), bleed: bleedOf(c) }))
+    .filter(p => /^\d+$/.test(String(p.c.data[COLS.flux]).trim()) && p.atk !== null && p.hp !== null)
+    .map(p => ({ ...p, total: p.atk + p.hp, extra: /pay\s+\d+\s*php|blood sacrifice/i.test(p.c.data[COLS.desc]) }));
+  const n = pts.length, mx = pts.reduce((s, p) => s + p.flux, 0) / (n || 1), my = pts.reduce((s, p) => s + p.total, 0) / (n || 1);
+  const sxx = pts.reduce((s, p) => s + (p.flux - mx) ** 2, 0), sxy = pts.reduce((s, p) => s + (p.flux - mx) * (p.total - my), 0);
+  const b = sxx ? sxy / sxx : 0, a = my - b * mx;
+  const expect = f => a + b * f;
+  pts.forEach(p => p.diff = p.total - expect(p.flux));
+  return { pts, a, b, expect };
+}
+let BAL = null;
+function balanceNote(c) {
+  if (category(c) !== "Creature" || isFusionCard(c)) return "";
+  const f = String(c.data[COLS.flux]).trim(), atk = atkNum(c), hp = hpNum(c);
+  if (!/^\d+$/.test(f) || atk === null || hp === null || !BAL) return "";
+  const total = atk + hp, exp = BAL.expect(+f), d = total - exp;
+  const cls = Math.abs(d) < 1.5 ? "" : d > 0 ? "hi" : "lo";
+  return `<span class="${cls}" title="ATK + HP compared with the average creature at ${f} flux">${total} stats · curve ${exp.toFixed(1)} (${d >= 0 ? "+" : ""}${d.toFixed(1)})</span>`;
+}
+
+/* ---------- 5. hand test (Monte Carlo) ---------- */
+function bestSpend(costs, flux, slots) {   // max flux spent with at most `slots` creatures; returns chosen indices
+  let best = { sum: 0, pick: [] };
+  const n = costs.length;
+  const rec = (i, sum, pick) => {
+    if (sum > best.sum) best = { sum, pick: [...pick] };
+    if (i === n || pick.length === slots || best.sum === flux) return;
+    if (sum + costs[i] <= flux) { pick.push(i); rec(i + 1, sum + costs[i], pick); pick.pop(); }
+    rec(i + 1, sum, pick);
+  };
+  rec(0, 0, []);
+  return best;
+}
+function simulateDeck(games = 5000, turns = 7) {
+  const s = deckSummary();
+  const deckCards = []; s.main.forEach(x => { for (let i = 0; i < x.qty; i++) deckCards.push(x.c); });
+  const fusions = s.fusion.map(x => ({ c: x.c, r: parseRecipe(x.c) }));
+  const res = {};
+  for (const seat of ["first", "second"]) {
+    const played = Array(turns).fill(0), spent = Array(turns).fill(0), avail = Array(turns).fill(0);
+    const fusionReady = fusions.map(() => Array(turns).fill(0));
+    let noCreatureOpening = 0, openCreatures = 0;
+    for (let g = 0; g < games; g++) {
+      const lib = [...deckCards];
+      for (let i = lib.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [lib[i], lib[j]] = [lib[j], lib[i]]; }
+      const hand = lib.splice(0, 6), seen = [...hand]; let field = 0;
+      const oc = hand.filter(c => category(c) === "Creature").length; openCreatures += oc; if (!oc) noCreatureOpening++;
+      for (let t = 1; t <= turns; t++) {
+        if (!(seat === "first" && t === 1)) { const d = lib.splice(0, 2); hand.push(...d); seen.push(...d); }
+        const flux = Math.min(t, 10);
+        const playable = hand.map((c, i) => ({ c, i, cost: category(c) === "Creature" && /^\d+$/.test(String(c.data[COLS.flux]).trim()) ? +c.data[COLS.flux] : null })).filter(x => x.cost !== null && x.cost <= flux);
+        // no field cap: combat isn't simulated, so creatures would otherwise pile up and block play
+        const pick = bestSpend(playable.map(x => x.cost), flux, 99);
+        if (pick.pick.length) played[t - 1]++;
+        spent[t - 1] += pick.sum; avail[t - 1] += flux; field += pick.pick.length;
+        pick.pick.map(k => playable[k].i).sort((a, b) => b - a).forEach(i => hand.splice(i, 1));
+        fusions.forEach((f, k) => { if (recipeMet(f.r, seen)) fusionReady[k][t - 1]++; });
+      }
+    }
+    res[seat] = { played, spent, avail, fusionReady, noCreatureOpening, openCreatures };
+  }
+  return { res, games, turns, fusions, deckSize: deckCards.length };
+}
+
+/* ---------- dialog ---------- */
+const pct = (k, n) => n ? Math.round(k / n * 100) + "%" : "–";
+let anaTab = "check";
+function openAnalysis(tab) {
+  if (tab) anaTab = tab;
+  const dlg = document.getElementById("anaDlg");
+  if (!dlg.open) dlg.showModal();
+  dlg.querySelectorAll(".ana-tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === anaTab));
+  const body = document.getElementById("anaBody");
+  body.innerHTML = `<div class="dp-empty">Working…</div>`;
+  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
+}
+function jumpTo(name) {
+  const c = cards.find(x => cardKey(x) === name) || cards.find(x => lc(cardKey(x)) === lc(name));
+  if (!c) return;
+  document.getElementById("anaDlg").close();
+  filters.cold = isCold(c); filters.type = "All"; filters.faction = "All"; filters.q = lc(cardKey(c));
+  document.getElementById("factionFilter").value = "All"; document.getElementById("search").value = cardKey(c);
+  render(); window.scrollTo(0, 0);
+}
+const cardLinks = names => String(names).split(", ").map(n => `<a href="#" class="jump" data-n="${esc(n)}">${esc(n)}</a>`).join(", ");
+
+function renderCheck(body) {
+  const issues = runChecks();
+  const sevOrder = { error: 0, warn: 1, info: 2 };
+  const groups = {}; issues.forEach((it, i) => { it.i = i; (groups[it.group] = groups[it.group] || []).push(it); });
+  const counts = { error: 0, warn: 0, info: 0 }; issues.forEach(i => counts[i.sev]++);
+  const fixable = issues.filter(i => i.fix);
+  body.innerHTML = `<p class="ana-lead"><b class="sev-error">${counts.error} problem${counts.error === 1 ? "" : "s"}</b> · <b class="sev-warn">${counts.warn} warning${counts.warn === 1 ? "" : "s"}</b> · <span class="sev-info">${counts.info} note${counts.info === 1 ? "" : "s"}</span>
+    ${fixable.length ? `<button class="btn" id="fixAll">Apply all ${fixable.length} suggested fixes</button>` : ""}
+    <br><small>Fixes change the cards in the editor. Check them, then press Save.</small></p>` +
+    Object.entries(groups).sort((a, b) => Math.min(...a[1].map(i => sevOrder[i.sev])) - Math.min(...b[1].map(i => sevOrder[i.sev]))).map(([g, list]) =>
+      `<h3>${esc(g)} <span class="n">${list.length}</span></h3><ul class="chk">${list.map(it =>
+        `<li class="sev-${it.sev}"><span class="dot"></span><span class="who">${cardLinks(it.card)}</span><span class="what">${esc(it.msg)}</span>${it.fix ? `<button class="btn" data-fix="${it.i}">${esc(it.fix.label)}</button>` : ""}</li>`).join("")}</ul>`).join("") +
+    (issues.length ? "" : `<p class="good">No problems found ✓</p>`);
+  const applyFix = list => { list.forEach(it => it.fix.apply()); buildFilters(); render(); updateStatus(); openAnalysis("check"); };
+  body.querySelectorAll("[data-fix]").forEach(b => b.onclick = () => applyFix([issues[+b.dataset.fix]]));
+  const fa = body.querySelector("#fixAll"); if (fa) fa.onclick = () => applyFix(fixable);
+}
+
+function renderBalance(body) {
+  const inc = !!renderBalance.includeCold;
+  const m = balanceModel(inc);
+  const W = 640, H = 300, P = 36;
+  const maxF = Math.max(7, ...m.pts.map(p => p.flux)), maxT = Math.max(10, ...m.pts.map(p => p.total)) + 2;
+  const x = f => P + (f / maxF) * (W - P - 10), y = t => H - P - (t / maxT) * (H - P - 10);
+  const jitter = {};
+  const dots = m.pts.map(p => { const k = p.flux + ":" + p.total; jitter[k] = (jitter[k] || 0) + 1; const j = (jitter[k] - 1) * 7;
+    return `<circle cx="${x(p.flux) + j}" cy="${y(p.total)}" r="6" fill="${FACTION_COLORS[factions(p.c)[0]] || "#888"}" stroke="#000" stroke-width=".5"><title>${esc(cardKey(p.c))}: ${p.atk}/${p.hp} for ${p.flux} flux (${p.diff >= 0 ? "+" : ""}${p.diff.toFixed(1)} vs curve)${p.extra ? " · also pays PHP" : ""}</title></circle>`; }).join("");
+  const grid = [...Array(maxF + 1).keys()].map(f => `<line x1="${x(f)}" x2="${x(f)}" y1="${P / 3}" y2="${H - P}" class="gl"/><text x="${x(f)}" y="${H - P + 16}" class="ax" text-anchor="middle">${f}</text>`).join("") +
+    [...Array(Math.floor(maxT / 5) + 1).keys()].map(i => `<line x1="${P}" x2="${W - 10}" y1="${y(i * 5)}" y2="${y(i * 5)}" class="gl"/><text x="${P - 6}" y="${y(i * 5) + 4}" class="ax" text-anchor="end">${i * 5}</text>`).join("");
+  const line = `<line x1="${x(0.5)}" y1="${y(m.expect(0.5))}" x2="${x(maxF)}" y2="${y(m.expect(maxF))}" class="curve-line"/>`;
+  const legend = [...new Set(m.pts.map(p => factions(p.c)[0] || "None"))].map(f => `<span><i style="background:${FACTION_COLORS[f] || "#888"}"></i>${esc(f)}</span>`).join("");
+  const rows = [...m.pts].sort((a, b) => b.diff - a.diff).map(p => `<tr><td>${cardLinks(cardKey(p.c))}</td><td>${esc(factions(p.c).join(" / "))}</td><td>${p.flux}</td><td>${esc(p.c.data[COLS.atk])}</td><td>${p.hp}</td><td>${p.total}</td><td>${m.expect(p.flux).toFixed(1)}</td>
+    <td class="${Math.abs(p.diff) < 1.5 ? "" : p.diff > 0 ? "hi" : "lo"}">${p.diff >= 0 ? "+" : ""}${p.diff.toFixed(1)}</td><td>${p.extra ? "pays PHP" : ""}${p.bleed ? (p.extra ? ", " : "") + "bleed " + p.bleed : ""}</td></tr>`).join("");
+  const fus = cards.filter(c => isFusionCard(c) && (inc || !isCold(c))).map(c => { const r = parseRecipe(c); const need = r ? r.parts.reduce((s, p) => s + p.count, 0) : null;
+    const t = (atkNum(c) ?? 0) + (hpNum(c) ?? 0); return { c, t, need, per: need ? t / need : null }; }).sort((a, b) => b.t - a.t);
+  body.innerHTML = `<p class="ana-lead">Creature stats (ATK + HP) against flux cost. The line is the average curve:
+      <b>${m.a.toFixed(1)} + ${m.b.toFixed(1)} per flux</b> across ${m.pts.length} ${inc ? "" : "active "}creatures. Dots far above the line are cheap for their stats, dots far below need a strong effect to be worth it.
+      <label class="inline"><input type="checkbox" id="balCold" ${inc ? "checked" : ""}> include cold storage</label></p>
+    <svg viewBox="0 0 ${W} ${H}" class="chart">${grid}${line}${dots}<text x="${W / 2}" y="${H - 4}" class="ax" text-anchor="middle">flux cost</text><text x="10" y="${H / 2}" class="ax" transform="rotate(-90 10 ${H / 2})" text-anchor="middle">ATK + HP</text></svg>
+    <div class="legend">${legend}</div>
+    <h3>Creatures, most above the curve first</h3>
+    <div class="tbl"><table class="atable"><tr><th>Card</th><th>Faction</th><th>Flux</th><th>ATK</th><th>HP</th><th>Stats</th><th>Curve</th><th>vs curve</th><th>Notes</th></tr>${rows}</table></div>
+    <h3>Fusions</h3><p class="ana-lead"><small>Fusions are free but cost the cards you fuse ("splices"). "Stats per splice" compares them.</small></p>
+    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th>Faction</th><th>ATK</th><th>HP</th><th>Stats</th><th>Splices</th><th>Stats per splice</th></tr>${fus.map(f =>
+      `<tr><td>${cardLinks(cardKey(f.c))}</td><td>${esc(factions(f.c).join(" / "))}</td><td>${esc(f.c.data[COLS.atk])}</td><td>${esc(f.c.data[COLS.hp])}</td><td>${f.t}</td><td>${f.need ?? "?"}</td><td>${f.per ? f.per.toFixed(1) : "–"}</td></tr>`).join("")}</table></div>`;
+  body.querySelector("#balCold").onchange = e => { renderBalance.includeCold = e.target.checked; openAnalysis("balance"); };
+}
+
+function renderFactions(body) {
+  const inc = !!renderFactions.includeCold;
+  const pool = cards.filter(c => inc || !isCold(c));
+  const facs = [...new Set(pool.flatMap(c => factions(c)))].sort();
+  const neutral = pool.filter(c => !factions(c).length && !isFusionCard(c));
+  const rows = facs.map(f => {
+    const fc = pool.filter(c => factions(c).includes(f));
+    const cre = fc.filter(c => category(c) === "Creature" && !isFusionCard(c)), fus = fc.filter(isFusionCard), spl = fc.filter(c => category(c) === "Spell");
+    const mainUnique = cre.length + spl.length, maxMain = mainUnique * RULES.copies, withNeutral = (mainUnique + neutral.length) * RULES.copies;
+    const curve = {}; cre.forEach(c => { const v = String(c.data[COLS.flux]).trim(); const k = /^\d+$/.test(v) ? Math.min(+v, 7) : "–"; curve[k] = (curve[k] || 0) + 1; });
+    const peak = Math.max(1, ...Object.values(curve));
+    const mini = ["1", "2", "3", "4", "5", "6", "7"].map(k => `<i title="${curve[k] || 0} creature(s) at ${k === "7" ? "7+" : k} flux" style="height:${(curve[k] || 0) / peak * 22 + 1}px"></i>`).join("");
+    return `<tr><td><span class="dot" style="background:${FACTION_COLORS[f] || "#888"}"></span> ${esc(f)}</td><td>${cre.length}</td><td>${spl.length}</td><td>${fus.length}</td>
+      <td class="${maxMain >= RULES.main ? "" : "lo"}">${maxMain}${maxMain >= RULES.main ? " ✓" : ""}</td><td class="${withNeutral >= RULES.main ? "" : "lo"}">${withNeutral}</td><td><span class="mini">${mini}</span></td></tr>`;
+  }).join("");
+  // attribute × faction crossover
+  const body2 = pool.filter(isBodyCard);
+  const m = new Map(); body2.forEach(c => attrsOf(c).forEach(a => { const k = lc(a); const e = m.get(k) || { label: a, n: 0, f: {} }; e.n++; (factions(c).length ? factions(c) : ["None"]).forEach(f => e.f[f] = (e.f[f] || 0) + 1); m.set(k, e); }));
+  const attrs = [...m.values()].sort((a, b) => Object.keys(b.f).length - Object.keys(a.f).length || b.n - a.n);
+  const cols = [...new Set(attrs.flatMap(a => Object.keys(a.f)))].sort();
+  const cross = attrs.filter(a => Object.keys(a.f).length > 1).length;
+  body.innerHTML = `<p class="ana-lead">How deep each faction is. A legal Main Deck needs ${RULES.main} cards with at most ${RULES.copies} copies of each, so a faction needs ${Math.ceil(RULES.main / RULES.copies)}+ different creatures/spells to fill a deck alone.
+      <label class="inline"><input type="checkbox" id="facCold" ${inc ? "checked" : ""}> include cold storage</label></p>
+    <div class="tbl"><table class="atable"><tr><th>Faction</th><th>Creatures</th><th>Spells</th><th>Fusions</th><th>Max deck alone</th><th>+ ${neutral.length} neutral</th><th>Flux curve 1→7+</th></tr>${rows}</table></div>
+    <h3>Attributes across factions <span class="n">${cross} of ${attrs.length} cross factions</span></h3>
+    <p class="ana-lead"><small>Counts are creatures + fusions. Cards with two factions count for both. Attributes on only one card are often typos.</small></p>
+    <div class="tbl"><table class="atable xt"><tr><th>Attribute</th><th>Cards</th><th>Factions</th>${cols.map(f => `<th>${esc(f)}</th>`).join("")}</tr>${attrs.map(a =>
+      `<tr class="${Object.keys(a.f).length > 1 ? "cross" : ""}"><td>${esc(a.label)}${a.n === 1 ? ' <span class="lo" title="Only one card has this">•</span>' : ""}</td><td>${a.n}</td><td>${Object.keys(a.f).length}</td>${cols.map(f => `<td>${a.f[f] || ""}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  body.querySelector("#facCold").onchange = e => { renderFactions.includeCold = e.target.checked; openAnalysis("factions"); };
+}
+
+async function versionSources() {
+  const out = [{ name: "Current editor (incl. unsaved edits)", text: async () => serialize() }];
+  try {
+    if (SERVER) (await (await api("api/versions")).json()).forEach(v => out.push({ name: `${new Date(v.modified).toLocaleString()} — ${v.name}`, text: async () => (await api("api/version?name=" + encodeURIComponent(v.name))).text() }));
+    else if (dirHandle && (await dirHandle.queryPermission({ mode: "readwrite" })) === "granted") (await listVersions()).forEach(v => out.push({ name: `${new Date(v.file.lastModified).toLocaleString()} — ${v.name}`, text: () => v.file.text() }));
+  } catch {}
+  return out;
+}
+function diffCsv(aText, bText) {
+  const toMap = t => { const rows = parseCSV(t).filter((r, i) => i === 0 || r.some(v => v.trim())); const h = rows[0]; const m = new Map();
+    rows.slice(1).forEach(r => { const o = {}; h.forEach((k, i) => o[k] = r[i] ?? ""); m.set((o.Name || "").trim(), o); }); return { h, m }; };
+  const A = toMap(aText), B = toMap(bText);
+  const added = [...B.m.keys()].filter(k => !A.m.has(k)), removed = [...A.m.keys()].filter(k => !B.m.has(k));
+  const changed = [];
+  for (const [k, b] of B.m) { const a = A.m.get(k); if (!a) continue;
+    const fields = [...new Set([...A.h, ...B.h])].filter(f => f !== "Name" && (a[f] ?? "").trim() !== (b[f] ?? "").trim()).map(f => ({ f, from: (a[f] ?? "").trim(), to: (b[f] ?? "").trim() }));
+    if (fields.length) changed.push({ k, fields }); }
+  return { added, removed, changed, B };
+}
+function patchNotes(d, label) {
+  const L = [`Patch notes — ${label}`, ""];
+  const line = ({ f, from, to }) => f === "Cold Storage" ? (to ? "moved to cold storage" : "back from cold storage") : f === "Description" ? `new text: "${to.replace(/\s*\n\s*/g, " ")}"` : `${f} ${from || "–"} → ${to || "–"}`;
+  if (d.added.length) { L.push("NEW CARDS"); d.added.forEach(k => { const o = d.B.m.get(k); L.push(`+ ${k} (${o.Type}${o.ATK && o.ATK !== "N/A" ? `, ${o.ATK}/${o.HP}` : ""}): ${(o.Description || "").replace(/\s*\n\s*/g, " ")}`); }); L.push(""); }
+  if (d.changed.length) { L.push("CHANGES"); d.changed.forEach(c => L.push(`* ${c.k}: ${c.fields.map(line).join("; ")}`)); L.push(""); }
+  if (d.removed.length) { L.push("REMOVED"); d.removed.forEach(k => L.push(`- ${k}`)); }
+  return L.join("\n");
+}
+async function renderCompare(body) {
+  const src = await versionSources();
+  if (src.length < 2) { body.innerHTML = `<p class="ana-lead">No saved versions to compare yet. Open the editor with the <b>Open Card Editor</b> shortcut and save once.</p>`; return; }
+  const opts = sel => src.map((s, i) => `<option value="${i}" ${i === sel ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+  body.innerHTML = `<p class="ana-lead">Compare <select id="cmpA">${opts(src.length - 1)}</select> → <select id="cmpB">${opts(0)}</select>
+    <button class="btn" id="cmpCopy">Copy as patch notes</button></p><div id="cmpOut"><div class="dp-empty">Comparing…</div></div>`;
+  let last = "";
+  const run = async () => {
+    const a = src[+body.querySelector("#cmpA").value], b = src[+body.querySelector("#cmpB").value];
+    const d = diffCsv(await a.text(), await b.text());
+    last = patchNotes(d, `${a.name.split(" — ")[0]} → ${b.name.split(" — ")[0]}`);
+    const fl = ({ f, from, to }) => `<div class="chg"><b>${esc(f)}</b> <span class="from">${esc(from || "–")}</span> → <span class="to">${esc(to || "–")}</span></div>`;
+    body.querySelector("#cmpOut").innerHTML = (!d.added.length && !d.removed.length && !d.changed.length) ? `<p class="good">No differences.</p>` :
+      (d.added.length ? `<h3>New cards <span class="n">${d.added.length}</span></h3><ul class="chk">${d.added.map(k => `<li>${cardLinks(k)}</li>`).join("")}</ul>` : "") +
+      (d.changed.length ? `<h3>Changed <span class="n">${d.changed.length}</span></h3><ul class="chk">${d.changed.map(c => `<li><span class="who">${cardLinks(c.k)}</span><span class="what">${c.fields.map(fl).join("")}</span></li>`).join("")}</ul>` : "") +
+      (d.removed.length ? `<h3>Removed / renamed <span class="n">${d.removed.length}</span></h3><ul class="chk">${d.removed.map(k => `<li>${esc(k)}</li>`).join("")}</ul>` : "");
+  };
+  body.querySelector("#cmpA").onchange = run; body.querySelector("#cmpB").onchange = run;
+  body.querySelector("#cmpCopy").onclick = async () => { try { await navigator.clipboard.writeText(last); body.querySelector("#cmpCopy").textContent = "Copied ✓"; } catch { prompt("Copy the patch notes:", last); } };
+  run();
+}
+
+function renderSim(body) {
+  const s = deckSummary();
+  if (!s.nMain) { body.innerHTML = `<p class="ana-lead">Add cards to a deck in the <b>Deck builder</b> first. This tests the deck that's open there.</p>`; return; }
+  const sim = simulateDeck();
+  const T = sim.turns, f = sim.res.first, sc = sim.res.second, G = sim.games;
+  const turnRow = (label, fn) => `<tr><td>${label}</td>${[...Array(T).keys()].map(t => `<td>${fn(t)}</td>`).join("")}</tr>`;
+  const head = `<tr><th></th>${[...Array(T).keys()].map(t => `<th>Turn ${t + 1}</th>`).join("")}</tr>`;
+  const seatTable = (r, label) => `<h3>${label}</h3><div class="tbl"><table class="atable">${head}
+      ${turnRow("Can play a creature", t => pct(r.played[t], G))}
+      ${turnRow("Flux used", t => pct(r.spent[t], r.avail[t]))}
+      ${sim.fusions.map((fu, k) => turnRow(`${esc(cardKey(fu.c))} ingredients drawn`, t => fu.r && !fu.r.parts.some(p => p.kind === "unknown") ? pct(r.fusionReady[k][t], G) : "can't tell")).join("")}
+    </table></div>`;
+  body.innerHTML = `<p class="ana-lead">Played out <b>${G.toLocaleString()}</b> random games of <b>${esc(deck().name)}</b> (${sim.deckSize} cards${sim.deckSize !== RULES.main ? `, not ${RULES.main} yet` : ""}).
+      Rules used: opening hand of 6, draw 2 a turn (the first player skips turn 1), max flux = turn number, only creatures cost flux.
+      Each turn plays creatures to use as much flux as possible. Spells, effects, combat, the 6-slot field limit and mulligans are ignored.
+      A drop in later turns means the deck runs out of creatures to play.</p>
+    <p class="ana-lead">Opening hand: <b>${(f.openCreatures / G).toFixed(1)}</b> creatures on average · <b class="${f.noCreatureOpening / G > .1 ? "lo" : ""}">${pct(f.noCreatureOpening, G)}</b> of hands have no creature at all.</p>
+    ${seatTable(f, "Going first")}${seatTable(sc, "Going second")}
+    <p class="ana-lead"><small>"Ingredients drawn" means the cards for that fusion have been drawn by that turn. They still have to be on your field to fuse.</small></p>
+    <button class="btn" id="simAgain">Run again</button>`;
+  body.querySelector("#simAgain").onclick = () => openAnalysis("sim");
+}
+
+document.getElementById("anaBtn").onclick = () => openAnalysis();
+document.getElementById("dpSim").onclick = () => openAnalysis("sim");
+document.querySelectorAll("#anaDlg .ana-tabs button").forEach(b => b.onclick = () => openAnalysis(b.dataset.t));
+document.getElementById("anaBody").addEventListener("click", e => { const a = e.target.closest("a.jump"); if (a) { e.preventDefault(); jumpTo(a.dataset.n); } });
+
+load(EMBEDDED_CSV, EMBEDDED_NAME, null);
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# Claude Code / editor settings and PC-specific shortcuts
+.claude/
+*.lnk
+Thumbs.db
+desktop.ini
