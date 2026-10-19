@@ -180,7 +180,7 @@ Space Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent's creature card
 Unfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it's base components.,,,yes
 Goblin General,Creature,1+d6,8,5,2,Your other 'Goblin' creatures roll their dice twice and keep the higher result.,Goblin,Greedy / Humanoid,
 Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.",Goblin,Greedy / Humanoid,
-Bobblin Miner,Creature,d6,8,4,2,When this creature is materialized and at the start of your turn: Gain 1 gold.,Goblin,Greedy / Humanoid,
+Goblin Miner,Creature,d6,8,4,2,When this creature is materialized and at the start of your turn: Gain 1 gold.,Goblin,Greedy / Humanoid,
 Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
 At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
 Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
@@ -188,7 +188,9 @@ Archangel,Creature,7,16,10,3,"Radiance (restoring HP can go past max HP. Until e
 Once per turn: Restore 5 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
 Goblin Pit Boss,Creature,2+d10,12,7,2,Whenever a 'Goblin' creature you control rolls the highest number on its die: Gain 2 gold. Once per turn: Pay 1 gold to reroll a 'Goblin' creature's die.,Goblin,Greedy / Humanoid,
 Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack misses and deals no damage.,Goblin,Greedy / Humanoid,
-Fuse,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux. (Fusing: once per turn, 2 creatures you control in adjacent lanes that each cost 5 or more flux go under a fusion from your Fusion Deck whose recipe they meet, and the fusion takes one of their lanes.)",,,
+It's free fuse-estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux
+
+ (Fusing: once per turn, 2 creatures you control in adjacent lanes that each cost 5 or more flux go under a fusion from your Fusion Deck whose recipe they meet, and the fusion takes one of their lanes.)",,,
 Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice a 'Blood Demon' creature you control that isn't one of the materials instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,4,"{Judicator Angel + any Holy creature}
 Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
