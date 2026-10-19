@@ -1910,11 +1910,12 @@ function renderSim(body) {
 /* ---------- 6. lane combat simulator ----------
    3 lanes a side. A creature can attack the enemy in its own lane or an adjacent one (the middle reaches all three).
    It attacks the player directly only if its own lane is empty on the other side; then enemies in adjacent
-   lanes hit it back. Faster creature strikes first, ties go to the attacker; if the first hit kills, there's no
+   lanes hit it back. The attacker gets +1 speed (rule; the checkbox turns it off for testing). Faster creature
+   strikes first, ties go to the attacker; if the first hit kills, there's no
    counter. Missing speed counts as normal (2). Damage stays on a creature until it's destroyed (it doesn't heal),
    so attacks chain; destroyed creatures leave their lane. */
 const laneSim = { you: [null, null, null], opp: [null, null, null], dmg: { you: [0, 0, 0], opp: [0, 0, 0] },
-  player: { you: 0, opp: 0 }, plus1: false, log: [], picked: null };
+  player: { you: 0, opp: 0 }, plus1: true, log: [], picked: null };
 const simPool = () => cards.filter(c => !isCold(c) && isBodyCard(c) && cardKey(c) && atkNum(c) !== null && hpNum(c) !== null)
   .sort((a, b) => cardKey(a).localeCompare(cardKey(b)));
 function unit(side, i) {
@@ -1992,9 +1993,9 @@ function renderLanes(body) {
   const row = (side, label) => `<div class="side">${label}${laneSim.player[side] ? `<br><span class="lo">−${laneSim.player[side]}</span>` : ""}</div>${[0, 1, 2].map(i => slot(side, i)).join("")}`;
   body.innerHTML = `<p class="ana-lead">Put creatures in the lanes and press an ⚔ button to play out an attack.
       A creature reaches its own lane and the lanes next to it; it can hit the player only when nothing is in front of it, and then enemies in adjacent lanes hit it back.
-      Faster strikes first, ties go to the attacker. Damage stays on creatures between attacks and destroyed creatures leave the board.
+      The attacker gets +1 speed, the faster creature strikes first, and ties go to the attacker. Damage stays on creatures between attacks and destroyed creatures leave the board.
       Speed shown with <b>?</b> isn't set on the card yet (counts as ${PLAY.speedNormal}, normal).
-      <label class="inline"><input type="checkbox" id="lanePlus1" ${laneSim.plus1 ? "checked" : ""}> Attacker gets +1 speed</label>
+      <label class="inline"><input type="checkbox" id="lanePlus1" ${laneSim.plus1 ? "checked" : ""}> Attacker +1 speed (rule; untick to test without it)</label>
       <button class="btn" id="laneSwap" title="Let the other side attack">⇅ Swap sides</button> <button class="btn" id="laneHeal" title="Remove all damage, keep the creatures">Reset damage</button> <button class="btn" id="laneClear">Clear</button></p>
     <div class="lanes">${row("opp", "Opponent")}</div>
     <div class="fuse-info">${fuseInfo("opp")}</div>

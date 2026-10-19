@@ -143,9 +143,10 @@ v2.1, because those cards are in cold storage. The card editor's checks and simu
    lanes next to it hit it back with their ATK.
 4. **Response window:** after the attack is declared, the defending player, then the attacking player, may play
    Instants. "When this creature attacks" effects trigger when the attack is declared.
-5. **Speed decides who hits first.** Speed runs 1–4; 2 is normal. The faster creature deals its damage first; on a
-   tie the attacker goes first. If the first hit destroys the other creature, it doesn't hit back. On a direct
-   attack, enemies faster than the attacker hit it before it reaches the player; slower ones hit it after.
+5. **Speed decides who hits first.** Speed runs 1–4; 2 is normal. **The attacker gets +1 Speed** for its attack
+   (attacker's advantage). The faster creature deals its damage first; if they're still tied, the attacker goes
+   first. If the first hit destroys the other creature, it doesn't hit back. On a direct attack, enemies faster
+   than the attacker (counting its +1) hit it before it reaches the player; slower ones hit it after.
 6. Damage dealt in combat stays (11).
 
 ## 13. Fusion
