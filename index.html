@@ -133,6 +133,12 @@
   .card div.f-attr { white-space: nowrap; overflow: hidden; }
   .card div.f-desc { white-space: pre-wrap; overflow-wrap: break-word; }
 
+  /* ---------- render view (#render=<card name>, used by tools/export-cards.ps1) ---------- */
+  body.render-mode { background: #000; margin: 0; width: 744px; height: 1039px; overflow: hidden; }
+  body.render-mode > *:not(#renderRoot) { display: none !important; }
+  #renderRoot { position: absolute; left: 0; top: 0; width: 744px; height: 1039px; }
+  #renderRoot .card { transform: none; }
+
   /* ---------- deck builder ---------- */
   .deckctl { display: none; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--muted);
     background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; }
@@ -539,6 +545,7 @@ function spellKind(c) {
 const spellSymbol = c => { const k = spellKind(c); return k ? `<img class="sym" src="${SPELL_SYMBOLS[k]}" alt="${k} spell" title="${titleCase(k)} spell">` : ""; };
 function render() {
   BAL = balanceModel();
+  if (RENDER_CARD) { showRenderCard(); return; }
   updateChipCounts();
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
@@ -2026,6 +2033,29 @@ document.getElementById("anaBtn").onclick = () => openAnalysis();
 document.getElementById("dpSim").onclick = () => openAnalysis("sim");
 document.querySelectorAll("#anaDlg .ana-tabs button").forEach(b => b.onclick = () => openAnalysis(b.dataset.t));
 document.getElementById("anaBody").addEventListener("click", e => { const a = e.target.closest("a.jump"); if (a) { e.preventDefault(); jumpTo(a.dataset.n); } });
+
+/* ---------------- render view: index.html#render=<card name> ----------------
+   Shows just that card at print size (744 x 1039 px) on its own, for tools/export-cards.ps1 to screenshot.
+   The rest of the page stays in the DOM (hidden) so loading and saving code keeps working. */
+const RENDER_CARD = (() => { const m = location.hash.match(/^#render=(.+)$/); return m ? decodeURIComponent(m[1]) : ""; })();
+function showRenderCard() {
+  document.body.classList.add("render-mode");
+  let root = document.getElementById("renderRoot");
+  if (!root) { root = document.createElement("div"); root.id = "renderRoot"; document.body.appendChild(root); }
+  root.innerHTML = "";
+  const c = cardByName(RENDER_CARD);
+  if (!c) { root.textContent = "No card named " + RENDER_CARD; root.dataset.ready = "missing"; return; }
+  const el = staticCard(c); root.appendChild(el);
+  const fit = () => el.querySelectorAll(".f-desc").forEach(d => { fitText(d); d.classList.remove("overflow-warn"); });
+  fit();
+  if (document.fonts) document.fonts.ready.then(fit);
+  root.dataset.ready = "yes";
+}
+if (RENDER_CARD) {   // without the helper, still use the custom art chosen in the editor
+  fetch("saves/art-overrides.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => {
+    ART_OVERRIDES = { ...m, ...ART_OVERRIDES }; showRenderCard();
+  }).catch(() => {});
+}
 
 load(EMBEDDED_CSV, EMBEDDED_NAME, null);
 </script>

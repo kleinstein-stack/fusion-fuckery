@@ -52,3 +52,4 @@ Without signing in, the website is view-only: browsing, deck building, PDF expor
 | `server.ps1`, `start-editor.bat`, `open-editor.ps1` | The local save helper |
 | `tools/editor-template.html` | Editor source. Run `tools\build.ps1` after changing it |
 | `tools/crop-art.ps1` | Re-cuts `art/` from a folder of finished card PNGs |
+| `tools/export-cards.ps1` | Saves every card not in cold storage as a JPEG (744 × 1039 px, print size) in `exports/cards/`. Needs Edge or Chrome. `-OutDir` picks another folder, `-Only "Cherub,Orc"` exports just those |
