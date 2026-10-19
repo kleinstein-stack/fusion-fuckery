@@ -158,8 +158,11 @@ Fusions are the end goal: each one is stronger than an Ultra.
 - Put the two creatures **under** the fusion card. They're now its materials, not creatures. Put the fusion in
   either of their lanes; the other lane is free again.
 - The fusion arrives at its own printed stats and full HP, and **can attack this turn**.
-- **It's free fuse-estate** (spell): fuse without paying the 2 flux. **Crimson Altar** (Blood Demon field spell): sacrifice another
-  Blood Demon instead of paying the 2 flux. **Ritual Pit** lets a Blood Demon costing 3–4 flux be a material.
+- **Ways around the 2 flux:** **It's free fuse-estate** (spell) lets you fuse without paying it. **Crimson Altar**
+  (Blood Demon field spell) lets you sacrifice another Blood Demon instead.
+- **A cheaper material:** **Ritual Pit** (Blood Demon continuous spell) is the one exception to the 5+ flux rule. Banish
+  a Blood Demon card from your Waste Repository: your next fusion this turn may use a 3–4 flux Blood Demon as a
+  material. You still pay the 2 flux.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
 - **Nothing carries over:** a fusion only has the effect printed on its own card. Its materials' effects, stats,
   damage and stat changes don't carry over. (This replaces v2.1 and the V5 rule where splice effects carried over.)
