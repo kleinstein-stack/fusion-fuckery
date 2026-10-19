@@ -120,8 +120,12 @@ v2.1, because those cards are in cold storage. The card editor's checks and simu
 |---|---|
 | Current HP | The HP it has right now. |
 | Max HP | Printed HP + permanent gains − permanent losses. |
-| Restore HP | Heal. Never above Max HP, except with Radiance (14.1). |
+| Restore HP | Heal Current HP. Never above Max HP, except with Radiance (14.1), and Max HP doesn't change. |
+| Give HP (or "+X HP") | **Permanent.** Raise both Current and Max HP. |
 | Permanently gain / lose HP | Raise / lower both Current and Max HP. |
+
+**Give vs restore.** A creature at 1/3 HP (Current/Max) that is **given** 3 HP becomes **4/6**. If 3 HP is
+**restored** instead, it becomes **3/3**.
 
 - A creature at 0 HP or less is **destroyed** and goes to its owner's Waste Repository. "Destroyed", "dies" and
   "killed" mean the same thing. **Sacrificing** a creature destroys it as a cost.
@@ -165,8 +169,10 @@ Fusions are the end goal: each one is stronger than an Ultra.
 ## 14. Faction mechanics
 
 ### 14.1 Angels: Radiance
-Healing from Holy cards can go past Max HP. Each point over Max HP gives **+1 ATK until end of turn**. At the end of
-the turn, the extra HP goes away along with the ATK.
+When a Holy card **restores** HP, it can go past Max HP. This is never permanent: Max HP doesn't change, and each
+point over Max HP is **+1 ATK until end of turn**. At the end of the turn the extra HP and the ATK both go away.
+Example: a 3/3 creature restored by 2 becomes 5/3 with +2 ATK this turn, then goes back to 3/3. (Giving HP is
+different: it's permanent and raises Max HP, see 11.)
 
 ### 14.2 Blood Demons: Blood Price
 **Blood Price N:** when you naturally materialize it, you may pay **2 PHP for each flux you skip**, up to N. The

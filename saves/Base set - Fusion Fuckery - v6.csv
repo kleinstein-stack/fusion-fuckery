@@ -6,17 +6,17 @@ Once per game you may banish 3 'Dino' cards from your waste repository, then as 
 Bull Run,Continuous Spell,N/A,N/A,N/A,,"The first time each turn you gain gold, gain 1 additional gold. While you have 5 or more gold in your pool, your 'Goblin' creatures gain +1 ATK.",Goblin,,
 Goblin Bank,Continuous Spell,N/A,N/A,N/A,,"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.",Goblin,,
 Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,At the end of your turn: a random 'Mutant' creature mutates. ,Mutant,,yes
-Cherub,Creature,1,2,1,3,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Cherub,Creature,1,2,1,3,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 When materialized: Restore 2 HP to another creature.",Angel,Holy / Humanoid / Winged,
-Holy Acolyte,Creature,1,5,2,1,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Holy Acolyte,Creature,1,5,2,1,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 Once per turn: Restore 2 HP to another creature.",Angel,Holy / Humanoid,
 Sanctified Knight,Creature,4,10,5,2,Your creatures in adjacent lanes take 1 less combat damage.,Angel,Holy / Humanoid / Noble,
-Judicator Angel,Creature,5,10,7,4,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Judicator Angel,Creature,5,10,7,4,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 When this creature attacks: Restore 2 HP to your creatures in adjacent lanes.",Angel,Holy / Humanoid / Winged / Noble,
 Chapel Guard,Creature,4,12,5,1,"The first time this creature would be destroyed, it survives with 1 HP instead.",Angel,Holy / Humanoid,
-Purifier Nun,Creature,2,10,4,2,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Purifier Nun,Creature,2,10,4,2,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 When materialized: Restore 3 HP to a creature. If it's Unholy, deal 3 damage to it instead.",Angel,Holy / Humanoid,
-Bellkeeper Monk,Creature,3,14,6,1,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Bellkeeper Monk,Creature,3,14,6,1,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is active).",Angel,Holy / Humanoid,
 Pain Drinker,Creature,5,6,5,3,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.",Blood Demon,Unholy / Humanoid,
@@ -69,7 +69,7 @@ Parasite Larva,Creature,1,3,1,,"While attached, the host's damage get's reduced 
 ",Parasite,Insect,yes
 Egg incubator,Equipment,N/A,N/A,N/A,,"Equip this 'Egg incubator' to any 'egg' creature. The first time this equiped 'egg' were to take damage from a creature in combat, negate this damage.",,,yes
 Gregg's Vape,Equipment/Mundane,N/A,N/A,N/A,,Equip this to a card that has 'Gregg' in the name (including Ggrreegg). The creature gains +4 ATK.,Mundane,,yes
-Sanctuary Bells,Field Spell,,,,,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Sanctuary Bells,Field Spell,,,,,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 At the end of each turn: All players restore 1 PHP.
 At the start of your turn: Your 'Angel' creatures restore 1 HP.",Angel,,
 Greggs,Field Spell,N/A,N/A,N/A,,All 'Gregg' cards on your field restore +1 hp at the end of every turn.,Mundane,,yes
@@ -91,7 +91,7 @@ Whenever you restore HP to a creature or pay PHP: Deal 2 damage to the enemy cre
 Lord Lazarus,Fusion,9,22,,2,"{any 2 Noble creatures}
 The first time this creature is destroyed, return it to the field with full HP. When it returns: Deal damage equal to its ATK to the enemy creature in front of it.",Angel / Blood Demon,Noble,
 Arch Cleric,Fusion,7,26,,2,"{Bellkeeper Monk + any Holy creature}
-Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 At the start of your turn: Restore 3 HP to each of your creatures.",Angel,Holy / Cleric,
 Skinless Titan,Fusion,14,18,N/A,2,"{Pain Drinker + any Unholy creature}
 At the end of your turn: Lose 2 PHP. Whenever you lose PHP: This creature gains +1 ATK until end of turn.
@@ -184,20 +184,20 @@ Bobblin Miner,Creature,d6,8,4,2,When this creature is materialized and at the st
 Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
 At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
 Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
-Archangel,Creature,7,16,10,3,"Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Archangel,Creature,7,16,10,3,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 Once per turn: Restore 5 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
 Goblin Pit Boss,Creature,2+d10,12,7,2,Whenever a 'Goblin' creature you control rolls the highest number on its die: Gain 2 gold. Once per turn: Pay 1 gold to reroll a 'Goblin' creature's die.,Goblin,Greedy / Humanoid,
 Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack misses and deals no damage.,Goblin,Greedy / Humanoid,
 Fuse,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux. (Fusing: once per turn, 2 creatures you control in adjacent lanes that each cost 5 or more flux go under a fusion from your Fusion Deck whose recipe they meet, and the fusion takes one of their lanes.)",,,
 Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice a 'Blood Demon' creature you control that isn't one of the materials instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,4,"{Judicator Angel + any Holy creature}
-Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
-When this creature attacks: Restore 2 HP to each of your creatures. Healing past max HP gives this creature +2 ATK per point instead of +1.",Angel,Holy / Winged,
+Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+When this creature attacks: Restore 2 HP to each of your creatures. When HP restored to this creature goes past its max, each point over is +2 ATK instead of +1.",Angel,Holy / Winged,
 Goblin King,Fusion,3+d10,24,,2,"{Goblin General + any Greedy creature}
 Your 'Goblin' creatures roll their dice twice and keep the higher result. At the start of your turn: Gain 1 gold.
 Your 'Goblin' creatures gain +1 ATK for every 5 gold in your pool.",Goblin,Greedy / Humanoid,
 Goblin Bombardier,Fusion,4+d8,22,,3,"{Gob-omber + any Greedy creature}
 Once per turn: Pay X gold. Deal X damage to an enemy creature and half of X (rounded down) to the creatures in the lanes next to it.",Goblin,Greedy / Humanoid,
 Indulgence Seller,Fusion,8,24,,2,"{any Holy creature + any Greedy creature}
-Radiance (healing can go past max HP; each point over gives +1 ATK until end of turn).
+Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
 Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
