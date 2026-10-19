@@ -1256,7 +1256,7 @@ async function syncDecksWithServer() {
 
 const cardKey = c => c.data[COLS.name].trim();
 const cardByName = name => cards.find(c => cardKey(c) === name);
-// Fusion cards go in the Fusion Deck. Some fusions are typed "Creature/…" but start with {splices}.
+// Fusion cards go in the Fusion Deck. Some fusions are typed "Creature/…" but start with their {recipe}.
 const isFusionCard = c => category(c) === "Fusion" || (category(c) === "Creature" && c.data[COLS.desc].trim().startsWith("{"));
 const fluxOf = c => { const n = parseInt(c.data[COLS.flux], 10); return isNaN(n) ? null : n; };
 
@@ -1789,8 +1789,8 @@ function renderBalance(body) {
     <div class="legend">${legend}</div>
     <h3>Creatures, most above the curve first</h3>
     <div class="tbl"><table class="atable"><tr><th>Card</th><th>Faction</th><th>Flux</th><th>Tier</th><th>ATK</th><th>HP</th><th>SPD</th><th title="Stat points / budget (2 × flux + 1) → what the effect should be worth">Budget</th><th>ATK+HP</th><th>Curve</th><th>vs curve</th><th>Notes</th></tr>${rows}</table></div>
-    <h3>Fusions</h3><p class="ana-lead"><small>Fusions are free but cost the cards you fuse ("splices"). "Stats per splice" compares them.<br>${ultraNote}</small></p>
-    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th>Faction</th><th>ATK</th><th>HP</th><th>SPD</th><th>Budget</th><th>Stats</th><th>Splices</th><th>Stats per splice</th></tr>${fus.map(f =>
+    <h3>Fusions</h3><p class="ana-lead"><small>Fusing costs ${PLAY.fuseFlux} flux (or a card like It's free fuse-estate or Crimson Altar instead) plus the 2 creatures you fuse, its materials. "Stats per material" compares them.<br>${ultraNote}</small></p>
+    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th>Faction</th><th>ATK</th><th>HP</th><th>SPD</th><th>Budget</th><th>Stats</th><th>Materials</th><th>Stats per material</th></tr>${fus.map(f =>
       `<tr><td>${cardLinks(cardKey(f.c))}</td><td>${esc(factions(f.c).join(" / "))}</td><td>${esc(f.c.data[COLS.atk])}</td><td>${esc(f.c.data[COLS.hp])}</td><td>${esc(f.c.data[COLS.speed] || "–")}</td><td>${budgetCell(budgetOf(f.c))}</td><td>${f.t}</td><td>${f.need ?? "?"}</td><td>${f.per ? f.per.toFixed(1) : "–"}</td></tr>`).join("")}</table></div>`;
   body.querySelector("#balCold").onchange = e => { renderBalance.includeCold = e.target.checked; openAnalysis("balance"); };
 }
