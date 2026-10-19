@@ -1,9 +1,9 @@
-# Fusion Fuckery: Rulebook v3 (gameplay v2)
+# Fusion Fuckery: Rulebook v4.2 (gameplay v2)
 
 Decided on 2026-10-19. This replaces the Rulebook v2.1 (*The Blocking Update*) wherever the two disagree; everything
 v2.1 says that isn't covered here still applies. The Dino, Mutant, Parasite, Bleed and Equipment rules are only in
 v2.1, because those cards are in cold storage. The player-facing version with diagrams is
-`Fusion Fuckery Rulebook v3.pdf`. The card editor's checks and simulators use these numbers
+`Fusion Fuckery Rulebook v4.2.pdf`. The card editor's checks and simulators use these numbers
 (`PLAY` in `tools/editor-template.html`).
 
 ## 1. The Golden Rules
