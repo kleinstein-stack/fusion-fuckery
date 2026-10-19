@@ -1,27 +1,27 @@
 Name,Type,ATK,HP,Flux Cost,Speed,Description,Faction,Attribute,Cold Storage
-Ritual Pit,Continuous Spell,N/A,N/A,,,Once per turn: Banish a 'Blood Demon' card from your Waste Repository. Your next fusion this turn may use a 'Blood Demon' creature that costs 3 or 4 flux as one of its materials.,Blood Demon,,
+Ritual Pit,Continuous Spell,N/A,N/A,,,Once per turn: Banish an 'Unholy' creature from your Waste Repository. Your next fusion this turn may use an 'Unholy' creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,
 The bodega,Continuous Spell,N/A,N/A,N/A,,"During your End Phase, you may discard 1 card, then draw 1 card. If the card you discarded was a Mundane Creature, choose 1 Mundane Creature on the field; it gains +2 ATK.",Mundane,,yes
 Primordial Soup,Continuous Spell,N/A,N/A,N/A,,"At the end of each turn, all Dino creatures you control gain +1 HP. Once per turn, the first Dino creature you Materialize costs 1 less Flux.
 Once per game you may banish 3 'Dino' cards from your waste repository, then as long as this card is on the field at the start of every turn roll a d20 if it lands on 1 all cards on either side of the field get destroyed.",Dino,,yes
-Bull Run,Continuous Spell,N/A,N/A,N/A,,"The first time each turn you gain gold, gain 1 additional gold. While you have 5 or more gold in your pool, your 'Goblin' creatures gain +1 ATK.",Goblin,,
+Bull Run,Continuous Spell,N/A,N/A,N/A,,"The first time each turn you gain gold, gain 1 additional gold. While you have 5 or more gold in your pool, your 'Greedy' creatures gain +1 ATK.",Goblin,,
 Goblin Bank,Continuous Spell,N/A,N/A,N/A,,"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.",Goblin,,
 Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,At the end of your turn: a random 'Mutant' creature mutates. ,Mutant,,yes
-Cherub,Creature,1,2,1,3,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Cherub,Creature,1,2,1,3,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 When materialized: Restore 2 HP to another creature.",Angel,Holy / Humanoid / Winged,
-Holy Acolyte,Creature,1,5,2,1,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Holy Acolyte,Creature,1,5,2,1,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 Once per turn: Restore 2 HP to another creature.",Angel,Holy / Humanoid,
 Sanctified Knight,Creature,4,10,5,2,Your creatures in adjacent lanes take 1 less combat damage.,Angel,Holy / Humanoid / Noble,
-Judicator Angel,Creature,5,10,7,4,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Judicator Angel,Creature,5,10,7,4,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 When this creature attacks: Restore 2 HP to your creatures in adjacent lanes.",Angel,Holy / Humanoid / Winged / Noble,
 Chapel Guard,Creature,4,12,5,1,"The first time this creature would be destroyed, it survives with 1 HP instead.",Angel,Holy / Humanoid,
-Purifier Nun,Creature,2,10,4,2,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Purifier Nun,Creature,2,10,4,2,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 When materialized: Restore 3 HP to a creature. If it's Unholy, deal 3 damage to it instead.",Angel,Holy / Humanoid,
-Bellkeeper Monk,Creature,3,14,6,1,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Bellkeeper Monk,Creature,3,14,6,1,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is active).",Angel,Holy / Humanoid,
 Pain Drinker,Creature,5,6,5,3,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.",Blood Demon,Unholy / Humanoid,
 Carrion Duchess,Creature,3,10,5,2,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
-At the end of your turn: You may pay 2 PHP to return a 'Blood Demon' with 5 or less max HP from your Waste Repository to the field.",Blood Demon,Unholy / Humanoid / Noble,
+At the end of your turn: You may pay 2 PHP to return a 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.",Blood Demon,Unholy / Humanoid / Noble,
 Nomed The Dark Viscount,Creature,6,10,7,3,"Blood Price 2 (pay 2 PHP for each flux you skip, up to 2).
 Whenever this creature deals combat damage: Gain 1 PHP.",Blood Demon,Unholy / Humanoid / Noble,
 Renroc The Dark Marquis,Creature,5,8,7,3,"Blood Price 2 (pay 2 PHP for each flux you skip, up to 2).
@@ -69,9 +69,9 @@ Parasite Larva,Creature,1,3,1,,"While attached, the host's damage get's reduced 
 ",Parasite,Insect,yes
 Egg incubator,Equipment,N/A,N/A,N/A,,"Equip this 'Egg incubator' to any 'egg' creature. The first time this equiped 'egg' were to take damage from a creature in combat, negate this damage.",,,yes
 Gregg's Vape,Equipment/Mundane,N/A,N/A,N/A,,Equip this to a card that has 'Gregg' in the name (including Ggrreegg). The creature gains +4 ATK.,Mundane,,yes
-Sanctuary Bells,Field Spell,,,,,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Sanctuary Bells,Field Spell,,,,,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 At the end of each turn: All players restore 1 PHP.
-At the start of your turn: Your 'Angel' creatures restore 1 HP.",Angel,,
+At the start of your turn: Your 'Holy' creatures restore 1 HP.",Angel,,
 Greggs,Field Spell,N/A,N/A,N/A,,All 'Gregg' cards on your field restore +1 hp at the end of every turn.,Mundane,,yes
 Brood Fog,Field Spell,N/A,N/A,N/A,,"At the end of your turn, each Infested creature takes 1 damage.
 If an Infested creature dies, the player controlling that creature draws 1 card.",Parasite,,yes
@@ -91,7 +91,7 @@ Whenever you restore HP to a creature or pay PHP: Deal 2 damage to the enemy cre
 Lord Lazarus,Fusion,9,22,,2,"{any 2 Noble creatures}
 The first time this creature is destroyed, return it to the field with full HP. When it returns: Deal damage equal to its ATK to the enemy creature in front of it.",Angel / Blood Demon,Noble,
 Arch Cleric,Fusion,7,26,,2,"{Bellkeeper Monk + any Holy creature}
-Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 At the start of your turn: Restore 3 HP to each of your creatures.",Angel,Holy / Cleric,
 Skinless Titan,Fusion,14,18,N/A,2,"{Pain Drinker + any Unholy creature}
 At the end of your turn: Lose 2 PHP. Whenever you lose PHP: This creature gains +1 ATK until end of turn.
@@ -138,8 +138,8 @@ Detroit,Field Spell/Thiefling,N/A,N/A,N/A,,"Can't have shit...
 Anytime a player steals an amount of cards, double that amount. Only one 'Detroit' field spell can be active at the same time.
 
 (Field Spell)",,,yes
-Sacrificial Lamb,Instant Spell,N/A,N/A,N/A,,Banish 2 'Blood Demon' creatures from your Waste Repository to gain 6 PHP.,Blood Demon,,
-Market Crash,Instant Spell,,,,,"Pay 5 gold, if you do all Goblin creatures you control gain +3 ATK until end of turn.",Goblin,,
+Sacrificial Lamb,Instant Spell,N/A,N/A,N/A,,Banish 2 'Unholy' creatures from your Waste Repository to gain 6 PHP.,Blood Demon,,
+Market Crash,Instant Spell,,,,,Pay 5 gold: All 'Greedy' creatures you control gain +3 ATK until end of turn.,Goblin,,
 HOA Complaint,Instant Spell,,,,,"Target a creature, it loses 2 ATK until end of turn. If that creature is not a Mundane: It also loses its effects until end of turn.",Mundane,,yes
 Tax Evasion,Instant Spell,,,,,Prevent up to 5 combat damage that would be dealt to a Mundane creature this battle.,Mundane,,yes
 "RS PRO 115mm Stainless Steel Curved Tweezers
@@ -150,12 +150,12 @@ Thiefling Sleight of Hand,Instant Spell/Thiefling,N/A,N/A,N/A,,"When your oppone
 ",,,yes
 Loaded Dice,Instant Spell,,,,,"Choose 1 coin flip or dice roll. Flip/roll again and use the second result.
 ",,,
-Blood Frenzy,Spell,,,,,Target 1 'Blood Demon' creature you control: It gains +4 ATK and +1 Speed until end of turn. Sacrifice it during the end phase.,Blood Demon,,
-Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 1 PHP: The next 'Blood Demon' creature you materialize this turn has +2 Blood Price.,Blood Demon,,
+Blood Frenzy,Spell,,,,,Target 1 'Unholy' creature you control: It gains +4 ATK and +1 Speed until end of turn. Sacrifice it during the end phase.,Blood Demon,,
+Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 1 PHP: The next 'Unholy' creature you materialize this turn has +2 Blood Price.,Blood Demon,,
 Archaeologist,Spell,N/A,N/A,N/A,,Banish 3 'Dino' creatures from your Waste Repository. Materialize any 'Dino' creature that isn't a 'T-Rex' from your hand or deck.,Dino,,yes
 Fossil Record,Spell,N/A,N/A,N/A,,"Return a Dino creature from your Waste Repository to your hand. If it was a Dino Egg or T-Rex, draw 1 card.",Dino,,yes
 Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.
-For each Goblin card you put at the bottom of your deck this way, gain 1 gold.",Goblin,,
+For each 'Greedy' creature you put at the bottom of your deck this way, gain 1 gold.",Goblin,,
 Goblin Stock Broker,Spell,N/A,N/A,N/A,,"Choose a real stock, ETF, or cryptocurrency ticker and record its price now. Invest up to 3 gold from your pool. At the start of your next turn, look up the same asset again:
 - If it rose, double the invested gold and add it to your pool.
 - If it fell, lose the invested gold.
@@ -178,28 +178,30 @@ Microwave,Spell,N/A,N/A,N/A,,"Reheat a creature from any Waste Repository and ma
 Pipebomb,Spell,N/A,N/A,N/A,,"Target a Continuous/Field Spell or Equipment on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.",,,yes
 Space Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent's creature cards for a turn.,,,yes
 Unfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it's base components.,,,yes
-Goblin General,Creature,1+d6,8,5,2,Your other 'Goblin' creatures roll their dice twice and keep the higher result.,Goblin,Greedy / Humanoid,
+Goblin General,Creature,1+d6,8,5,2,Your other 'Greedy' creatures roll their dice twice and keep the higher result.,Goblin,Greedy / Humanoid,
 Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.",Goblin,Greedy / Humanoid,
 Goblin Miner,Creature,d6,8,4,2,When this creature is materialized and at the start of your turn: Gain 1 gold.,Goblin,Greedy / Humanoid,
 Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
 At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
 Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
-Archangel,Creature,7,16,10,3,"Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Archangel,Creature,7,16,10,3,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 Once per turn: Restore 5 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
-Goblin Pit Boss,Creature,2+d10,12,7,2,Whenever a 'Goblin' creature you control rolls the highest number on its die: Gain 2 gold. Once per turn: Pay 1 gold to reroll a 'Goblin' creature's die.,Goblin,Greedy / Humanoid,
+Goblin Pit Boss,Creature,2+d10,12,7,2,Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold. Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.,Goblin,Greedy / Humanoid,
 Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack misses and deals no damage.,Goblin,Greedy / Humanoid,
 It's free fuse-estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux
 
  (Fusing: once per turn, 2 creatures you control in adjacent lanes that each cost 5 or more flux go under a fusion from your Fusion Deck whose recipe they meet, and the fusion takes one of their lanes.)",,,
-Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice a 'Blood Demon' creature you control that isn't one of the materials instead of paying the 2 flux.,Blood Demon,,
+Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one of the fusion splices instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,4,"{Judicator Angel + any Holy creature}
-Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
-When this creature attacks: Restore 2 HP to each of your creatures. When HP restored to this creature goes past its max, each point over is +2 ATK instead of +1.",Angel,Holy / Winged,
+Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
+When this creature attacks: Restore 2 HP to each of your creatures. When HP restored to this creature goes past its max, each point you turn into ATK is +2 ATK instead of +1.",Angel,Holy / Winged,
 Goblin King,Fusion,3+d10,24,,2,"{Goblin General + any Greedy creature}
-Your 'Goblin' creatures roll their dice twice and keep the higher result. At the start of your turn: Gain 1 gold.
-Your 'Goblin' creatures gain +1 ATK for every 5 gold in your pool.",Goblin,Greedy / Humanoid,
+Your 'Greedy' creatures roll their dice twice and keep the higher result. At the start of your turn: Gain 1 gold.
+Your 'Greedy' creatures gain +1 ATK for every 5 gold in your pool.",Goblin,Greedy / Humanoid,
 Goblin Bombardier,Fusion,4+d8,22,,3,"{Gob-omber + any Greedy creature}
 Once per turn: Pay X gold. Deal X damage to an enemy creature and half of X (rounded down) to the creatures in the lanes next to it.",Goblin,Greedy / Humanoid,
 Indulgence Seller,Fusion,8,24,,2,"{any Holy creature + any Greedy creature}
-Radiance (restoring HP can go past max HP. Until end of turn, each point over max is +1 ATK; then the extra HP is lost).
+Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
+Market Cycle,Field Spell,N/A,N/A,N/A,,"While you have 5 to 9 gold in your pool, your 'Greedy' creatures gain +1 ATK. With 10 or more, they gain +2 ATK instead.
+If you end your turn with 10 or more gold, roll a d6: 1-2 lose half your gold (rounded down), 3-5 nothing happens, 6 gain 2 gold.",Goblin,,
