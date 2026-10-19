@@ -1227,6 +1227,17 @@ const FACTION_COLORS = { Angel: "#f2cf5b", "Blood Demon": "#d23a3a", Dino: "#3fa
 const DECK_KEY = "fusion-fuckery-decks";
 let deckState = { decks: [{ name: "My deck", cards: {} }], current: 0 };
 try { const s = JSON.parse(localStorage.getItem(DECK_KEY)); if (s && s.decks && s.decks.length) deckState = s; } catch {}
+// Built-in copy of saves/decks.json (like the card list), so the starter decks show up even without the helper
+// or when GitHub can't be reached. Only adds decks this browser doesn't have yet; never overwrites one by name.
+const EMBEDDED_DECKS = __DECKS_DATA__;
+function addMissingDecks(src) {
+  if (!src || !src.decks) return;
+  const blank = deckState.decks.length === 1 && !Object.keys(deckState.decks[0].cards).length;   // untouched "My deck"
+  if (blank) { deckState = { decks: src.decks.map(d => ({ name: d.name, cards: { ...d.cards } })), current: 0 }; return; }
+  const have = new Set(deckState.decks.map(d => d.name));
+  src.decks.filter(d => !have.has(d.name)).forEach(d => deckState.decks.push({ name: d.name, cards: { ...d.cards } }));
+}
+addMissingDecks(EMBEDDED_DECKS);
 const deck = () => deckState.decks[deckState.current];
 let deckSyncTimer = null;
 function saveDecks() {

@@ -9,7 +9,10 @@ function b64($f) { "data:image/png;base64," + [Convert]::ToBase64String([IO.File
 $csv = [IO.File]::ReadAllText("$root\saves\Base set - Fusion Fuckery - v6.csv", $utf8)
 Add-Type -AssemblyName System.Web
 $json = '"' + [System.Web.HttpUtility]::JavaScriptStringEncode($csv) + '"'
-$t = $t.Replace("__IMG_CREATURE__", (b64 "creature.png")).Replace("__IMG_FUSION__", (b64 "fusion.png")).Replace("__IMG_SPELL__", (b64 "spell.png")).Replace("__SYM_INSTANT__", (b64 "sym-instant.png")).Replace("__SYM_FIELD__", (b64 "sym-field.png")).Replace("__SYM_CONTINUOUS__", (b64 "sym-continuous.png")).Replace("__CSV_DATA__", $json)
+# Built-in copy of the saved decks (starter decks etc.), used when the helper / GitHub can't provide them
+$decksFile = "$root\saves\decks.json"
+$decks = if (Test-Path $decksFile) { [IO.File]::ReadAllText($decksFile, $utf8).Trim().Replace("</", "<\/") } else { '{"decks":[]}' }
+$t = $t.Replace("__IMG_CREATURE__", (b64 "creature.png")).Replace("__IMG_FUSION__", (b64 "fusion.png")).Replace("__IMG_SPELL__", (b64 "spell.png")).Replace("__SYM_INSTANT__", (b64 "sym-instant.png")).Replace("__SYM_FIELD__", (b64 "sym-field.png")).Replace("__SYM_CONTINUOUS__", (b64 "sym-continuous.png")).Replace("__CSV_DATA__", $json).Replace("__DECKS_DATA__", $decks)
 [IO.File]::WriteAllText("$root\card-editor.html", $t, $utf8)
 [IO.File]::WriteAllText("$root\index.html", $t, $utf8)
 "Built card-editor.html and index.html"
