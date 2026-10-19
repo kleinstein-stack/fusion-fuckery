@@ -81,7 +81,11 @@
 
   .card .f-name { position: absolute; left: 38px; top: 20px; width: 610px; height: 56px; font-size: 40px; font-weight: 500; }
   .card.spell .f-name { width: 600px; }
-  .bolt { position: absolute; left: 666px; top: 26px; width: 52px; height: 52px; }
+  .card.creature .f-name { width: 580px; }
+  /* v4 frames: spell type symbol (instant / field / continuous) and the creature flux badge, top right */
+  .sym { position: absolute; left: 662px; top: 20px; width: 62px; height: 62px; }
+  .card .f-flux { position: absolute; left: 626px; top: 26px; width: 42px; height: 44px; line-height: 44px; font-size: 33px; font-weight: 500; text-align: right; }
+  .card div.f-flux { white-space: nowrap; }
 
   .art {
     position: absolute; left: 40px; top: 80px; width: 665px; height: 460px; border-radius: 34px 34px 0 0;
@@ -119,6 +123,7 @@
   }
   .meta input:focus { outline: none; border-color: var(--accent); }
   .meta label { font-size: 10px; color: var(--muted); display: block; text-transform: uppercase; letter-spacing: .04em; }
+  .meta .tier span { display: block; font-size: 12px; padding: 4px 0 0; }
   .meta .actions { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); }
   .meta .actions button { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; font-size: 12px; padding: 0; }
   .meta .actions button:hover { color: var(--text); text-decoration: underline; }
@@ -239,6 +244,22 @@
   .meta .bal { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); text-align: center; }
   #dpSim { width: 100%; }
 
+  /* lane combat simulator */
+  .lanes { display: grid; grid-template-columns: 90px repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 900px; align-items: stretch; }
+  .lanes .side { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; align-self: center; }
+  .lane-slot { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 120px; }
+  .lane-slot.empty { border-style: dashed; }
+  .lane-slot select { width: 100%; min-width: 0; }
+  .lane-slot .st { font-size: 13px; }
+  .lane-slot .st small { color: var(--muted); }
+  .lane-slot .acts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+  .lane-slot .acts .btn { padding: 3px 8px; font-size: 12px; }
+  .lane-slot.picked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .fuse-info { font-size: 12.5px; color: var(--muted); margin: 6px 0 12px; max-width: 900px; }
+  .lane-log { max-width: 900px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-top: 12px; line-height: 1.6; }
+  .lane-log .res { font-weight: 600; margin-top: 6px; }
+  @media (max-width: 640px) { .lanes { grid-template-columns: 50px repeat(3, minmax(0, 1fr)); } }
+
   #ghDlg { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; width: min(520px, calc(100vw - 32px)); padding: 16px 18px; font-size: 14px; line-height: 1.5; }
   #ghDlg::backdrop { background: rgba(0,0,0,.6); }
   #ghDlg a { color: #c9a6ff; } #ghDlg ol { padding-left: 20px; margin: 6px 0 12px; }
@@ -335,6 +356,7 @@
       <button class="chip" data-t="factions">Factions</button>
       <button class="chip" data-t="compare">Compare versions</button>
       <button class="chip" data-t="sim">Hand test</button>
+      <button class="chip" data-t="lanes">Lane sim</button>
     </div>
     <button class="btn" onclick="this.closest('dialog').close()">✕</button>
   </div>
@@ -397,7 +419,8 @@ let fileHandle = null, fileName = EMBEDDED_NAME, hadBOM = false;
 let nextId = 1;
 const artCache = new Map(); // card id -> object URL (session only)
 const filters = { type: "All", faction: "All", q: "", cold: false };
-const COLS = { name: "Name", type: "Type", atk: "ATK", hp: "HP", flux: "Flux Cost", desc: "Description", faction: "Faction", attr: "Attribute" };
+const COLS = { name: "Name", type: "Type", atk: "ATK", hp: "HP", flux: "Flux Cost", desc: "Description", faction: "Faction", attr: "Attribute",
+  speed: "Speed" };   // Speed: gameplay v2 (v4 frames), added to older CSVs on load
 // Optional column, only added to the CSV the first time a card is put into cold storage.
 const COLD_COL = "Cold Storage";
 const isCold = c => /^(yes|y|true|1|x)$/i.test((c.data[COLD_COL] || "").trim());
@@ -503,8 +526,15 @@ document.getElementById("zoom").oninput = e => {
 };
 
 /* ---------------- rendering ---------------- */
-const BOLT = `<svg class="bolt" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23.5" fill="#fff" stroke="#000" stroke-width="3"/><path d="M29 8 L15 29 h10 l-3 15 L37 22 h-10 l2-14z" fill="#000"/></svg>`;
-
+// Spell type symbol from the Type column: Field Spell, Continuous Spell (also Equipment), anything else = Instant.
+const SPELL_SYMBOLS = { instant: "__SYM_INSTANT__", field: "__SYM_FIELD__", continuous: "__SYM_CONTINUOUS__" };
+function spellKind(c) {
+  const t = lc(c.data[COLS.type]);
+  if (t.includes("field")) return "field";
+  if (/contin|contun|equip/.test(t)) return "continuous";
+  return "instant";
+}
+const spellSymbol = c => { const k = spellKind(c); return `<img class="sym" src="${SPELL_SYMBOLS[k]}" alt="${k} spell" title="${titleCase(k)} spell">`; };
 function render() {
   BAL = balanceModel();
   updateChipCounts();
@@ -542,7 +572,11 @@ function cardEl(c) {
   const mk = (tag, cls, attrs = {}) => { const e = document.createElement(tag); e.className = cls; Object.assign(e, attrs); return e; };
 
   card.appendChild(bind(mk("input", "f-name", { placeholder: "Card name", spellcheck: false }), COLS.name));
-  if (cat === "Spell") card.insertAdjacentHTML("beforeend", BOLT);
+  if (cat === "Spell") card.insertAdjacentHTML("beforeend", spellSymbol(c));
+  if (cat === "Creature") {   // flux cost sits in the DNA badge on the v4 creature frame
+    const fx = bind(mk("input", "f-flux", { spellcheck: false, title: "Flux cost (1–10)", placeholder: "–" }), COLS.flux, () => { c._updBal && c._updBal(); c._setTier && c._setTier(); });
+    card.appendChild(fx);
+  }
 
   // art: click "Change art" or drop an image. Saved to the art folder when the helper is running.
   const art = mk("div", "art");
@@ -567,7 +601,7 @@ function cardEl(c) {
   card.appendChild(art);
 
   const desc = mk("textarea", "f-desc", { placeholder: "Description…", spellcheck: true });
-  bind(desc, COLS.desc, () => fitText(desc));
+  bind(desc, COLS.desc, () => { fitText(desc); c._updBal && c._updBal(); });
 
   if (cat !== "Spell") {
     const tl = mk("div", "typeline");
@@ -588,8 +622,8 @@ function cardEl(c) {
       stats.appendChild(mk("span", "u", { textContent: unit }));
     };
     stat(COLS.atk, "ATK"); stats.appendChild(document.createTextNode("/"));
-    stat(COLS.hp, "HP");
-    if (cat === "Creature") { stats.appendChild(document.createTextNode("/")); stat(COLS.flux, "FLUX"); }
+    stat(COLS.hp, "HP"); stats.appendChild(document.createTextNode("/"));
+    stat(COLS.speed, "SPD");
     card.appendChild(stats);
   } else {
     card.appendChild(desc);
@@ -605,6 +639,11 @@ function cardEl(c) {
   };
   metaField("Type", COLS.type, () => { if (category(c) !== cat) { render(); } });
   metaField("Faction", COLS.faction, () => { c._setTL && c._setTL(); });
+  if (cat === "Creature") {
+    const tier = mk("div", "tier");
+    c._setTier = () => { const t = tierOf(c); tier.innerHTML = `<label>Cost tier</label><span>${t ? `${t.label} (${t.range})` : "–"}</span>`; };
+    c._setTier(); meta.appendChild(tier);
+  }
   const actions = mk("div", "actions");
   const revert = mk("button", "", { textContent: "Revert", title: "Undo all unsaved edits to this card" });
   revert.onclick = () => { if (c.isNew) return; Object.assign(c.data, c.orig); render(); updateStatus(); };
@@ -619,7 +658,7 @@ function cardEl(c) {
   cold.onclick = () => setCold(c, !isCold(c));
   actions.append(revert, mk("span", "", { textContent: cat }), cold, del);
   meta.appendChild(actions);
-  if (cat === "Creature") {   // live "stats vs flux curve" readout while editing
+  if (cat !== "Spell") {   // live stat-budget readout while editing
     const bal = mk("div", "bal");
     c._updBal = () => { bal.innerHTML = balanceNote(c); };
     c._updBal(); meta.appendChild(bal);
@@ -1162,6 +1201,34 @@ document.fonts && document.fonts.ready.then(() => document.querySelectorAll(".f-
    Rules (Rulebook v2.1, section 6): Main Deck exactly 30 cards; Fusion Deck up to 10
    fusion cards (not counted in the 30); max 3 copies of any card by name, in both decks. */
 const RULES = { main: 30, fusion: 10, copies: 3 };
+/* Gameplay v2: flux starts at 3 and caps at 10, max 3 creatures (one per lane), fusions only between
+   creatures costing 5+ flux in adjacent lanes. Cost tiers, aimed at a 2 : 3 : 2 : 1 spread per faction;
+   Ultras aim for about 20 stat points, fusions for 28 (the end goal). */
+const PLAY = { fluxStart: 3, fluxMax: 10, lanes: 3, fuseMinFlux: 5, fuseParts: 2, speedMin: 1, speedMax: 4, speedNormal: 2,
+  startPHP: 30, openingHand: 5, drawPerTurn: 1, secondPlayerFlux: 1,   // first player skips their first draw; spells are free
+  fuseFlux: 2, fusionBudget: 28, ultraBudget: 20 };   // fusing: once per turn for 2 flux (Fuse = free, Crimson Altar = sacrifice)
+const TIERS = [
+  { key: "low",    label: "Low",    range: "1–3",  min: 1, max: 3,  target: 2 },
+  { key: "medium", label: "Medium", range: "4–5",  min: 4, max: 5,  target: 3 },
+  { key: "high",   label: "High",   range: "6–8",  min: 6, max: 8,  target: 2 },
+  { key: "ultra",  label: "Ultra",  range: "9–10", min: 9, max: 10, target: 1 },
+];
+const tierOf = c => { const f = fluxOf(c); return f === null ? null : TIERS.find(t => f >= t.min && f <= t.max) || null; };
+const speedOf = c => { const m = String(c.data[COLS.speed] || "").match(/^\s*(\d+)\s*$/); return m ? +m[1] : null; };
+// Blood Price N (Blood Demons): pay 2 PHP for each flux skipped, up to N. Printed cost still sets tier + fusion eligibility.
+const bloodPriceOf = c => { const m = String(c.data[COLS.desc] || "").match(/blood price\s*(\d+)/i); return m ? +m[1] : 0; };
+/* Stat budget: points = ATK + HP/2 + (Speed - 2) + Blood Price/2 (+ effect), aiming for 2 x flux + 1.
+   Speed steps count double on 8+ ATK. Ultras (9-10) land at about 20; fusions aim for 28, so they beat an Ultra and
+   pay back the two 5+ creatures and the fuse. Dice count at their average. */
+function budgetOf(c) {
+  const atk = atkNum(c), hp = hpNum(c); if (atk === null || hp === null) return null;
+  const f = fluxOf(c), fusion = isFusionCard(c);
+  if (!fusion && f === null) return null;
+  const spd = speedOf(c) ?? PLAY.speedNormal;
+  const pts = atk + hp / 2 + (spd - PLAY.speedNormal) * (atk >= 8 ? 2 : 1) + bloodPriceOf(c) / 2;
+  const target = fusion ? PLAY.fusionBudget : 2 * f + 1;
+  return { pts, target, room: target - pts, slack: !fusion && f <= 3 ? 1 : 0 };
+}
 const FACTION_COLORS = { Angel: "#f2cf5b", "Blood Demon": "#d23a3a", Dino: "#3fae5a", Goblin: "#9ccc3c", Mundane: "#9aa3ad",
   Mutant: "#b05ae0", Parasite: "#e8873a", Thiefling: "#3d8fe0", Galorpian: "#2cc3d6" };
 const DECK_KEY = "fusion-fuckery-decks";
@@ -1332,7 +1399,8 @@ function staticCard(c) {
   const card = document.createElement("div"); card.className = "card " + cat.toLowerCase();
   const div = (cls, text) => { const d = document.createElement("div"); d.className = cls; d.textContent = text; card.appendChild(d); return d; };
   div("f-name", c.data[COLS.name]);
-  if (cat === "Spell") card.insertAdjacentHTML("beforeend", BOLT);
+  if (cat === "Spell") card.insertAdjacentHTML("beforeend", spellSymbol(c));
+  if (cat === "Creature") div("f-flux", c.data[COLS.flux]);
   const art = div("art", "");
   const src = artSrc(c);
   if (src) art.innerHTML = `<img src="${encodeURI(src)}" alt="">`;
@@ -1341,9 +1409,7 @@ function staticCard(c) {
     div("typeline", `[Creature${f ? "/" + f : ""}]`);
     div("f-attr", c.data[COLS.attr]);
     div("f-desc", c.data[COLS.desc].trim());
-    const stats = [`${c.data[COLS.atk]}ATK`, `${c.data[COLS.hp]}HP`];
-    if (cat === "Creature") stats.push(`${c.data[COLS.flux]}FLUX`);
-    div("stats", stats.join("/"));
+    div("stats", [`${c.data[COLS.atk]}ATK`, `${c.data[COLS.hp]}HP`, `${c.data[COLS.speed]}SPD`].join("/"));
   } else {
     div("f-desc", c.data[COLS.desc].trim());
   }
@@ -1397,7 +1463,9 @@ document.getElementById("dpPdf").onclick = exportPdf;
 const lc = s => String(s || "").toLowerCase();
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const attrsOf = c => c.data[COLS.attr].split("/").map(s => s.replace(/\s+/g, " ").trim()).filter(Boolean);
-const atkNum = c => { const m = String(c.data[COLS.atk]).match(/^\s*(\d+)/); return m ? +m[1] : null; };
+// ATK is a number, "4(bleed1)", or Goblin dice: "1+d6" / "d6" (rolled every time it attacks or hits back). Dice count at their average.
+const diceOf = c => { const m = String(c.data[COLS.atk]).match(/^\s*(?:(\d+)\s*\+\s*)?d(\d+)\s*$/i); return m ? { base: +(m[1] || 0), die: +m[2] } : null; };
+const atkNum = c => { const d = diceOf(c); if (d) return d.base + (d.die + 1) / 2; const m = String(c.data[COLS.atk]).match(/^\s*(\d+)/); return m ? +m[1] : null; };
 const hpNum = c => { const m = String(c.data[COLS.hp]).match(/^\s*(\d+)\s*$/); return m ? +m[1] : null; };
 const bleedOf = c => { const m = String(c.data[COLS.atk]).match(/bleed\s*(\d+)/i); return m ? +m[1] : 0; };
 const isBodyCard = c => category(c) !== "Spell";   // creatures + fusions carry stats/attributes
@@ -1465,10 +1533,11 @@ function recipeMet(recipe, pool) {
 const CANON_TYPES = ["Creature", "Fusion", "Spell", "Instant Spell", "Field Spell", "Continuous Spell", "Equipment"];
 function runChecks() {
   const out = [];   // { sev: 'error'|'warn'|'info', group, card, msg, fix?: {label, apply()} }
-  const add = (sev, group, card, msg, fix) => out.push({ sev, group, card, msg, fix });
+  const add = (sev, group, card, msg, fix) => { if (!out.some(o => o.card === card && o.msg === msg)) out.push({ sev, group, card, msg, fix }); };
   const names = cards.map(cardKey);
   const facs = allFactionNames().map(lc);
   const ac = attrCounts();
+  const noSpeed = [];
 
   // duplicate names
   const seen = {}; names.forEach(n => seen[lc(n)] = (seen[lc(n)] || 0) + 1);
@@ -1480,7 +1549,7 @@ function runChecks() {
     // ---- numbers ----
     if (isBodyCard(c)) {
       const atk = c.data[COLS.atk], hp = c.data[COLS.hp];
-      if (!/^\s*\d+\s*(\(\s*bleed\s*\d+\s*\))?\s*$/i.test(atk)) add("error", "Broken numbers", name, `ATK is "${atk}" — expected a number like 4 or 4(bleed1).`);
+      if (!/^\s*\d+\s*(\(\s*bleed\s*\d+\s*\))?\s*$/i.test(atk) && !diceOf(c)) add("error", "Broken numbers", name, `ATK is "${atk}" — expected a number like 4, 4(bleed1) or dice like 1+d6.`);
       if (!/^\s*\d+\s*$/.test(hp)) {
         const clean = String(hp).replace(/[^\d]/g, "");
         add("error", "Broken numbers", name, `HP is "${hp}" — expected a whole number.`,
@@ -1492,8 +1561,12 @@ function runChecks() {
           const clean = f.replace(/[^\d]/g, "");
           add("error", "Broken numbers", name, `Flux cost is "${f}" — expected a whole number.`, clean ? { label: `Set flux to ${clean}`, apply: () => { c.data[COLS.flux] = clean; } } : null);
         } else if (!/^\d+$/.test(f)) add("info", "Can't be materialized normally", name, "No flux cost, so it can only enter play through an effect. Fine if that's intended (like T-Rex).");
+        else if (+f < 1 || +f > PLAY.fluxMax) add("error", "Gameplay v2 rules", name, `Flux cost ${f} is outside 1–${PLAY.fluxMax} (flux caps at ${PLAY.fluxMax}).`);
       }
-      if (!attrsOf(c).length) add("warn", "Missing info", name, "No attributes. Fusions that need an attribute can't use it.");
+      const spd = String(c.data[COLS.speed] || "").trim();
+      if (!spd) { if (!isCold(c)) noSpeed.push(name); }
+      else if (speedOf(c) === null) add("error", "Broken numbers", name, `Speed is "${spd}" — expected a whole number.`);
+      else if (speedOf(c) < PLAY.speedMin || speedOf(c) > PLAY.speedMax) add("warn", "Gameplay v2 rules", name, `Speed ${spd} is outside ${PLAY.speedMin}–${PLAY.speedMax} (${PLAY.speedNormal} is normal).`);      if (!attrsOf(c).length) add("warn", "Missing info", name, "No attributes. Fusions that need an attribute can't use it.");
     }
     if (!c.data[COLS.desc].trim() && cat !== "Fusion") add("warn", "Missing info", name, "No card text.");
     // ---- type spelling ----
@@ -1525,8 +1598,26 @@ function runChecks() {
         const ref = cardByName(p.value) || cards.find(x => lc(cardKey(x)) === lc(p.value));
         if (ref && isCold(ref)) add("warn", "Depends on cold storage", name, `Needs ${p.value}, which is in cold storage, so this fusion can't be made right now.`);
       }
+      // gameplay v2: every fusion ingredient must cost 5+ flux (only checked for cards in play, not cold storage)
+      if (isCold(c)) return;
+      if (p.kind === "card") {
+        const ref = cards.find(x => lc(cardKey(x)) === lc(p.value)), f = ref ? fluxOf(ref) : null;
+        if (ref && !isFusionCard(ref) && (f === null || f < PLAY.fuseMinFlux))
+          add("error", "Gameplay v2 rules", name, `Needs ${p.value}, which costs ${f ?? "no"} flux. Fusions are only between creatures costing ${PLAY.fuseMinFlux}+ flux.`);
+      } else if (p.kind === "faction" || p.kind === "attr") {
+        const fits = cards.filter(x => !isCold(x) && cardFitsPart(x, p));
+        const ok = fits.filter(x => isFusionCard(x) || (fluxOf(x) ?? 0) >= PLAY.fuseMinFlux);
+        if (!fits.length) add("error", "Gameplay v2 rules", name, `Recipe part "${p.text}": no creature outside cold storage matches it, so this fusion can't be made.`);
+        else if (!ok.length) add("error", "Gameplay v2 rules", name, `Recipe part "${p.text}": none of the ${fits.length} matching creatures cost ${PLAY.fuseMinFlux}+ flux, so nothing can be fused into it.`);
+        else if (ok.length && ok.length < fits.length) add("info", "Gameplay v2 rules", name, `Recipe part "${p.text}": only ${ok.length} of ${fits.length} matching creatures cost ${PLAY.fuseMinFlux}+ flux (${ok.map(cardKey).join(", ")}).`);
+      }
     });
+    if (r && !isCold(c)) {
+      const need = r.parts.reduce((s, p) => s + p.count, 0);
+      if (need > PLAY.fuseParts) add("warn", "Gameplay v2 rules", name, `Recipe needs ${need} creatures. Fusions are now ${PLAY.fuseParts} creatures in adjacent lanes (max ${PLAY.lanes} on the field).`);
+    }
   });
+  if (noSpeed.length) add("info", "Gameplay v2 rules", noSpeed.join(", "), `${noSpeed.length} creature${noSpeed.length === 1 ? "" : "s"}/fusion${noSpeed.length === 1 ? "" : "s"} have no Speed yet. The lane simulator treats missing speed as ${PLAY.speedNormal} (normal).`);
 
   // ---- attribute typos: rare attribute that is a near-miss of a common one ----
   for (const [k, a] of ac) {
@@ -1561,7 +1652,7 @@ function balanceModel(includeCold = false) {
   const pts = cards.filter(c => category(c) === "Creature" && !isFusionCard(c) && (includeCold || !isCold(c)))
     .map(c => ({ c, flux: +c.data[COLS.flux], atk: atkNum(c), hp: hpNum(c), bleed: bleedOf(c) }))
     .filter(p => /^\d+$/.test(String(p.c.data[COLS.flux]).trim()) && p.atk !== null && p.hp !== null)
-    .map(p => ({ ...p, total: p.atk + p.hp, extra: /pay\s+\d+\s*php|blood sacrifice/i.test(p.c.data[COLS.desc]) }));
+    .map(p => ({ ...p, total: p.atk + p.hp, extra: /pay\s+\d+\s*php|blood sacrifice|blood price/i.test(p.c.data[COLS.desc]) }));
   const n = pts.length, mx = pts.reduce((s, p) => s + p.flux, 0) / (n || 1), my = pts.reduce((s, p) => s + p.total, 0) / (n || 1);
   const sxx = pts.reduce((s, p) => s + (p.flux - mx) ** 2, 0), sxy = pts.reduce((s, p) => s + (p.flux - mx) * (p.total - my), 0);
   const b = sxx ? sxy / sxx : 0, a = my - b * mx;
@@ -1570,13 +1661,16 @@ function balanceModel(includeCold = false) {
   return { pts, a, b, expect };
 }
 let BAL = null;
+// Live budget readout under each creature/fusion: what's left over is what the effect should be worth.
+const fmtPts = n => (Math.round(n * 10) / 10).toString();
+function budgetCell(b) {
+  if (!b) return "";
+  const cls = b.room < -b.slack - 1 ? "hi" : b.room > 5 ? "lo" : "";
+  return `<span class="${cls}">${fmtPts(b.pts)} / ${b.target} → effect ${b.room >= 0 ? "worth" : "over by"} ${fmtPts(Math.abs(b.room))}</span>`;
+}
 function balanceNote(c) {
-  if (category(c) !== "Creature" || isFusionCard(c)) return "";
-  const f = String(c.data[COLS.flux]).trim(), atk = atkNum(c), hp = hpNum(c);
-  if (!/^\d+$/.test(f) || atk === null || hp === null || !BAL) return "";
-  const total = atk + hp, exp = BAL.expect(+f), d = total - exp;
-  const cls = Math.abs(d) < 1.5 ? "" : d > 0 ? "hi" : "lo";
-  return `<span class="${cls}" title="ATK + HP compared with the average creature at ${f} flux">${total} stats · curve ${exp.toFixed(1)} (${d >= 0 ? "+" : ""}${d.toFixed(1)})</span>`;
+  const b = budgetOf(c); if (!b) return "";
+  return `<span title="Stat points (ATK + HP/2 + speed − 2 + Blood Price/2) against the budget of 2 × flux + 1 (${PLAY.fusionBudget} for fusions). The rest is what the effect should be worth: small ≈ 1, repeatable 2–3, removal/engine 4+.">${budgetCell(b)}</span>`;
 }
 
 /* ---------- 5. hand test (Monte Carlo) ---------- */
@@ -1604,11 +1698,12 @@ function simulateDeck(games = 5000, turns = 7) {
     for (let g = 0; g < games; g++) {
       const lib = [...deckCards];
       for (let i = lib.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [lib[i], lib[j]] = [lib[j], lib[i]]; }
-      const hand = lib.splice(0, 6), seen = [...hand]; let field = 0;
+      const hand = lib.splice(0, PLAY.openingHand), seen = [...hand]; let field = 0;
       const oc = hand.filter(c => category(c) === "Creature").length; openCreatures += oc; if (!oc) noCreatureOpening++;
       for (let t = 1; t <= turns; t++) {
-        if (!(seat === "first" && t === 1)) { const d = lib.splice(0, 2); hand.push(...d); seen.push(...d); }
-        const flux = Math.min(t, 10);
+        if (!(seat === "first" && t === 1)) { const d = lib.splice(0, PLAY.drawPerTurn); hand.push(...d); seen.push(...d); }
+        const bonus = seat === "second" && t === 1 ? PLAY.secondPlayerFlux : 0;   // going second: +1 flux on your first turn
+        const flux = Math.min(PLAY.fluxStart + t - 1 + bonus, PLAY.fluxMax);
         const playable = hand.map((c, i) => ({ c, i, cost: category(c) === "Creature" && /^\d+$/.test(String(c.data[COLS.flux]).trim()) ? +c.data[COLS.flux] : null })).filter(x => x.cost !== null && x.cost <= flux);
         // no field cap: combat isn't simulated, so creatures would otherwise pile up and block play
         const pick = bestSpend(playable.map(x => x.cost), flux, 99);
@@ -1633,7 +1728,7 @@ function openAnalysis(tab) {
   dlg.querySelectorAll(".ana-tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === anaTab));
   const body = document.getElementById("anaBody");
   body.innerHTML = `<div class="dp-empty">Working…</div>`;
-  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
+  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim, lanes: renderLanes })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
 }
 function jumpTo(name) {
   const c = cards.find(x => cardKey(x) === name) || cards.find(x => lc(cardKey(x)) === lc(name));
@@ -1667,7 +1762,7 @@ function renderBalance(body) {
   const inc = !!renderBalance.includeCold;
   const m = balanceModel(inc);
   const W = 640, H = 300, P = 36;
-  const maxF = Math.max(7, ...m.pts.map(p => p.flux)), maxT = Math.max(10, ...m.pts.map(p => p.total)) + 2;
+  const maxF = Math.max(PLAY.fluxMax, ...m.pts.map(p => p.flux)), maxT = Math.max(10, ...m.pts.map(p => p.total)) + 2;
   const x = f => P + (f / maxF) * (W - P - 10), y = t => H - P - (t / maxT) * (H - P - 10);
   const jitter = {};
   const dots = m.pts.map(p => { const k = p.flux + ":" + p.total; jitter[k] = (jitter[k] || 0) + 1; const j = (jitter[k] - 1) * 7;
@@ -1676,20 +1771,25 @@ function renderBalance(body) {
     [...Array(Math.floor(maxT / 5) + 1).keys()].map(i => `<line x1="${P}" x2="${W - 10}" y1="${y(i * 5)}" y2="${y(i * 5)}" class="gl"/><text x="${P - 6}" y="${y(i * 5) + 4}" class="ax" text-anchor="end">${i * 5}</text>`).join("");
   const line = `<line x1="${x(0.5)}" y1="${y(m.expect(0.5))}" x2="${x(maxF)}" y2="${y(m.expect(maxF))}" class="curve-line"/>`;
   const legend = [...new Set(m.pts.map(p => factions(p.c)[0] || "None"))].map(f => `<span><i style="background:${FACTION_COLORS[f] || "#888"}"></i>${esc(f)}</span>`).join("");
-  const rows = [...m.pts].sort((a, b) => b.diff - a.diff).map(p => `<tr><td>${cardLinks(cardKey(p.c))}</td><td>${esc(factions(p.c).join(" / "))}</td><td>${p.flux}</td><td>${esc(p.c.data[COLS.atk])}</td><td>${p.hp}</td><td>${p.total}</td><td>${m.expect(p.flux).toFixed(1)}</td>
+  const rows = [...m.pts].sort((a, b) => b.diff - a.diff).map(p => `<tr><td>${cardLinks(cardKey(p.c))}</td><td>${esc(factions(p.c).join(" / "))}</td><td>${p.flux}</td><td>${(tierOf(p.c) || {}).label || "–"}</td><td>${esc(p.c.data[COLS.atk])}</td><td>${p.hp}</td><td>${esc(p.c.data[COLS.speed] || "–")}</td><td>${budgetCell(budgetOf(p.c))}</td><td>${p.total}</td><td>${m.expect(p.flux).toFixed(1)}</td>
     <td class="${Math.abs(p.diff) < 1.5 ? "" : p.diff > 0 ? "hi" : "lo"}">${p.diff >= 0 ? "+" : ""}${p.diff.toFixed(1)}</td><td>${p.extra ? "pays PHP" : ""}${p.bleed ? (p.extra ? ", " : "") + "bleed " + p.bleed : ""}</td></tr>`).join("");
   const fus = cards.filter(c => isFusionCard(c) && (inc || !isCold(c))).map(c => { const r = parseRecipe(c); const need = r ? r.parts.reduce((s, p) => s + p.count, 0) : null;
     const t = (atkNum(c) ?? 0) + (hpNum(c) ?? 0); return { c, t, need, per: need ? t / need : null }; }).sort((a, b) => b.t - a.t);
+  // Ultra creatures (9–10 flux) are meant to be on par with fusions
+  const ultra = m.pts.filter(p => p.flux >= TIERS[3].min);
+  const avg = l => l.length ? (l.reduce((s, x) => s + x, 0) / l.length).toFixed(1) : "–";
+  const ultraNote = `Ultra creatures (${TIERS[3].range} flux) aim for about ${PLAY.ultraBudget} stat points and fusions for ${PLAY.fusionBudget}, so a fusion is the bigger payoff: <b>${ultra.length}</b> ultra creature${ultra.length === 1 ? "" : "s"} average <b>${avg(ultra.map(p => p.total))}</b> stats, fusions average <b>${avg(fus.map(f => f.t))}</b>.` +
+    (ultra.length ? ` (${ultra.map(p => `${esc(cardKey(p.c))} ${p.total}`).join(", ")})` : "");
   body.innerHTML = `<p class="ana-lead">Creature stats (ATK + HP) against flux cost. The line is the average curve:
       <b>${m.a.toFixed(1)} + ${m.b.toFixed(1)} per flux</b> across ${m.pts.length} ${inc ? "" : "active "}creatures. Dots far above the line are cheap for their stats, dots far below need a strong effect to be worth it.
       <label class="inline"><input type="checkbox" id="balCold" ${inc ? "checked" : ""}> include cold storage</label></p>
     <svg viewBox="0 0 ${W} ${H}" class="chart">${grid}${line}${dots}<text x="${W / 2}" y="${H - 4}" class="ax" text-anchor="middle">flux cost</text><text x="10" y="${H / 2}" class="ax" transform="rotate(-90 10 ${H / 2})" text-anchor="middle">ATK + HP</text></svg>
     <div class="legend">${legend}</div>
     <h3>Creatures, most above the curve first</h3>
-    <div class="tbl"><table class="atable"><tr><th>Card</th><th>Faction</th><th>Flux</th><th>ATK</th><th>HP</th><th>Stats</th><th>Curve</th><th>vs curve</th><th>Notes</th></tr>${rows}</table></div>
-    <h3>Fusions</h3><p class="ana-lead"><small>Fusions are free but cost the cards you fuse ("splices"). "Stats per splice" compares them.</small></p>
-    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th>Faction</th><th>ATK</th><th>HP</th><th>Stats</th><th>Splices</th><th>Stats per splice</th></tr>${fus.map(f =>
-      `<tr><td>${cardLinks(cardKey(f.c))}</td><td>${esc(factions(f.c).join(" / "))}</td><td>${esc(f.c.data[COLS.atk])}</td><td>${esc(f.c.data[COLS.hp])}</td><td>${f.t}</td><td>${f.need ?? "?"}</td><td>${f.per ? f.per.toFixed(1) : "–"}</td></tr>`).join("")}</table></div>`;
+    <div class="tbl"><table class="atable"><tr><th>Card</th><th>Faction</th><th>Flux</th><th>Tier</th><th>ATK</th><th>HP</th><th>SPD</th><th title="Stat points / budget (2 × flux + 1) → what the effect should be worth">Budget</th><th>ATK+HP</th><th>Curve</th><th>vs curve</th><th>Notes</th></tr>${rows}</table></div>
+    <h3>Fusions</h3><p class="ana-lead"><small>Fusions are free but cost the cards you fuse ("splices"). "Stats per splice" compares them.<br>${ultraNote}</small></p>
+    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th>Faction</th><th>ATK</th><th>HP</th><th>SPD</th><th>Budget</th><th>Stats</th><th>Splices</th><th>Stats per splice</th></tr>${fus.map(f =>
+      `<tr><td>${cardLinks(cardKey(f.c))}</td><td>${esc(factions(f.c).join(" / "))}</td><td>${esc(f.c.data[COLS.atk])}</td><td>${esc(f.c.data[COLS.hp])}</td><td>${esc(f.c.data[COLS.speed] || "–")}</td><td>${budgetCell(budgetOf(f.c))}</td><td>${f.t}</td><td>${f.need ?? "?"}</td><td>${f.per ? f.per.toFixed(1) : "–"}</td></tr>`).join("")}</table></div>`;
   body.querySelector("#balCold").onchange = e => { renderBalance.includeCold = e.target.checked; openAnalysis("balance"); };
 }
 
@@ -1705,8 +1805,15 @@ function renderFactions(body) {
     const curve = {}; cre.forEach(c => { const v = String(c.data[COLS.flux]).trim(); const k = /^\d+$/.test(v) ? Math.min(+v, 7) : "–"; curve[k] = (curve[k] || 0) + 1; });
     const peak = Math.max(1, ...Object.values(curve));
     const mini = ["1", "2", "3", "4", "5", "6", "7"].map(k => `<i title="${curve[k] || 0} creature(s) at ${k === "7" ? "7+" : k} flux" style="height:${(curve[k] || 0) / peak * 22 + 1}px"></i>`).join("");
+    // cost tiers vs the 2 : 3 : 2 : 1 target, scaled to this faction's creature count
+    const tierN = TIERS.map(t => cre.filter(c => tierOf(c) === t).length), tierSum = tierN.reduce((a, b) => a + b, 0);
+    const tgtSum = TIERS.reduce((a, t) => a + t.target, 0);
+    const tierCell = TIERS.map((t, i) => { const want = tierSum * t.target / tgtSum, d = tierN[i] - want;
+      return `<span class="${Math.abs(d) < 1 ? "" : d > 0 ? "hi" : "lo"}" title="${t.label} (${t.range} flux): ${tierN[i]}, target about ${want.toFixed(1)}">${tierN[i]}</span>`; }).join(" / ");
+    const fusable = cre.filter(c => (fluxOf(c) ?? 0) >= PLAY.fuseMinFlux).length;
     return `<tr><td><span class="dot" style="background:${FACTION_COLORS[f] || "#888"}"></span> ${esc(f)}</td><td>${cre.length}</td><td>${spl.length}</td><td>${fus.length}</td>
-      <td class="${maxMain >= RULES.main ? "" : "lo"}">${maxMain}${maxMain >= RULES.main ? " ✓" : ""}</td><td class="${withNeutral >= RULES.main ? "" : "lo"}">${withNeutral}</td><td><span class="mini">${mini}</span></td></tr>`;
+      <td class="${maxMain >= RULES.main ? "" : "lo"}">${maxMain}${maxMain >= RULES.main ? " ✓" : ""}</td><td class="${withNeutral >= RULES.main ? "" : "lo"}">${withNeutral}</td><td><span class="mini">${mini}</span></td>
+      <td>${tierCell}</td><td class="${fus.length && fusable < 2 ? "lo" : ""}" title="Creatures costing ${PLAY.fuseMinFlux}+ flux, the only ones that can fuse">${fusable}</td></tr>`;
   }).join("");
   // attribute × faction crossover
   const body2 = pool.filter(isBodyCard);
@@ -1716,7 +1823,8 @@ function renderFactions(body) {
   const cross = attrs.filter(a => Object.keys(a.f).length > 1).length;
   body.innerHTML = `<p class="ana-lead">How deep each faction is. A legal Main Deck needs ${RULES.main} cards with at most ${RULES.copies} copies of each, so a faction needs ${Math.ceil(RULES.main / RULES.copies)}+ different creatures/spells to fill a deck alone.
       <label class="inline"><input type="checkbox" id="facCold" ${inc ? "checked" : ""}> include cold storage</label></p>
-    <div class="tbl"><table class="atable"><tr><th>Faction</th><th>Creatures</th><th>Spells</th><th>Fusions</th><th>Max deck alone</th><th>+ ${neutral.length} neutral</th><th>Flux curve 1→7+</th></tr>${rows}</table></div>
+    <div class="tbl"><table class="atable"><tr><th>Faction</th><th>Creatures</th><th>Spells</th><th>Fusions</th><th>Max deck alone</th><th>+ ${neutral.length} neutral</th><th>Flux curve 1→7+</th><th title="Low 1–3 / Medium 4–5 / High 6–8 / Ultra 9–10">Tiers L / M / H / U</th><th>Can fuse (${PLAY.fuseMinFlux}+)</th></tr>${rows}</table></div>
+    <p class="ana-lead"><small>Tiers aim for a <b>${TIERS.map(t => t.target).join(" : ")}</b> spread (${TIERS.map(t => `${t.label} ${t.range}`).join(", ")}). <span class="hi">Orange</span> = more than the target share, <span class="lo">blue</span> = fewer. Ultras aim for about ${PLAY.ultraBudget} stat points, fusions for ${PLAY.fusionBudget}.</small></p>
     <h3>Attributes across factions <span class="n">${cross} of ${attrs.length} cross factions</span></h3>
     <p class="ana-lead"><small>Counts are creatures + fusions. Cards with two factions count for both. Attributes on only one card are often typos.</small></p>
     <div class="tbl"><table class="atable xt"><tr><th>Attribute</th><th>Cards</th><th>Factions</th>${cols.map(f => `<th>${esc(f)}</th>`).join("")}</tr>${attrs.map(a =>
@@ -1786,14 +1894,127 @@ function renderSim(body) {
       ${sim.fusions.map((fu, k) => turnRow(`${esc(cardKey(fu.c))} ingredients drawn`, t => fu.r && !fu.r.parts.some(p => p.kind === "unknown") ? pct(r.fusionReady[k][t], G) : "can't tell")).join("")}
     </table></div>`;
   body.innerHTML = `<p class="ana-lead">Played out <b>${G.toLocaleString()}</b> random games of <b>${esc(deck().name)}</b> (${sim.deckSize} cards${sim.deckSize !== RULES.main ? `, not ${RULES.main} yet` : ""}).
-      Rules used: opening hand of 6, draw 2 a turn (the first player skips turn 1), max flux = turn number, only creatures cost flux.
-      Each turn plays creatures to use as much flux as possible. Spells, effects, combat, the 6-slot field limit and mulligans are ignored.
+      Rules used: opening hand of ${PLAY.openingHand}, draw ${PLAY.drawPerTurn} a turn (the first player skips their first draw), flux starts at ${PLAY.fluxStart} and goes up 1 a turn to ${PLAY.fluxMax}
+      (the second player gets +${PLAY.secondPlayerFlux} on their first turn), only creatures cost flux.
+      Each turn plays creatures to use as much flux as possible. Spells, effects, combat, the ${PLAY.lanes}-creature field limit and mulligans are ignored.
       A drop in later turns means the deck runs out of creatures to play.</p>
     <p class="ana-lead">Opening hand: <b>${(f.openCreatures / G).toFixed(1)}</b> creatures on average · <b class="${f.noCreatureOpening / G > .1 ? "lo" : ""}">${pct(f.noCreatureOpening, G)}</b> of hands have no creature at all.</p>
     ${seatTable(f, "Going first")}${seatTable(sc, "Going second")}
     <p class="ana-lead"><small>"Ingredients drawn" means the cards for that fusion have been drawn by that turn. They still have to be on your field to fuse.</small></p>
     <button class="btn" id="simAgain">Run again</button>`;
   body.querySelector("#simAgain").onclick = () => openAnalysis("sim");
+}
+
+/* ---------- 6. lane combat simulator ----------
+   3 lanes a side. A creature can attack the enemy in its own lane or an adjacent one (the middle reaches all three).
+   It attacks the player directly only if its own lane is empty on the other side; then enemies in adjacent
+   lanes hit it back. Faster creature strikes first, ties go to the attacker; if the first hit kills, there's no
+   counter. Missing speed counts as normal (2). Damage stays on a creature until it's destroyed (it doesn't heal),
+   so attacks chain; destroyed creatures leave their lane. */
+const laneSim = { you: [null, null, null], opp: [null, null, null], dmg: { you: [0, 0, 0], opp: [0, 0, 0] },
+  player: { you: 0, opp: 0 }, plus1: false, log: [], picked: null };
+const simPool = () => cards.filter(c => !isCold(c) && isBodyCard(c) && cardKey(c) && atkNum(c) !== null && hpNum(c) !== null)
+  .sort((a, b) => cardKey(a).localeCompare(cardKey(b)));
+function unit(side, i) {
+  const name = laneSim[side][i], c = name && cardByName(name); if (!c) return null;
+  const max = hpNum(c), d = diceOf(c);
+  const roll = d ? 1 + Math.floor(Math.random() * d.die) : null;   // Goblin dice: rolled fresh for every attack (and every hit back)
+  return { c, side, i, name: cardKey(c), atkText: String(c.data[COLS.atk]).trim(), atk: d ? d.base + roll : atkNum(c), roll, die: d && d.die,
+    max, cur: max - laneSim.dmg[side][i], spd: speedOf(c) ?? PLAY.speedNormal, noSpd: speedOf(c) === null, bleed: bleedOf(c) };
+}
+const units = side => [0, 1, 2].map(i => unit(side, i));
+const statStr = u => `${esc(u.atkText)}ATK/<b>${u.cur}</b>${u.cur < u.max ? `<small>/${u.max}</small>` : ""}HP/${u.spd}SPD${u.noSpd ? "?" : ""}`;
+const hitLine = (from, to) => `<b>${esc(from.name)}</b> hits <b>${esc(to.name)}</b> for ${from.atk}${from.die ? ` (rolled ${from.roll} on d${from.die})` : ""}${from.bleed ? ` (+${from.bleed} bleed)` : ""} → ${esc(to.name)} at ${Math.max(0, to.cur)}/${to.max} HP${to.cur <= 0 ? " 💀 destroyed" : ""}`;
+// write a unit's HP back to the board; destroyed creatures leave their lane
+function commit(u) {
+  if (u.cur <= 0) { laneSim[u.side][u.i] = null; laneSim.dmg[u.side][u.i] = 0; }
+  else laneSim.dmg[u.side][u.i] = u.max - u.cur;
+}
+function fight(att, def, plus1) {
+  const sa = att.spd + (plus1 ? 1 : 0), sd = def.spd;
+  const L = [`Speed: ${esc(att.name)} ${sa}${plus1 ? " (+1 attacking)" : ""} vs ${esc(def.name)} ${sd} → <b>${esc(sa >= sd ? att.name : def.name)}</b> strikes first${sa === sd ? " (tie goes to the attacker)" : ""}.`];
+  const [first, second] = sa >= sd ? [att, def] : [def, att];
+  second.cur -= first.atk; L.push(hitLine(first, second));
+  if (second.cur > 0) { first.cur -= second.atk; L.push(hitLine(second, first)); }
+  else L.push(`${esc(second.name)} is destroyed before it can hit back.`);
+  const dead = [att, def].filter(u => u.cur <= 0).map(u => esc(u.name));
+  L.push(`<div class="res">${dead.length ? dead.join(" and ") + " destroyed." : "Both survive."} ${[att, def].filter(u => u.cur > 0).map(u => `${esc(u.name)} ${u.cur}/${u.max} HP`).join(" · ")}</div>`);
+  commit(att); commit(def);
+  return L.join("<br>");
+}
+function directAttack(att, plus1) {
+  const sa = att.spd + (plus1 ? 1 : 0), foe = att.side === "you" ? "opp" : "you";
+  const adj = [att.i - 1, att.i + 1].filter(j => j >= 0 && j < PLAY.lanes).map(j => unit(foe, j)).filter(Boolean);
+  const L = [`Lane ${att.i + 1} is open, so <b>${esc(att.name)}</b> attacks the player.` +
+    (adj.length ? ` Enemies in adjacent lanes hit back: ${adj.map(u => esc(u.name)).join(", ")}.` : " No enemies in adjacent lanes.")];
+  const faster = adj.filter(u => u.spd > sa), slower = adj.filter(u => u.spd <= sa);
+  faster.forEach(u => { att.cur -= u.atk; L.push(`${hitLine(u, att)} (faster: ${u.spd} vs ${sa})`); });
+  const hits = att.cur > 0;
+  if (hits) { laneSim.player[foe] += att.atk; L.push(`<b>${esc(att.name)}</b> hits the player for <b>${att.atk}</b>${att.die ? ` (rolled ${att.roll} on d${att.die})` : ""}.`); }
+  else L.push(`${esc(att.name)} is destroyed before it reaches the player.`);
+  if (hits) slower.forEach(u => { att.cur -= u.atk; L.push(hitLine(u, att)); });
+  L.push(`<div class="res">Player takes ${hits ? att.atk : 0} (${laneSim.player[foe]} total). ${esc(att.name)} ${att.cur > 0 ? `survives at ${att.cur}/${att.max} HP` : "is destroyed"}.</div>`);
+  commit(att);
+  return L.join("<br>");
+}
+function fuseInfo(side) {
+  const us = units(side), out = [];
+  for (let i = 0; i < PLAY.lanes - 1; i++) {
+    const a = us[i], b = us[i + 1];
+    if (!a || !b) continue;
+    const low = [a, b].filter(u => !isFusionCard(u.c) && (fluxOf(u.c) ?? 0) < PLAY.fuseMinFlux);
+    const fus = [a, b].filter(u => isFusionCard(u.c));
+    out.push(`Lanes ${i + 1}+${i + 2}: ` + (fus.length ? `<span class="lo">${fus.map(u => esc(u.name)).join(", ")} is already a fusion</span>`
+      : low.length ? `<span class="lo">can't fuse, ${low.map(u => `${esc(u.name)} costs ${fluxOf(u.c) ?? "no"} flux`).join(", ")}</span>` : `<span class="good">can fuse ✓</span>`));
+  }
+  if (us[0] && us[2] && !us[1]) out.push(`Lanes 1+3 aren't adjacent, so they can't fuse.`);
+  return out.length ? out.join(" · ") : "Fusions: put creatures in adjacent lanes to see if they can fuse (both need " + PLAY.fuseMinFlux + "+ flux).";
+}
+function renderLanes(body) {
+  const pool = simPool();
+  const opts = sel => `<option value="">— empty —</option>` + pool.map(c => `<option value="${esc(cardKey(c))}" ${cardKey(c) === sel ? "selected" : ""}>${esc(cardKey(c))}</option>`).join("");
+  const slot = (side, i) => {
+    const u = unit(side, i);
+    let acts = "";
+    if (side === "you" && u) {
+      const opp = units("opp");
+      acts = [i - 1, i, i + 1].filter(j => j >= 0 && j < PLAY.lanes && opp[j])
+        .map(j => `<button class="btn" data-atk="${i}" data-tgt="${j}">⚔ ${esc(opp[j].name)}${j !== i ? ` (lane ${j + 1})` : ""}</button>`).join("");
+      if (!opp[i]) acts += `<button class="btn" data-atk="${i}" data-tgt="player">⚔ Player</button>`;
+    }
+    return `<div class="lane-slot${u ? "" : " empty"}${laneSim.picked && laneSim.picked[side === "you" ? 0 : 1] === i ? " picked" : ""}">
+      <select data-side="${side}" data-i="${i}">${opts(laneSim[side][i])}</select>
+      <div class="st">${u ? `${statStr(u)}<br><small>${esc(factions(u.c).join(" / ") || "No faction")}${isFusionCard(u.c) ? " · fusion" : ` · ${fluxOf(u.c) ?? "–"} flux`}</small>` : `<small>Lane ${i + 1}</small>`}</div>
+      <div class="acts">${acts}</div></div>`;
+  };
+  const row = (side, label) => `<div class="side">${label}${laneSim.player[side] ? `<br><span class="lo">−${laneSim.player[side]}</span>` : ""}</div>${[0, 1, 2].map(i => slot(side, i)).join("")}`;
+  body.innerHTML = `<p class="ana-lead">Put creatures in the lanes and press an ⚔ button to play out an attack.
+      A creature reaches its own lane and the lanes next to it; it can hit the player only when nothing is in front of it, and then enemies in adjacent lanes hit it back.
+      Faster strikes first, ties go to the attacker. Damage stays on creatures between attacks and destroyed creatures leave the board.
+      Speed shown with <b>?</b> isn't set on the card yet (counts as ${PLAY.speedNormal}, normal).
+      <label class="inline"><input type="checkbox" id="lanePlus1" ${laneSim.plus1 ? "checked" : ""}> Attacker gets +1 speed</label>
+      <button class="btn" id="laneSwap" title="Let the other side attack">⇅ Swap sides</button> <button class="btn" id="laneHeal" title="Remove all damage, keep the creatures">Reset damage</button> <button class="btn" id="laneClear">Clear</button></p>
+    <div class="lanes">${row("opp", "Opponent")}</div>
+    <div class="fuse-info">${fuseInfo("opp")}</div>
+    <div class="lanes">${row("you", "You")}</div>
+    <div class="fuse-info">${fuseInfo("you")}</div>
+    <div class="lane-log">${laneSim.log.length ? laneSim.log.join(`<hr style="border:0;border-top:1px solid var(--line)">`) : `<span class="good">Pick an attack to see the result here.</span>`}</div>`;
+  const rerender = () => renderLanes(body);
+  const resetDmg = () => { laneSim.dmg = { you: [0, 0, 0], opp: [0, 0, 0] }; laneSim.player = { you: 0, opp: 0 }; laneSim.log = []; laneSim.picked = null; };
+  body.querySelectorAll(".lanes select").forEach(s => s.onchange = () => { laneSim[s.dataset.side][+s.dataset.i] = s.value || null; laneSim.dmg[s.dataset.side][+s.dataset.i] = 0; laneSim.picked = null; rerender(); });
+  body.querySelector("#lanePlus1").onchange = e => { laneSim.plus1 = e.target.checked; rerender(); };
+  body.querySelector("#laneSwap").onclick = () => {
+    [laneSim.you, laneSim.opp] = [laneSim.opp, laneSim.you]; [laneSim.dmg.you, laneSim.dmg.opp] = [laneSim.dmg.opp, laneSim.dmg.you];
+    [laneSim.player.you, laneSim.player.opp] = [laneSim.player.opp, laneSim.player.you]; laneSim.picked = null; rerender(); };
+  body.querySelector("#laneHeal").onclick = () => { resetDmg(); rerender(); };
+  body.querySelector("#laneClear").onclick = () => { laneSim.you = [null, null, null]; laneSim.opp = [null, null, null]; resetDmg(); rerender(); };
+  body.querySelectorAll("[data-atk]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.atk, att = unit("you", i);
+    const entry = b.dataset.tgt === "player" ? directAttack(att, laneSim.plus1) : fight(att, unit("opp", +b.dataset.tgt), laneSim.plus1);
+    laneSim.picked = [i, b.dataset.tgt === "player" ? null : +b.dataset.tgt];
+    laneSim.log.unshift(entry); laneSim.log.length = Math.min(laneSim.log.length, 8);   // newest first
+    rerender();
+  });
 }
 
 document.getElementById("anaBtn").onclick = () => openAnalysis();

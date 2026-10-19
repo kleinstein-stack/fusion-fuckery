@@ -5,9 +5,12 @@ card frames, build decks, print A4 proxy sheets, and check balance.
 
 **Open it online:** https://kleinstein-stack.github.io/fusion-fuckery/
 
+The game rules the editor uses are in [RULES.md](RULES.md).
+
 ## What it does
 
-- **Edit cards** right on the card: name, attributes, text, ATK / HP / flux, type and faction.
+- **Edit cards** right on the v4 card frames: name, attributes, text, ATK / HP / Speed, flux (in the creature's
+  DNA badge), type and faction. Spells show the instant / field / continuous symbol from their type.
   Filter by type (Creature, Fusion, Spell), faction or search, and zoom.
 - **Change art**: hover a card's art → *Change art*, or drop an image on it. It's cropped to the frame automatically.
 - **Cold storage**: hide cards from the main tabs without deleting them.
@@ -15,7 +18,9 @@ card frames, build decks, print A4 proxy sheets, and check balance.
   flux curve, and **Export PDF (A4)**: 3×3 cards per page at real card size, optional card backs for double-sided printing.
 - **📊 Analysis**: card checker (typos, broken numbers, fusion recipes that point at missing cards),
   balance chart (stats vs flux cost), faction depth and attribute crossover, version compare with patch notes,
-  and an opening-hand simulator for the open deck.
+  an opening-hand simulator for the open deck, and a **lane sim** (3 lanes a side) that plays out attacks with
+  speed, adjacent lanes and direct attacks (damage stays on creatures between attacks). Gameplay v2 checks: flux 1–10, fusion ingredients cost 5+ flux,
+  2-creature recipes, and the Low / Medium / High / Ultra cost-tier spread (2 : 3 : 2 : 1) per faction.
 - **Versions**: every save is kept; load or compare any earlier version.
 
 ## Saving
