@@ -10,7 +10,7 @@ The game rules the editor uses are in [RULES.md](RULES.md).
 ## What it does
 
 - **Edit cards** right on the v4 card frames: name, attributes, text, ATK / HP / Speed, flux (in the creature's
-  DNA badge), type and faction. Spells show the instant / field / continuous symbol from their type.
+  DNA badge), type and faction. Spells show the instant / field / continuous symbol from their type; normal Spells have none.
   Filter by type (Creature, Fusion, Spell), faction or search, and zoom.
 - **Change art**: hover a card's art → *Change art*, or drop an image on it. It's cropped to the frame automatically.
 - **Cold storage**: hide cards from the main tabs without deleting them.

@@ -526,15 +526,17 @@ document.getElementById("zoom").oninput = e => {
 };
 
 /* ---------------- rendering ---------------- */
-// Spell type symbol from the Type column: Field Spell, Continuous Spell (also Equipment), anything else = Instant.
+// Spell type symbol from the Type column: Instant Spell, Field Spell, Continuous Spell (also Equipment).
+// A normal Spell has no symbol.
 const SPELL_SYMBOLS = { instant: "__SYM_INSTANT__", field: "__SYM_FIELD__", continuous: "__SYM_CONTINUOUS__" };
 function spellKind(c) {
   const t = lc(c.data[COLS.type]);
   if (t.includes("field")) return "field";
   if (/contin|contun|equip/.test(t)) return "continuous";
-  return "instant";
+  if (t.includes("instant")) return "instant";
+  return null;
 }
-const spellSymbol = c => { const k = spellKind(c); return `<img class="sym" src="${SPELL_SYMBOLS[k]}" alt="${k} spell" title="${titleCase(k)} spell">`; };
+const spellSymbol = c => { const k = spellKind(c); return k ? `<img class="sym" src="${SPELL_SYMBOLS[k]}" alt="${k} spell" title="${titleCase(k)} spell">` : ""; };
 function render() {
   BAL = balanceModel();
   updateChipCounts();

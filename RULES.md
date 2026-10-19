@@ -98,8 +98,8 @@ v2.1, because those cards are in cold storage. The player-facing version with di
 
 ## 10. Spells
 
-The symbol in a spell's top-right corner shows its type: a lightning bolt for Spells and Instant Spells, a circle of
-arrows for Continuous Spells, a mountain for Field Spells.
+The symbol in a spell's top-right corner shows its type: a lightning bolt for Instant Spells, a circle of arrows for
+Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 
 1. **Spell:** your Main Phases only. Can't be played in response.
 2. **Instant Spell:** your Main Phases, **on your opponent's turn**, **during combat**, or in response to any card
