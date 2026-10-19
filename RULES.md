@@ -161,10 +161,10 @@ Fusions are the end goal: each one is stronger than an Ultra.
 - **It's free fuse-estate** (spell): fuse without paying the 2 flux. **Crimson Altar** (Blood Demon field spell): sacrifice another
   Blood Demon instead of paying the 2 flux. **Ritual Pit** lets a Blood Demon costing 3–4 flux be a material.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
-- **What carries over** (from v2.1): the materials' effects carry over to the fusion, each effect only once. Their
-  stats, damage and stat changes don't.
-- **When a fusion is destroyed**, the fusion card and its materials go to your Waste Repository. Its death effects
-  trigger (its own plus inherited ones, each once); the materials' don't trigger separately.
+- **Nothing carries over:** a fusion only has the effect printed on its own card. Its materials' effects, stats,
+  damage and stat changes don't carry over. (This replaces v2.1 and the V5 rule where splice effects carried over.)
+- **When a fusion is destroyed**, the fusion card and its materials go to your Waste Repository. Only the fusion's
+  own death effects trigger; the materials' don't.
 
 ## 14. Faction mechanics
 
