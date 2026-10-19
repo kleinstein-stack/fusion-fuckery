@@ -103,10 +103,10 @@
   .art-tools button:hover { background: var(--accent); }
   @media print { .art-tools { display: none; } }
 
-  .typeline { position: absolute; left: 44px; top: 556px; width: 656px; text-align: center; font-size: 31px; font-weight: 500; white-space: nowrap; overflow: hidden; }
-  .card .f-attr { position: absolute; left: 60px; top: 598px; width: 624px; text-align: center; font-size: 22px; color: #555; }
+  /* no type/faction line: the frame colour shows the card type. Attributes sit right under the divider. */
+  .card .f-attr { position: absolute; left: 60px; top: 558px; width: 624px; text-align: center; font-size: 22px; color: #555; }
   .card .f-desc {
-    position: absolute; left: 44px; top: 632px; width: 656px; height: 300px; resize: none;
+    position: absolute; left: 44px; top: 592px; width: 656px; height: 340px; resize: none;
     font-size: 26px; line-height: 1.3; font-weight: 500; overflow: hidden;
   }
   .card.spell .f-desc { top: 556px; height: 420px; }
@@ -604,13 +604,6 @@ function cardEl(c) {
   bind(desc, COLS.desc, () => { fitText(desc); c._updBal && c._updBal(); });
 
   if (cat !== "Spell") {
-    const tl = mk("div", "typeline");
-    const setTL = () => {
-      const f = c.data[COLS.faction].trim() || factions(c).join(" / ");
-      tl.textContent = `[Creature${f ? "/" + f : ""}]`;
-    };
-    setTL(); c._setTL = setTL;
-    card.appendChild(tl);
     card.appendChild(bind(mk("input", "f-attr", { placeholder: "Attribute (e.g. Humanoid / Greedy)", spellcheck: false }), COLS.attr));
     card.appendChild(desc);
 
@@ -638,7 +631,7 @@ function cardEl(c) {
     w.appendChild(inp); meta.appendChild(w);
   };
   metaField("Type", COLS.type, () => { if (category(c) !== cat) { render(); } });
-  metaField("Faction", COLS.faction, () => { c._setTL && c._setTL(); });
+  metaField("Faction", COLS.faction);
   if (cat === "Creature") {
     const tier = mk("div", "tier");
     c._setTier = () => { const t = tierOf(c); tier.innerHTML = `<label>Cost tier</label><span>${t ? `${t.label} (${t.range})` : "–"}</span>`; };
@@ -1405,8 +1398,6 @@ function staticCard(c) {
   const src = artSrc(c);
   if (src) art.innerHTML = `<img src="${encodeURI(src)}" alt="">`;
   if (cat !== "Spell") {
-    const f = c.data[COLS.faction].trim() || factions(c).join(" / ");
-    div("typeline", `[Creature${f ? "/" + f : ""}]`);
     div("f-attr", c.data[COLS.attr]);
     div("f-desc", c.data[COLS.desc].trim());
     div("stats", [`${c.data[COLS.atk]}ATK`, `${c.data[COLS.hp]}HP`, `${c.data[COLS.speed]}SPD`].join("/"));
