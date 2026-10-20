@@ -27,16 +27,16 @@ Pain Drinker,Creature,5,4,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.",Blood Demon,Unholy / Humanoid,
 Carrion Duchess,Creature,3,8,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 At the end of your turn: You may pay 2 PHP to return an 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.",Blood Demon,Unholy / Humanoid / Noble,
-Nomed The Dark Viscount,Creature,6,9,7,3,"Pay 6 PHP: Reduce this creature's flux cost by 2.
+Nomed The Dark Viscount,Creature,6,9,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
 Whenever this creature deals combat damage: Gain 1 PHP.",Blood Demon,Unholy / Humanoid / Noble,
-Renroc The Dark Marquis,Creature,5,6,7,3,"Pay 6 PHP: Reduce this creature's flux cost by 2.
+Renroc The Dark Marquis,Creature,5,6,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
 Once per turn: Pay 2 PHP to destroy a creature with 4 or less HP.",Blood Demon,Unholy / Humanoid / Noble,
 Blood Priest,Creature,4,6,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 Whenever you sacrifice a creature: Gain 2 PHP.",Blood Demon,Unholy / Humanoid,
 Blood Imp,Creature,1,1,1,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Blood Demon,Unholy / Beast / Winged,
-Vein Ripper,Creature,4,2,3,3,Pay 6 PHP: Reduce this creature's flux cost by 2.,Blood Demon,Unholy / Beast,
-Flesh Collector,Creature,7,10,9,1,"Pay 9 PHP: Reduce this creature's flux cost by 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
+Vein Ripper,Creature,4,2,3,3,Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.,Blood Demon,Unholy / Beast,
+Flesh Collector,Creature,7,10,9,1,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
 
 Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.",Blood Demon,Unholy / Amorphous,
 Hemogoblin,Creature,1+d8,8,6,3,"Once per turn: Pay 2 PHP to gain 2 gold.
