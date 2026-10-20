@@ -33,7 +33,8 @@ When this creature dies: Deal 2 damage to any creature, or to the enemy player i
 Vein Ripper,Creature,4,2,3,3,"Blood Price 2 (pay 2 PHP for each flux you skip, up to 2).",Blood Demon,Unholy / Beast,
 Flesh Collector,Creature,7,10,9,1,"Blood Price 3 (pay 2 PHP for each flux you skip, up to 3). You may banish 2 cards from your Waste Repository instead of paying 2 PHP.
 Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.",Blood Demon,Unholy / Amorphous,
-Hemogoblin,Creature,1+d8,8,6,3,Once per turn: Pay 2 PHP to gain 2 gold.,Goblin,Greedy / Humanoid / Unholy,
+Hemogoblin,Creature,1+d8,8,6,3,"Once per turn: Pay 2 PHP to gain 2 gold.
+Once per turn: Pay 2 gold; when you do gain +1SPD for this turn.",Goblin,Greedy / Humanoid / Unholy,
 Ankylosaurus,Creature,3,11,4,,"The first time each turn this creature would take combat damage, reduce that damage by 2.",Dino,Prehistoric / Beast,yes
 Brontosaurus,Creature,2,10,3,,"This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!",Dino,Prehistoric / Beast,yes
 Triceratops,Creature,4,6,3,,"When this creature attacks, you may deal 2 damage to a creature adjacent to the one targeted.",Dino,Prehistoric / Beast,yes
@@ -106,6 +107,7 @@ TT-rex,Fusion,15(bleed5),30,N/A,,"{T-Rex + T-Rex}
 Life... uh, finds a way",Dino,Beast / Carnivore / Heavy,yes
 Hop Goblin,Fusion,5+d12,20,N/A,2,"{any 2 Greedy creatures}
 This creature rolls its die twice and keeps the higher result.
+
 Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently.",Goblin,Small  / Greedy / Heavy,
 Purrramid,Fusion,10,20,N/A,,"{3 Cats} This furry purrramid is just so cute! :3 
 If this creature doesn’t attack: Restore 3 HP to it at end phase.
@@ -155,8 +157,11 @@ Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 1 PHP: The next 'Unholy' crea
 Archaeologist,Spell,N/A,N/A,N/A,,Banish 3 'Dino' creatures from your Waste Repository. Materialize any 'Dino' creature that isn't a 'T-Rex' from your hand or deck.,Dino,,yes
 Fossil Record,Spell,N/A,N/A,N/A,,"Return a Dino creature from your Waste Repository to your hand. If it was a Dino Egg or T-Rex, draw 1 card.",Dino,,yes
 Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.
+
 For each 'Greedy' creature you put at the bottom of your deck this way, gain 1 gold.",Goblin,,
-Goblin Stock Broker,Spell,N/A,N/A,N/A,,"Choose a real stock, ETF, or cryptocurrency ticker and record its price now. Invest up to 3 gold from your pool. At the start of your next turn, look up the same asset again:
+Goblin Stock Broker,Spell,N/A,N/A,N/A,,"Pay 3 gold to activate this spell, when you do: choose a real stock, ETF, or cryptocurrency ticker and record its price now. 
+
+At the start of your next turn, look up the same asset again:
 - If it rose, double the invested gold and add it to your pool.
 - If it fell, lose the invested gold.
 After that this card resolves.",Goblin,,
@@ -178,16 +183,22 @@ Microwave,Spell,N/A,N/A,N/A,,"Reheat a creature from any Waste Repository and ma
 Pipebomb,Spell,N/A,N/A,N/A,,"Target a Continuous/Field Spell or Equipment on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.",,,yes
 Space Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent's creature cards for a turn.,,,yes
 Unfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it's base components.,,,yes
-Goblin General,Creature,1+d6,8,5,2,Your other 'Greedy' creatures roll their dice twice and keep the higher result.,Goblin,Greedy / Humanoid,
+Goblin General,Creature,1+d6,8,5,2,"Your other 'Greedy' creatures roll their dice twice and keep the higher result.
+
+Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, you may restore 1HP to this creature.",Goblin,Greedy / Humanoid,
 Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.",Goblin,Greedy / Humanoid,
-Goblin Miner,Creature,d6,8,4,2,When this creature is materialized and at the start of your turn: Gain 1 gold.,Goblin,Greedy / Humanoid,
+Goblin Miner,Creature,d6,8,4,2,"When this creature is materialized and at the start of your turn: Gain 1 gold.
+
+Or pay this 'Goblin Miner' 2 gold and instead of gaining 1 gold on the start of your next turn gain +1 flux.",Goblin,Greedy / Humanoid,
 Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
 At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
 Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
 Archangel,Creature,7,16,10,3,"Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 Once per turn: Restore 5 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
-Goblin Pit Boss,Creature,2+d10,12,7,2,Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold. Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.,Goblin,Greedy / Humanoid,
-Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack misses and deals no damage.,Goblin,Greedy / Humanoid,
+Goblin Pit Boss,Creature,2+d10,12,7,2,"Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold.
+
+Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.",Goblin,Greedy / Humanoid,
+Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack whiffs and deals half damage.,Goblin,Greedy / Humanoid,
 It's free fuse-estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux
 
  (Fusing: once per turn, 2 creatures you control in adjacent lanes that each cost 5 or more flux go under a fusion from your Fusion Deck whose recipe they meet, and the fusion takes one of their lanes.)",,,
@@ -203,5 +214,4 @@ Once per turn: Pay X gold. Deal X damage to an enemy creature and half of X (rou
 Indulgence Seller,Fusion,8,24,,2,"{any Holy creature + any Greedy creature}
 Radiance (restoring HP can go past max HP. For each point over max, choose +1 HP or +1 ATK until end of turn).
 Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
-Market Cycle,Field Spell,N/A,N/A,N/A,,"While you have 5 to 9 gold in your pool, your 'Greedy' creatures gain +1 ATK. With 10 or more, they gain +2 ATK instead.
-If you end your turn with 10 or more gold, roll a d6: 1-2 lose half your gold (rounded down), 3-5 nothing happens, 6 gain 2 gold.",Goblin,,
+Market research,Spell,N/A,N/A,N/A,,"Pay 4 gold to activate this spell, when you do search for any greedy creature in your deck.",Goblin,,
