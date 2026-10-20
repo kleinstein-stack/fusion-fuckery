@@ -23,20 +23,20 @@ When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage
 Bellkeeper Monk,Creature,3,14,6,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is in play).",Angel,Holy / Humanoid,
-Pain Drinker,Creature,5,6,5,3,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
+Pain Drinker,Creature,5,4,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.",Blood Demon,Unholy / Humanoid,
-Carrion Duchess,Creature,3,10,5,2,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
+Carrion Duchess,Creature,3,8,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 At the end of your turn: You may pay 2 PHP to return an 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.",Blood Demon,Unholy / Humanoid / Noble,
-Nomed The Dark Viscount,Creature,6,10,7,3,"Blood Price 2 (pay 2 PHP for each flux you skip, up to 2).
+Nomed The Dark Viscount,Creature,6,9,7,3,"Pay 6 PHP: Reduce this creature's flux cost by 2.
 Whenever this creature deals combat damage: Gain 1 PHP.",Blood Demon,Unholy / Humanoid / Noble,
-Renroc The Dark Marquis,Creature,5,8,7,3,"Blood Price 2 (pay 2 PHP for each flux you skip, up to 2).
+Renroc The Dark Marquis,Creature,5,6,7,3,"Pay 6 PHP: Reduce this creature's flux cost by 2.
 Once per turn: Pay 2 PHP to destroy a creature with 4 or less HP.",Blood Demon,Unholy / Humanoid / Noble,
-Blood Priest,Creature,4,8,5,2,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
+Blood Priest,Creature,4,6,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 Whenever you sacrifice a creature: Gain 2 PHP.",Blood Demon,Unholy / Humanoid,
-Blood Imp,Creature,1,2,1,2,"Blood Price 1 (pay 2 PHP for each flux you skip, up to 1).
+Blood Imp,Creature,1,1,1,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Blood Demon,Unholy / Beast / Winged,
-Vein Ripper,Creature,4,2,3,3,"Blood Price 2 (pay 2 PHP for each flux you skip, up to 2).",Blood Demon,Unholy / Beast,
-Flesh Collector,Creature,7,10,9,1,"Blood Price 3 (pay 2 PHP for each flux you skip, up to 3). You may banish 2 cards from your Waste Repository instead of paying 2 PHP.
+Vein Ripper,Creature,4,2,3,3,Pay 6 PHP: Reduce this creature's flux cost by 2.,Blood Demon,Unholy / Beast,
+Flesh Collector,Creature,7,10,9,1,"Pay 9 PHP: Reduce this creature's flux cost by 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
 Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.",Blood Demon,Unholy / Amorphous,
 Hemogoblin,Creature,1+d8,8,6,3,"Once per turn: Pay 2 PHP to gain 2 gold.
 Once per turn: Pay 2 gold: This creature gains +1 Speed until end of turn.",Goblin,Greedy / Humanoid / Unholy,
@@ -160,7 +160,7 @@ Thiefling Sleight of Hand,Instant Spell/Thiefling,N/A,N/A,N/A,,"When your oppone
 ",,,yes
 Loaded Dice,Instant Spell,,,,,Choose 1 coin flip or dice roll. Flip/roll again and use the second result.,,,
 Blood Frenzy,Spell,,,,,Choose an 'Unholy' creature you control: It gains +4 ATK and +1 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,
-Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 1 PHP: The next 'Unholy' creature you materialize this turn has +2 Blood Price.,Blood Demon,,
+Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next 'Unholy' creature you materialize this turn costs 2 less flux.,Blood Demon,,
 Archaeologist,Spell,N/A,N/A,N/A,,Banish 3 'Dino' creatures from your Waste Repository. Materialize any 'Dino' creature that isn't a 'T-Rex' from your hand or deck.,Dino,,yes
 Fossil Record,Spell,N/A,N/A,N/A,,"Return a Dino creature from your Waste Repository to your hand. If it was a Dino Egg or T-Rex, draw 1 card.",Dino,,yes
 Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.

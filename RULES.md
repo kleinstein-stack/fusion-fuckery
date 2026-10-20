@@ -190,8 +190,10 @@ Card text: "Radiance (when this creature is restored past its max HP, it gains y
 extra, until your next turn)."
 
 ### 14.2 Blood Price
-**Blood Price N:** when you naturally materialize it, you may pay **2 PHP for each flux you skip**, up to N. The
-printed cost still decides tier and fusion eligibility.
+Card text: **"Pay X PHP: Reduce this creature's flux cost by Y."** Usable once, only when you naturally materialize the
+creature (from your hand): pay the PHP, then the lower flux cost. The printed cost still decides tier and fusion
+eligibility. Price: **3 PHP per flux** (X = 3 × Y). These creatures are a little weak at their printed cost (see the
+stat budget); paying PHP is what makes them strong.
 
 ### 14.3 Dice ATK & Gold
 - **Dice ATK:** an ATK like "1+d6" is **rolled every time the creature attacks**, for that attack only. When it hits
@@ -236,9 +238,11 @@ printed cost still decides tier and fusion eligibility.
 boxes; players never need them. Card text never names a faction: it names the attribute instead (**Holy** for
 Angels, **Unholy** for Blood Demons, **Greedy** for Goblins). Rules terms: a fusion is made of **fusion splices**.
 
-**Stat budget.** points = ATK + HP ÷ 2 + (Speed − 2) + Blood Price ÷ 2 + effect, aiming for **2 × flux + 1** (about
-20 for Ultras) and **28 for fusions**. Two 5-flux creatures are worth 22, so a fusion pays them back plus the fuse.
+**Stat budget.** points = ATK + HP ÷ 2 + (Speed − 2) + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
+**28 for fusions**. Two 5-flux creatures are worth 22, so a fusion pays them back plus the fuse.
 
+- **Blood Price creatures** aim **1 point under** at 1–3 flux and **2 under** at 5+ flux: weak at their printed cost,
+  strong when you pay PHP.
 - Dice count at their average (a d6 is 3.5).
 - Speed steps count double on creatures with 8+ ATK.
 - Effects: small ≈ 1, repeatable 2–3, removal or an engine 4+.
