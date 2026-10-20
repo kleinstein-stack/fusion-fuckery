@@ -56,8 +56,7 @@ v2.1, because those cards are in cold storage. The player-facing version with di
   says they may.
 - **In front of:** the enemy creature in the same lane, directly across.
 - **Lanes next to it:** the lane(s) directly left and right. The middle lane has two, the outer lanes have one.
-- **Adjacent** (when a card uses the keyword): the creature in front of it plus the creatures in the lanes next to it
-  on its own side. Empty lanes don't count as anything.
+  (Card text says "the lanes next to it", never "adjacent".)
 
 ## 6. Building a deck
 
@@ -81,17 +80,17 @@ v2.1, because those cards are in cold storage. The player-facing version with di
 |---|---|---|
 | 1 | Draw | Draw **1** card (the first player skips this on their first turn). |
 | 2 | Reactor | Max flux +1 (not on your first turn), then refill. |
-| 3 | Start | Start-of-turn effects. |
+| 3 | Start | Radiance bonuses from your last turn end → start-of-turn effects. |
 | 4 | Main 1 | In any order: materialize creatures, play spells, activate effects. **One fusion** (13). |
 | 5 | Battle | Attack (12). Nobody attacks on the first turn of the game. |
 | 6 | Main 2 | Spells and effects. No natural materializing and no fusing. |
-| 7 | End | End-of-turn effects → Radiance wears off (14.1) → discard down to 8 cards. |
+| 7 | End | End-of-turn effects → discard down to 8 cards. |
 
 ## 9. Materializing creatures
 
 - **Natural materialize:** in Main Phase 1, from your hand. Pay its flux cost (some creatures let you pay part of it
   in PHP with **Blood Price**, 14.2), then put it in any empty lane. No limit beyond flux and lanes.
-- **By effect** (Carrion Duchess, The Meat Cathedral…): happens whenever the effect says, without paying flux. It
+- **By effect** (Carrion Duchess, Lord Lazarus…): happens whenever the effect says, without paying flux. It
   still needs an empty lane.
 - "When materialized" effects trigger both ways.
 - **Creatures can attack the turn they arrive.** No summoning sickness.
@@ -129,7 +128,7 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 |---|---|
 | Current HP | The HP it has right now. |
 | Max HP | Printed HP + permanent gains − permanent losses. |
-| Restore HP | Heal Current HP. Never above Max HP, except with Radiance (14.1), and Max HP doesn't change. |
+| Restore HP | Heal Current HP. Never above Max HP (Radiance turns the extra into a bonus, 14.1), and Max HP doesn't change. |
 | Give HP (or "+X HP") | **Permanent.** Raise both Current and Max HP. |
 | Permanently gain / lose HP | Raise / lower both Current and Max HP. |
 
@@ -182,11 +181,13 @@ Fusions are the end goal: each one is stronger than an Ultra.
 ## 14. Keywords
 
 ### 14.1 Radiance
-When a card with Radiance **restores** HP to a creature, the healing can go past its Max HP. For each point over Max
-HP, **you choose**: **+1 HP** over max (overhealth) or **+1 ATK**, both until end of turn. You can split the points
-however you like. Max HP doesn't change, and at the end of the turn the extra HP and ATK both go away.
-Example: restoring 2 HP to a creature at 12/12 can make it 14/12, or 12/12 with +2 ATK, or 13/12 with +1 ATK, and
-it goes back to 12/12 at the end of the turn. (Giving HP is different: it's permanent and raises Max HP, see 11.)
+A creature with **Radiance** never wastes healing. When HP restored to it would go past its Max HP, the extra becomes
+**your choice** of that much **+ATK** or that much **+HP** over max (overhealth), **until your next turn**. Max HP
+doesn't change; the bonus ends at the start of your next turn.
+Example: a Cherub (Radiance) at 2/2 is restored by 2: choose +2 ATK, or 4/2 HP, until your next turn. (Giving HP is
+different: it's permanent and raises Max HP, see 11.)
+Card text: "Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the
+extra, until your next turn)."
 
 ### 14.2 Blood Price
 **Blood Price N:** when you naturally materialize it, you may pay **2 PHP for each flux you skip**, up to N. The
@@ -197,7 +198,7 @@ printed cost still decides tier and fusion eligibility.
   back in a fight, it rolls too. "Natural 20" / "natural 1" means the die itself showed that number.
 - **Gold:** everyone starts with **0 Gold**; there's **no cap**. Only cards that mention Gold can make, spend or move
   it. Invested Gold is locked into that card and lost if the card leaves the field.
-- The v2.1 **Market Cycle** is no longer a rule: it's the **Market Cycle** Field Spell card now.
+- The v2.1 **Market Cycle** is no longer a rule.
 
 ## 15. Advanced rules
 

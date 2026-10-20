@@ -611,7 +611,9 @@ function cardEl(c) {
   const mk = (tag, cls, attrs = {}) => { const e = document.createElement(tag); e.className = cls; Object.assign(e, attrs); return e; };
 
   card.appendChild(bind(mk("input", "f-name", { placeholder: "Card name", spellcheck: false }), COLS.name));
-  if (cat === "Spell") card.insertAdjacentHTML("beforeend", spellSymbol(c));
+  // spell type symbol, redrawn when the Type changes (Field Spell -> Spell, -> Instant Spell, ...)
+  c._setSym = () => { card.querySelectorAll(".sym").forEach(s => s.remove()); if (category(c) === "Spell") card.insertAdjacentHTML("beforeend", spellSymbol(c)); };
+  c._setSym();
   if (cat === "Creature") {   // flux cost sits in the DNA badge on the v4 creature frame
     const fx = bind(mk("input", "f-flux", { spellcheck: false, title: "Flux cost (1–10)", placeholder: "–" }), COLS.flux, () => { c._updBal && c._updBal(); c._setTier && c._setTier(); });
     card.appendChild(fx);
@@ -670,7 +672,7 @@ function cardEl(c) {
     const inp = bind(mk("input", "", { spellcheck: false }), col, after);
     w.appendChild(inp); meta.appendChild(w);
   };
-  metaField("Type", COLS.type, () => { if (category(c) !== cat) { render(); } });
+  metaField("Type", COLS.type, () => { if (category(c) !== cat) { render(); } else { c._setSym(); } });
   metaField("Faction", COLS.faction);
   if (cat === "Creature") {
     const tier = mk("div", "tier");
@@ -1137,6 +1139,15 @@ async function save() {
   }
   if (SERVER) {
     try {
+      // Someone (another tab, the website, a script) saved the card list after this tab loaded it: don't silently overwrite.
+      if (syncedText !== null) {
+        let current = null;
+        try { current = await (await api("api/latest")).text(); } catch {}
+        if (current !== null && current !== syncedText && current !== text &&
+            !confirm("The card list was changed somewhere else after this tab loaded it.\n\n" +
+                     "Saving now replaces those changes with what this tab shows.\n" +
+                     "Cancel, then reload the page to get the latest version first (your unsaved edits here would be lost).\n\nSave anyway?")) return;
+      }
       const j = await (await api("api/save?name=" + encodeURIComponent(fileName), { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: text })).json();
       syncedText = text;
       await linkRenamedArt(cards.filter(c => c.artKey && cardKey(c) !== c.artKey));
