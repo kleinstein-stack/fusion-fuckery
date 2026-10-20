@@ -190,10 +190,11 @@ Card text: "Radiance (when this creature is restored past its max HP, it gains y
 extra, until your next turn)."
 
 ### 14.2 Blood Price
-Card text: **"Pay X PHP: Reduce this creature's flux cost by Y."** Usable once, only when you naturally materialize the
-creature (from your hand): pay the PHP, then the lower flux cost. The printed cost still decides tier and fusion
-eligibility. Price: **3 PHP per flux** (X = 3 × Y). These creatures are a little weak at their printed cost (see the
-stat budget); paying PHP is what makes them strong.
+Card text: **"Pay 3 PHP per flux: Reduce this creature's flux cost by up to Y."** (with Y = 1 just "Pay 3 PHP: Reduce
+this creature's flux cost by 1."). Only when you naturally materialize the creature (from your hand): take any amount
+off its flux cost, up to Y, paying **3 PHP for each flux**. Example: Vein Ripper (3 flux, up to 2) can be played for
+3 flux, 2 flux + 3 PHP, or 1 flux + 6 PHP. The printed cost still decides tier and fusion eligibility. These creatures
+are a little weak at their printed cost (see the stat budget); paying PHP is what makes them strong.
 
 ### 14.3 Dice ATK & Gold
 - **Dice ATK:** an ATK like "1+d6" is **rolled every time the creature attacks**, for that attack only. When it hits
