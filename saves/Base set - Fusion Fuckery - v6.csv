@@ -37,6 +37,7 @@ Blood Imp,Creature,1,1,1,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Blood Demon,Unholy / Beast / Winged,
 Vein Ripper,Creature,4,2,3,3,Pay 6 PHP: Reduce this creature's flux cost by 2.,Blood Demon,Unholy / Beast,
 Flesh Collector,Creature,7,10,9,1,"Pay 9 PHP: Reduce this creature's flux cost by 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
+
 Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.",Blood Demon,Unholy / Amorphous,
 Hemogoblin,Creature,1+d8,8,6,3,"Once per turn: Pay 2 PHP to gain 2 gold.
 Once per turn: Pay 2 gold: This creature gains +1 Speed until end of turn.",Goblin,Greedy / Humanoid / Unholy,
@@ -180,16 +181,16 @@ Host Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK an
 Infection Burst,Spell,N/A,N/A,N/A,,Infest a target creature with a 'Parasite' creature from your hand or Waste Repository.,Parasite,,yes
 And for my next trick...,Spell,N/A,N/A,N/A,,"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don't have any coins left. After stealing their coin, add this card to their deck and shuffel.",,,yes
 Crack a pack,Spell,N/A,N/A,N/A,,"Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository. ",,,yes
-Energy drink,Spell,N/A,N/A,N/A,,Choose 1 creature you control and restore half (rounded down) of it’s max hp.,,,yes
+Energy drink,Spell,N/A,N/A,N/A,,Choose 1 creature you control and restore half (rounded down) of it’s max hp.,,,
 "Jar of Materialism
 ",Spell,N/A,N/A,N/A,,"Just different enough not to get sued...
 
-Draw 1 card and then draw another card.",,,yes
+Draw 1 card and then draw another card.",,,
 Microwave,Spell,N/A,N/A,N/A,,"Reheat a creature from any Waste Repository and materialized it on your side of the field.
-",,,yes
-Pipebomb,Spell,N/A,N/A,N/A,,"Target a Continuous/Field Spell or Equipment on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.",,,yes
-Space Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent's creature cards for a turn.,,,yes
-Unfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it's base components.,,,yes
+",,,
+Pipebomb,Spell,N/A,N/A,N/A,,"Target a Continuous/Field Spell or Equipment on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.",,,
+Space Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent's creature cards for a turn.,,,
+Unfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it's base components.,,,
 Goblin General,Creature,1+d6,8,5,2,"Your other 'Greedy' creatures roll their dice twice and keep the higher result.
 
 Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.",Goblin,Greedy / Humanoid,
