@@ -17,7 +17,13 @@ const R = { php: 40, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3
   winded: false,      // a creature that attacked can't hit back until its controller's next turn (Magic's tapping, Lorcana's exert)
   intercept: false,   // a creature next to a direct attacker may step in front of it and fight it instead (Magic's blocking)
   overclock: false,   // once per turn: put a card from your hand under your Reactor for +1 flux this turn (Lorcana's inkwell)
-  bloodDraw: false }; // once per turn: pay 3 PHP to draw a card (a consistency engine, like Pokemon's draw Supporters)
+  bloodDraw: false,   // once per turn: pay 3 PHP to draw a card (a consistency engine, like Pokemon's draw Supporters)
+  // Reactor flux, a structural change (Lorcana's inkwell): no automatic +1 a turn. Once per turn you may put a card from your
+  // hand face down under your Reactor; your max flux is inkBase + the cards under it (up to fluxMax), and the new flux is usable at once.
+  ink: false, inkBase: 2,
+  // Reactor choice, a structural change: in your Reactor Phase (not your first turn) choose one: Charge (+1 max flux, as now),
+  // Vent (draw a card instead) or Overload (+2 flux this turn only, lose overloadPHP PHP).
+  reactor: false, overloadPHP: 2 };
 const RULEBOOK = Object.assign({}, R);
 // Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
 function withRules(rules, fn) {
@@ -824,6 +830,27 @@ const SPELLS = {
     }
     return best && best.s > 1 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => unfuse(g, p, best.t)) } : null;
   } },
+  "Overclock": { play(g, p, c) {   // a card under the Reactor for N flux this turn (with Reactor flux it also raises max flux for good)
+    if (g.phase !== 1 || p.hand.length < 2) return null;
+    const n = num(c.d, /gain (\d+) flux/i, 2);
+    const burn = p.hand.filter(x => x !== c).sort((a, b) => holdWorth(a) - holdWorth(b))[0];
+    const before = bestPlan(g, p).score, ci = p.hand.indexOf(c), bi = p.hand.indexOf(burn);
+    const keep = p.hand.slice(); p.hand = p.hand.filter(x => x !== c && x !== burn); p.flux += n;
+    const after = bestPlan(g, p).score; p.flux -= n; p.hand = keep;
+    const s = after - before - holdWorth(burn) - 0.5 + (R.ink && p.maxFlux < R.fluxMax ? 2.5 : 0);
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => {
+      const j = p.hand.indexOf(burn); if (j < 0) return;
+      p.hand.splice(j, 1); p.reactor.push(burn); p.flux += n;
+      if (R.ink) p.maxFlux = Math.min(R.fluxMax, R.inkBase + p.reactor.length);
+      L(g, `  ${burn.d.name} goes under the Reactor: +${n} flux.`);
+    }) } : null;
+  } },
+  "Blood Ledger": { perm: true, score: () => 2.5, acts: [{ id: "draw", pri: 0, ai(g, p, z) {   // pay PHP to draw, once per turn
+    const cost = num(z.c.d, /pay (\d+) PHP to draw/i, 3), n = num(z.c.d, /to draw (\d+) card/i, 1);
+    if (p.deck.length < n || !canPay(p, cost)) return null;
+    const worth = p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0;
+    return { score: worth * n - cost * phpW(g, p), run: () => { L(g, `${who(g, p)} pays ${cost} PHP to draw (Blood Ledger).`); payPHP(g, p, cost); if (!g.over) draw(g, p, n); } };
+  } }] },
   "Divine Silence": { play(g, p, c) {   // before attacking: negate the enemy whose effect is in the way of this turn's attacks
     if (g.phase !== 1 || g.turnNo === 1) return null;
     const mine = units(p).filter(u => !u.attacked && expAtk(g, u) > 0), n = num(c.d, /draw (\d+) card/i, 0);
@@ -1020,6 +1047,29 @@ function overclockOption(g, p) {
     L(g, `${who(g, p)} overclocks: ${c.d.name} goes under the Reactor for +1 flux.`);
   } };
 }
+// Reactor choice: Charge, Vent or Overload, whichever helps most now (with the sloppy player's misjudgement, like every choice)
+function reactorChoice(g, p) {
+  const plan = extra => { p.flux += extra; const s = bestPlan(g, p).score; p.flux -= extra; return s; }, base = plan(0);
+  const charge = (p.maxFlux < R.fluxMax ? 2.2 + (plan(1) - base) : 0) + jitter(g, p);
+  const vent = (p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0) + (p.deck.length ? 0 : -99) + jitter(g, p);
+  const overload = (canPay(p, R.overloadPHP) ? plan(2) - base - R.overloadPHP * phpW(g, p) : -99) + jitter(g, p);
+  if (charge >= vent && charge >= overload) { p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1); p.flux += 1; L(g, `  Reactor: Charge (max flux ${p.maxFlux}).`); p.st.reactor[0]++; }
+  else if (vent >= overload) { L(g, `  Reactor: Vent, draws a card.`); draw(g, p, 1); p.st.reactor[1]++; }
+  else { L(g, `  Reactor: Overload, +2 flux this turn for ${R.overloadPHP} PHP.`); p.flux += 2; losePHP(g, p, R.overloadPHP, { paid: true }); p.st.reactor[2]++; }
+}
+// what a card in hand is worth keeping, for choosing what goes under the Reactor: a creature its stats, a spell about 2
+const holdWorth = c => isUnitKind(c.d.kind) ? defValue(c.d) * 0.4 : 2;
+function inkOption(g, p) {   // Reactor flux: the card needed least goes under the Reactor for +1 max flux, usable right away
+  const c = p.hand.slice().sort((a, b) => holdWorth(a) - holdWorth(b))[0], i = p.hand.indexOf(c);
+  let now = 0;
+  if (g.phase === 1) { const before = bestPlan(g, p).score; p.hand.splice(i, 1); p.flux += 1; now = bestPlan(g, p).score - before; p.flux -= 1; p.hand.splice(i, 0, c); }
+  const later = 2.5;   // one more flux on every turn from now on
+  return { key: "rule:ink", pri: 0, score: now + later - holdWorth(c) + (p.hand.length >= 6 ? 1 : 0), run: () => {
+    const j = p.hand.indexOf(c); if (j < 0) return;
+    p.hand.splice(j, 1); p.reactor.push(c); p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1); p.flux += 1;
+    L(g, `${who(g, p)} puts ${c.d.name} under the Reactor (max flux ${p.maxFlux}).`);
+  } };
+}
 function bloodDrawOption(g, p) {   // Blood for cards: a card is worth more the emptier the hand
   const worth = p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0;
   return { key: "rule:blood", pri: 0, score: worth - 3 * phpW(g, p), run: () => { L(g, `${who(g, p)} pays 3 PHP to draw a card.`); payPHP(g, p, 3); if (!g.over) draw(g, p, 1); } };
@@ -1050,6 +1100,7 @@ function mainPhase(g, p) {
         const o = a.ai(g, p, z); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
       }
     }
+    if (R.ink && !p.once.has("rule:ink") && p.hand.length && p.maxFlux < R.fluxMax) add(inkOption(g, p));
     if (R.overclock && g.phase === 1 && !p.once.has("rule:overclock") && p.hand.length) add(overclockOption(g, p));
     if (R.bloodDraw && !p.once.has("rule:blood") && p.deck.length && canPay(p, 3)) add(bloodDrawOption(g, p));
     if (g.phase === 1) add(planOption(g, p));
@@ -1092,8 +1143,10 @@ function playTurn(g) {
   p.fused = false; p.pact = 0; g.phase = 0;
   const first = p.turns === 1;
   if (!(first && g.first === p.i)) { draw(g, p, 1); if (g.over) return; }
-  if (!first) p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1);
+  if (R.ink) p.maxFlux = Math.min(R.fluxMax, R.inkBase + p.reactor.length);
+  else if (!first && !R.reactor) p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1);
   p.flux = p.maxFlux + (first && g.first !== p.i ? R.secondFlux : 0);
+  if (R.reactor && !first) { reactorChoice(g, p); if (g.over) return; }
   L(g, `— Turn ${g.turnNo}: ${who(g, p)} · ${p.php} PHP vs ${o.php} · ${p.flux} flux${p.gold ? ` · ${p.gold} gold` : ""} —`);
   if (g.log) L(g, `  Hand: ${p.hand.map(c => c.d.name).join(", ") || "empty"}.`);
   for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; u.winded = false; }
@@ -1167,9 +1220,9 @@ function randomDeck(defs, rng) {
   return { label, arch: [prim, sec].filter(Boolean).sort().join(" + "), main: expand(counts), fusion: expand(fcounts), elig: fusions.map(d => d.name) };
 }
 function newPlayer(g, i, deck) {
-  const p = { i, php: R.php, gold: 0, flux: 0, maxFlux: R.fluxStart, deck: [], hand: [], waste: [], oblivion: [], fdeck: [],
+  const p = { i, php: R.php, gold: 0, flux: 0, maxFlux: R.ink ? R.inkBase : R.fluxStart, deck: [], hand: [], waste: [], oblivion: [], fdeck: [],
     lanes: [null, null, null], zones: [], field: null, reactor: [], turns: 0, once: new Set(), fused: false, pact: 0,
-    broker: [], lazarus: [], deathMark: 0, bullTurn: -1, st: { drawn: new Set(), played: new Set(), fused: new Set(), face: 0 } };
+    broker: [], lazarus: [], deathMark: 0, bullTurn: -1, st: { drawn: new Set(), played: new Set(), fused: new Set(), face: 0, reactor: [0, 0, 0] } };
   const card = d => ({ d, owner: i, uid: g.uid++, lazarusUsed: false });
   deck.main.forEach(n => { const d = g.defs.get(n); if (d) p.deck.push(card(d)); });
   deck.fusion.forEach(n => { const d = g.defs.get(n); if (d) p.fdeck.push(card(d)); });
@@ -1230,7 +1283,7 @@ function record(g, A, B) {
   return { w: g.winner, t: g.turnNo, end: g.endReason, f: g.first, c: closeness(g), p: [A, B].map((D, i) => {
     const p = g.p[i];
     return { label: D.label, arch: D.arch, fixed: !!D.fixed, main: uniq(D.main), fus: uniq(D.fusion), elig: D.elig ? uniq(D.elig) : null, top: p.top,
-      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face, fc: p.st.firstCre || 99, oc: p.st.openCre, ff: p.st.firstFuse || 0 };
+      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face, fc: p.st.firstCre || 99, oc: p.st.openCre, ff: p.st.firstFuse || 0, rc: p.st.reactor };
   }) };
 }
 // o: { count, start, seed, fixed: [{ label, cards: [[name, copies]] }], mode, sigma, replays }. Saved decks play every other game,
