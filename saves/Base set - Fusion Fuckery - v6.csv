@@ -78,13 +78,13 @@ Parasite Larva,Creature,1,3,1,,"While attached, the host's damage get's reduced 
 ",Parasite,Insect,yes
 Egg incubator,Equipment,N/A,N/A,N/A,,"Equip this 'Egg incubator' to any 'egg' creature. The first time this equiped 'egg' were to take damage from a creature in combat, negate this damage.",,,yes
 Gregg's Vape,Equipment/Mundane,N/A,N/A,N/A,,Equip this to a card that has 'Gregg' in the name (including Ggrreegg). The creature gains +4 ATK.,Mundane,,yes
-Sanctuary Bells,Field Spell,,,,,"At the end of each turn: Each player restores 1 PHP.
-At the start of your turn: Restore 1 HP to each of your 'Holy' creatures.",Angel,,
+Sanctuary Bells,Field Spell,,,,,"At the end of your turn: Restore 1 HP to each 'Holy' creature on the field, yours and your opponent's.",Angel,,
 Greggs,Field Spell,N/A,N/A,N/A,,All 'Gregg' cards on your field restore +1 hp at the end of every turn.,Mundane,,yes
 Brood Fog,Field Spell,N/A,N/A,N/A,,"At the end of your turn, each Infested creature takes 1 damage.
 If an Infested creature dies, the player controlling that creature draws 1 card.",Parasite,,yes
 Seraphim Wall,Fusion,7,30,,1,"{Chapel Guard + any Holy creature}
-",Angel,Holy / Guardian / Heavy,
+
+Your creatures in the lanes next to this creature take 1 less combat damage.",Angel,Holy / Guardian / Heavy,
 Crimson Cherub,Fusion,4,8,,,{Cherub + Blood Imp},Angel / Blood Demon,Abomination / (Un)Holy / Winged,yes
 Alexandru,Creature/Thiefling,3,5,3,,"Once per turn, flip all coins you control. For each heads: steal a random card from your opponent’s hand, reveal it and put it on top of their deck.",,,yes
 Alexanduex,Creature/Thiefling,7,15,N/A,,"{2 'Thiefling' creatures with 'Alex' in their name}
@@ -98,7 +98,7 @@ Fallen Angel,Fusion,11,20,,3,"{any Holy creature + any Unholy creature}
 Once per turn, when you restore HP to a creature or pay PHP: Deal 2 damage to the enemy creature in front of this creature.",Angel / Blood Demon,Holy / Unholy / Winged,
 Lord Lazarus,Fusion,9,22,,2,"{any 2 Noble creatures}
 
-The first time this creature is destroyed, return it from your Waste Repository to the field at the start of your next turn, with its ATK, HP and Speed halved (4 ATK / 11 HP / 1 Speed).",Angel / Blood Demon,Noble,
+The first time this creature is destroyed, return it from your Waste Repository to the field at the start of your next turn, with its ATK, HP and Speed halved (4 ATK / 11 HP / 1 Speed). If all your lanes are full then, it stays in your Waste Repository.",Angel / Blood Demon,Noble,
 Arch Cleric,Fusion,7,26,,2,"{Bellkeeper Monk + any Holy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
@@ -172,6 +172,7 @@ Goblin Stock Broker,Spell,N/A,N/A,N/A,,"Pay 3 gold: Choose a real stock, ETF or 
 At the start of your next turn, look up the same asset again:
 - If it rose, double the invested gold and add it to your pool.
 - If it fell, lose the invested gold.
+- If it didn't change, flip a coin: heads it counts as rose, tails as fell.
 After that this card resolves.",Goblin,,
 Bad Bunny Concert tickets,Spell,N/A,N/A,N/A,,"Turn any creature on the field into a creature named 'Bunny', it keeps it's ATK & HP but looses any effects and original atribute(s).",Mundane,,yes
 Costco Hot Dog and Soda Comb for $1.5,Spell,,,,,Restore 4 HP to a Mundane creature. Draw 1 card.,Mundane,,yes
@@ -197,7 +198,7 @@ Once per turn: You may invest any amount of gold from your pool onto this creatu
 Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.",Goblin,Greedy / Humanoid,
 Goblin Miner,Creature,d6,8,4,2,"When materialized and at the start of your turn: Gain 1 gold.
 
-You may pay 2 gold: At the start of your next turn, gain 1 flux instead of 1 gold.",Goblin,Greedy / Humanoid,
+Once per turn: You may pay 2 gold. At the start of your next turn, gain 1 flux for that turn instead of 1 gold.",Goblin,Greedy / Humanoid,
 Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
 At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
 Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
@@ -225,7 +226,7 @@ Indulgence Seller,Fusion,8,24,,2,"{any Holy creature + any Greedy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
-Market research,Spell,N/A,N/A,N/A,,Pay 4 gold: Search your deck for a 'Greedy' creature and put it into your hand.,Goblin,,
+Market research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for a 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
 Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: send a card from your hand to Oblivion. Gain 3 flux this turn.
 
 The warning lights are mostly decorative.",,,

@@ -643,7 +643,7 @@ const FX = {
     } }] },
   "Goblin Pit Boss": { value: 3, rerolls: true, onMaxRoll(g, k) { L(g, `  Goblin Pit Boss: highest roll, +2 gold.`); gainGold(g, g.p[k.ctrl], 2); } },
   "Orc": { value: 1, orc: true },
-  "Seraphim Wall": {},
+  "Seraphim Wall": { value: 2, guardNeighbors: 1 },
   "Fallen Angel": { value: 3, onYouRestore(g, u) { angelZap(g, u); }, onLosePHP(g, u, n, info) { if (info.paid) angelZap(g, u); } },
   "Lord Lazarus": { value: 4, returns: true },
   "Arch Cleric": { value: 3, startTurn(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 3); if (t && t.s > 0) restoreHP(g, p, t.u, 3); } },
@@ -696,9 +696,14 @@ const SPELLS = {
   "Bull Run": { perm: true, goldBonus: true, wantsGold5: true, score: () => 2.5,
     aura: (g, p, u) => hasAttr(u.d, "greedy") && p.gold >= num(spellsOf(p).find(z => z.c.d.fx && z.c.d.fx.goldBonus).c.d, /while you have (\d+) or more gold/i, 5) ? 1 : 0 },
   "Goblin Bank": { perm: true, startTurn(g, p) { if (p.gold < 5) gainGold(g, p, 1); }, score: () => 2.5 },
-  "Sanctuary Bells": { perm: true, bells: true, score: () => 2.5,
-    startTurn(g, p) { units(p).forEach(u => { if (hasAttr(u.d, "holy")) restoreHP(g, p, u, 1); }); },
-    endEachTurn(g) { g.p.forEach(q => restorePHP(g, q, 1)); } },
+  "Sanctuary Bells": { perm: true, bells: true, score: () => 2.5,   // follows its text, old and new wordings
+    startTurn(g, p, z) { if (says(z.c.d, /start of your turn: restore 1 HP to each of your 'Holy'/i)) units(p).forEach(u => { if (hasAttr(u.d, "holy")) restoreHP(g, p, u, 1); }); },
+    endEachTurn(g, q) {
+      const d = q.field.c.d;
+      if (says(d, /each player restores 1 PHP/i)) g.p.forEach(x => restorePHP(g, x, 1));
+      if (says(d, /'holy' creature on the field/i) && (says(d, /end of each turn/i) || g.active === q.i))
+        g.p.forEach(x => units(x).forEach(u => { if (hasAttr(u.d, "holy")) restoreHP(g, q, u, 1); }));
+    } },
   "Crimson Altar": { perm: true, altar: true, needs: x => x.fusions > 0 && x.unholy >= 4, score: (g, p) => p.fdeck.length ? 2 : 0.5,
     acts: [{ id: "feed", pri: 3, ai(g, p, z) {   // only if its text has "sacrifice ... to draw N cards"
       const n = num(z.c.d, /sacrifice[^.]*to draw (\d+) card/i, 0); if (!n) return null;
@@ -891,10 +896,10 @@ const FX_TEXT = {
   "Hemogoblin": "kt81l8",
   "Goblin": "15jv2o1",
   "Penny Stock Goblin": "xjpujb",
-  "Sanctuary Bells": "j3nzxp",
-  "Seraphim Wall": "1eozs5j",
+  "Sanctuary Bells": "1x70bw",
+  "Seraphim Wall": "xkxa1g",
   "Fallen Angel": "q4xo63",
-  "Lord Lazarus": "1bdvnko",
+  "Lord Lazarus": "zapp81",
   "Arch Cleric": "jyr4g9",
   "Skinless Titan": "18zgfwi",
   "The Meat Cathedral": "1om48",
@@ -909,7 +914,7 @@ const FX_TEXT = {
   "Blood Frenzy": "j4iw80",
   "Blood Pact Summoning Circle": "1jpgxtw",
   "Goblin Shuffle": "1au5pap",
-  "Goblin Stock Broker": "clhl85",
+  "Goblin Stock Broker": "6wyjhe",
   "Energy drink": "idjnd2",
   "Jar of Materialism": "emr87t",
   "Microwave": "1ks3k2m",
@@ -918,7 +923,7 @@ const FX_TEXT = {
   "Unfuse": "1i5una4",
   "Goblin General": "v3esdv",
   "Gob-omber": "t7o3k6",
-  "Goblin Miner": "jwdpgh",
+  "Goblin Miner": "d8v9",
   "Soul Sucker": "2l5tm3",
   "Archangel": "23e116",
   "Goblin Pit Boss": "1l9geuw",
@@ -929,7 +934,7 @@ const FX_TEXT = {
   "Goblin King": "1p28xfm",
   "Goblin Bombardier": "70thxd",
   "Indulgence Seller": "ogn18i",
-  "Market research": "1rqsaa3",
+  "Market research": "79bnsq",
   "Overclock": "xlgey8",
   "Blood Ledger": "1vrh362",
 };
