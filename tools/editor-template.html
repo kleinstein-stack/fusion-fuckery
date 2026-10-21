@@ -1334,8 +1334,9 @@ const RULES = { main: 30, fusion: 10, copies: 3 };
    creatures costing 5+ flux in adjacent lanes. Cost tiers, aimed at a 2 : 3 : 2 : 1 spread per faction;
    Ultras aim for about 20 stat points, fusions for 28 (the end goal). */
 const PLAY = { fluxStart: 3, fluxMax: 10, lanes: 3, fuseMinFlux: 5, fuseParts: 2, speedMin: 1, speedMax: 4, speedNormal: 2,
-  startPHP: 40, openingHand: 5, drawPerTurn: 1, secondPlayerFlux: 1,   // first player skips their first draw; spells are free
+  startPHP: 30, openingHand: 5, drawPerTurn: 1, secondPlayerFlux: 1,   // first player skips their first draw; spells are free
   freeRedraw: true, attackOnArrival: false,   // v4.3: redraw a hand with 0-1 creatures once; nothing attacks the turn it arrives
+  reactorFeedSkip: true, winded: true,   // v4.4: Reactor Phase Feed (card to Oblivion, +1 flux) or Skip (no +1 max, draw 1); attackers can't hit back
   fuseFlux: 2, fusionBudget: 28, ultraBudget: 20 };   // fusing: once per turn for 2 flux (It's free fuse-estate = free, Crimson Altar = sacrifice)
 const TIERS = [
   { key: "low",    label: "Low",    range: "1–3",  min: 1, max: 3,  target: 2 },
@@ -1349,8 +1350,7 @@ const speedOf = c => { const m = String(c.data[COLS.speed] || "").match(/^\s*(\d
 // The printed cost still sets tier + fusion eligibility.
 const bloodPriceOf = c => { const m = String(c.data[COLS.desc] || "").match(/reduce this creature's flux cost by\s*(?:up to\s*)?(\d+)/i); return m ? +m[1] : 0; };
 /* Stat budget: points = ATK + HP/2 + (Speed - 2) (+ effect), aiming for 2 x flux + 1.
-   Creatures with a PHP discount are meant to be slightly weak at their printed cost: 1 point under for 1-3 flux,
-   2 under for more; paying PHP is what makes them good.
+   (Until v4.4 creatures with a PHP discount aimed 1-2 points under; the battle sim showed they need full stats.)
    Speed steps count double on 8+ ATK. Ultras (9-10) land at about 20; fusions aim for 28, so they beat an Ultra and
    pay back the two 5+ creatures and the fuse. Dice count at their average. */
 function budgetOf(c) {
@@ -1359,7 +1359,7 @@ function budgetOf(c) {
   if (!fusion && f === null) return null;
   const spd = speedOf(c) ?? PLAY.speedNormal;
   const pts = atk + hp / 2 + (spd - PLAY.speedNormal) * (atk >= 8 ? 2 : 1);
-  const target = fusion ? PLAY.fusionBudget : 2 * f + 1 - (bloodPriceOf(c) ? (f <= 3 ? 1 : 2) : 0);
+  const target = fusion ? PLAY.fusionBudget : 2 * f + 1;
   return { pts, target, room: target - pts, slack: !fusion && f <= 3 ? 1 : 0 };
 }
 const FACTION_COLORS = { Angel: "#f2cf5b", "Blood Demon": "#d23a3a", Dino: "#3fae5a", Goblin: "#9ccc3c", Mundane: "#9aa3ad",
@@ -2043,7 +2043,7 @@ function renderSim(body) {
       ${sim.fusions.map((fu, k) => turnRow(`${esc(cardKey(fu.c))} ingredients drawn`, t => fu.r && !fu.r.parts.some(p => p.kind === "unknown") ? pct(r.fusionReady[k][t], G) : "can't tell")).join("")}
     </table></div>`;
   body.innerHTML = `<p class="ana-lead">Played out <b>${G.toLocaleString()}</b> random games of <b>${esc(deck().name)}</b> (${sim.deckSize} cards${sim.deckSize !== RULES.main ? `, not ${RULES.main} yet` : ""}).
-      Rules used: opening hand of ${PLAY.openingHand}, draw ${PLAY.drawPerTurn} a turn (the first player skips their first draw), flux starts at ${PLAY.fluxStart} and goes up 1 a turn to ${PLAY.fluxMax}
+      Rules used: opening hand of ${PLAY.openingHand}, draw ${PLAY.drawPerTurn} a turn (the first player skips their first draw), flux starts at ${PLAY.fluxStart} and goes up 1 a turn to ${PLAY.fluxMax} (Feed and Skip aren't used)
       (the second player gets +${PLAY.secondPlayerFlux} on their first turn), only creatures cost flux.
       Each turn plays creatures to use as much flux as possible. Spells, effects, combat, the ${PLAY.lanes}-creature field limit and mulligans are ignored${PLAY.freeRedraw ? ", but a hand with 0 or 1 creatures uses the free redraw" : ""}.
       A drop in later turns means the deck runs out of creatures to play.</p>
@@ -2179,7 +2179,8 @@ const ruleText = r => { const R0 = BattleSim.RULEBOOK, parts = [];
   for (const x of EXTRA_RULES) if (r[x.key] !== undefined && r[x.key] !== R0[x.key]) parts.push((r[x.key] ? "" : "no ") + x.short);
   return parts.join(", "); };
 const ruleOn = k => battleSim.rules[k] ?? BattleSim.RULEBOOK[k];
-const V42_RULES = { php: 30, redraw: false, sick: false };   // the rules before v4.3, to compare against
+const V42_RULES = { php: 30, redraw: false, sick: false, winded: false, reactor: false };   // the rules before v4.3, to compare against
+const V43_RULES = { php: 40, redraw: true, sick: true, winded: false, reactor: false };   // the rules before v4.4
 // rules to try that aren't in the rulebook (see R in tools/battle-sim.js)
 const EXTRA_RULES = [
   { key: "winded", short: "Winded", label: "Winded: a creature that attacked can't hit back until your next turn" },
@@ -2487,7 +2488,7 @@ function battleNotesHTML() {
 }
 function renderBattle(body) {
   const r = battleSim.run, res = battleSim.res;
-  body.innerHTML = `<p class="ana-lead">Plays whole games by the Rulebook v4.3 rules between <b>random decks</b> made from the cards outside cold storage, with the same simple AI on both sides.
+  body.innerHTML = `<p class="ana-lead">Plays whole games by the Rulebook v4.4 rules between <b>random decks</b> made from the cards outside cold storage, with the same simple AI on both sides.
       Each random deck picks 1 faction (sometimes 2), a normal flux curve, spells that fit it, and fusions its own creatures can make.
       Cards and pairs that win clearly more often than average show up under <b>Look at these first</b>.</p>
     <div class="bs-ctl">
@@ -2502,7 +2503,8 @@ function renderBattle(body) {
       <label class="inline"><input type="checkbox" id="bsRedraw" ${ruleOn("redraw") ? "checked" : ""} ${r ? "disabled" : ""}> Free redraw for an opening hand with 0–1 creatures${BattleSim.RULEBOOK.redraw ? " (rulebook)" : ""}</label>
       <label class="inline"><input type="checkbox" id="bsSick" ${ruleOn("sick") ? "checked" : ""} ${r ? "disabled" : ""}> Creatures can't attack the turn they arrive${BattleSim.RULEBOOK.sick ? " (rulebook)" : ""}</label>
       ${EXTRA_RULES.map(x => `<label class="inline"><input type="checkbox" data-rule="${x.key}" ${ruleOn(x.key) ? "checked" : ""} ${r ? "disabled" : ""}> ${esc(x.label)}${BattleSim.RULEBOOK[x.key] ? " (rulebook)" : ""}</label>`).join("")}
-      <button class="btn" id="bsV42" ${r ? "disabled" : ""} title="30 PHP, no free redraw, creatures attack the turn they arrive">Use the v4.2 rules</button>
+      <button class="btn" id="bsV42" ${r ? "disabled" : ""} title="30 PHP, no free redraw, creatures attack the turn they arrive, no Feed/Skip, no Winded">Use the v4.2 rules</button>
+      <button class="btn" id="bsV43" ${r ? "disabled" : ""} title="40 PHP, free redraw, no attacking on arrival, no Feed/Skip, no Winded">Use the v4.3 rules</button>
       <button class="btn" id="bsBook" ${r ? "disabled" : ""}>Use the rulebook</button>
     </div>
     <div id="bsProg">${r ? battleProgHTML(r) : ""}</div>
@@ -2518,6 +2520,7 @@ function renderBattle(body) {
   $("#bsSick").onchange = e => { battleSim.rules.sick = e.target.checked; };
   body.querySelectorAll("[data-rule]").forEach(el => el.onchange = () => { battleSim.rules[el.dataset.rule] = el.checked; });
   $("#bsV42").onclick = () => { battleSim.rules = { ...V42_RULES }; renderBattle(body); };
+  $("#bsV43").onclick = () => { battleSim.rules = { ...V43_RULES }; renderBattle(body); };
   $("#bsBook").onclick = () => { battleSim.rules = {}; renderBattle(body); };
   if ($("#bsRun")) $("#bsRun").onclick = startBattles;
   if ($("#bsStop")) $("#bsStop").onclick = () => { const run = battleSim.run; if (!run) return; run.stopped = true; if (run.stopBatch) run.stopBatch(); };

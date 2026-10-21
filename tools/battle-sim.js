@@ -1,4 +1,4 @@
-/* Fusion Fuckery battle simulator (Rulebook v4.3, gameplay v2).
+/* Fusion Fuckery battle simulator (Rulebook v4.4, gameplay v2).
    Plays whole games between two decks with a rule-of-thumb AI, so the editor's Battle sim tab can play thousands
    of them and show which cards and combinations win too often. No DOM in here: tools/build.ps1 inlines this file
    into the editor, which runs it on the page (to watch one game) and in Web Workers (for big runs).
@@ -8,13 +8,13 @@
 var BattleSim = (function () {
 "use strict";
 
-const R = { php: 40, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
+const R = { php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
   handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
   early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
   redraw: true,   // v4.3: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
   sick: true,   // v4.3: creatures and fusions can't attack the turn they arrive (taking control of one isn't arriving)
   // Rules to try, aimed at giving players more decisions that matter (ideas from Magic, Lorcana, Pokemon and Yu-Gi-Oh!):
-  winded: false,      // a creature that attacked can't hit back until its controller's next turn (Magic's tapping, Lorcana's exert)
+  winded: true,       // v4.4: a creature that attacked can't hit back until its controller's next turn (Magic's tapping, Lorcana's exert)
   intercept: false,   // a creature next to a direct attacker may step in front of it and fight it instead (Magic's blocking)
   overclock: false,   // once per turn: put a card from your hand under your Reactor for +1 flux this turn (Lorcana's inkwell)
   bloodDraw: false,   // once per turn: pay 3 PHP to draw a card (a consistency engine, like Pokemon's draw Supporters)
@@ -24,7 +24,7 @@ const R = { php: 40, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3
   // Reactor Phase choices: normally +1 max flux (up to 10) and refill. You may also Feed the reactor: send 1 card from your
   // hand to Oblivion for +1 flux this turn (not max flux). Or Skip: no +1 max flux this turn, still refill, draw 1 extra card.
   // Feed and Skip don't combine; the normal draw always happens. holdAtCap: whether you may Skip once max flux is already 10.
-  reactor: false, holdAtCap: true };
+  reactor: true, holdAtCap: true };   // v4.4
 const RULEBOOK = Object.assign({}, R);
 // Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
 function withRules(rules, fn) {
@@ -908,7 +908,7 @@ const FX_TEXT = {
   "Loaded Dice": "zx6hut",
   "Blood Frenzy": "j4iw80",
   "Blood Pact Summoning Circle": "1jpgxtw",
-  "Goblin Shuffle": "k2msak",
+  "Goblin Shuffle": "1au5pap",
   "Goblin Stock Broker": "clhl85",
   "Energy drink": "idjnd2",
   "Jar of Materialism": "emr87t",
@@ -930,6 +930,8 @@ const FX_TEXT = {
   "Goblin Bombardier": "70thxd",
   "Indulgence Seller": "ogn18i",
   "Market research": "1rqsaa3",
+  "Overclock": "xlgey8",
+  "Blood Ledger": "1vrh362",
 };
 
 /* ---------------- the AI ---------------- */

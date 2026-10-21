@@ -12,31 +12,31 @@ When materialized: Restore 2 HP to another creature.",Angel,Holy / Humanoid / Wi
 Holy Acolyte,Creature,1,5,2,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 Once per turn: Restore 2 HP to another creature.",Angel,Holy / Humanoid,
-Sanctified Knight,Creature,4,10,5,2,Your creatures in the lanes next to this creature take 1 less combat damage.,Angel,Holy / Humanoid / Noble,
-Judicator Angel,Creature,5,10,7,4,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Sanctified Knight,Creature,3,8,5,2,Your creatures in the lanes next to this creature take 1 less combat damage.,Angel,Holy / Humanoid / Noble,
+Judicator Angel,Creature,4,10,7,4,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Angel,Holy / Humanoid / Winged / Noble,
-Chapel Guard,Creature,4,12,5,1,"The first time this creature would be destroyed, it survives with 1 HP instead.",Angel,Holy / Humanoid,
+Chapel Guard,Creature,4,12,6,1,"The first time this creature would be destroyed, it survives with 1 HP instead.",Angel,Holy / Humanoid,
 Purifier Nun,Creature,2,10,4,2,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage to it instead.",Angel,Holy / Humanoid,
-Bellkeeper Monk,Creature,3,14,6,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Bellkeeper Monk,Creature,3,10,6,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is in play).",Angel,Holy / Humanoid,
-Pain Drinker,Creature,5,4,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Pain Drinker,Creature,5,6,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.",Blood Demon,Unholy / Humanoid,
-Carrion Duchess,Creature,3,8,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Carrion Duchess,Creature,3,10,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 At the end of your turn: You may pay 2 PHP to return an 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.",Blood Demon,Unholy / Humanoid / Noble,
-Nomed The Dark Viscount,Creature,6,9,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
+Nomed The Dark Viscount,Creature,6,11,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
 Whenever this creature deals combat damage: Gain 1 PHP.",Blood Demon,Unholy / Humanoid / Noble,
-Renroc The Dark Marquis,Creature,5,6,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
+Renroc The Dark Marquis,Creature,5,8,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
 Once per turn: Pay 2 PHP to destroy a creature with 4 or less HP.",Blood Demon,Unholy / Humanoid / Noble,
-Blood Priest,Creature,4,6,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Blood Priest,Creature,4,8,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 Whenever you sacrifice a creature: Gain 2 PHP.",Blood Demon,Unholy / Humanoid,
-Blood Imp,Creature,1,1,1,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Blood Imp,Creature,1,2,1,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Blood Demon,Unholy / Beast / Winged,
-Vein Ripper,Creature,4,2,3,3,Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.,Blood Demon,Unholy / Beast,
-Flesh Collector,Creature,7,10,9,1,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
+Vein Ripper,Creature,4,4,3,3,Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.,Blood Demon,Unholy / Beast,
+Flesh Collector,Creature,7,12,9,1,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
 
 Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.",Blood Demon,Unholy / Amorphous,
 Hemogoblin,Creature,1+d8,8,6,3,"Once per turn: Pay 2 PHP to gain 2 gold.
@@ -164,7 +164,7 @@ Blood Frenzy,Spell,,,,,Choose an 'Unholy' creature you control: It gains +4 ATK 
 Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next 'Unholy' creature you materialize this turn costs 2 less flux.,Blood Demon,,
 Archaeologist,Spell,N/A,N/A,N/A,,Banish 3 'Dino' creatures from your Waste Repository. Materialize any 'Dino' creature that isn't a 'T-Rex' from your hand or deck.,Dino,,yes
 Fossil Record,Spell,N/A,N/A,N/A,,"Return a Dino creature from your Waste Repository to your hand. If it was a Dino Egg or T-Rex, draw 1 card.",Dino,,yes
-Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.
+Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards plus 1.
 
 For each 'Greedy' creature you put on the bottom of your deck this way, gain 1 gold.",Goblin,,
 Goblin Stock Broker,Spell,N/A,N/A,N/A,,"Pay 3 gold: Choose a real stock, ETF or cryptocurrency ticker and write down its price now.
@@ -191,7 +191,7 @@ Microwave,Spell,N/A,N/A,N/A,,"Reheat a creature from any Waste Repository and ma
 Pipebomb,Spell,N/A,N/A,N/A,,"Target a Continuous/Field Spell or Equipment on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.",,,
 Space Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent's creature cards for a turn.,,,
 Unfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it's base components.,,,
-Goblin General,Creature,1+d6,8,5,2,"Your other 'Greedy' creatures roll their dice twice and keep the higher result.
+Goblin General,Creature,1+d6,6,5,2,"Your other 'Greedy' creatures roll their dice twice and keep the higher result.
 
 Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.",Goblin,Greedy / Humanoid,
 Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.",Goblin,Greedy / Humanoid,
@@ -201,10 +201,10 @@ You may pay 2 gold: At the start of your next turn, gain 1 flux instead of 1 gol
 Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
 At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
 Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
-Archangel,Creature,7,16,10,3,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Archangel,Creature,6,14,10,3,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 Once per turn: Restore 2 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
-Goblin Pit Boss,Creature,2+d10,12,7,2,"Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold.
+Goblin Pit Boss,Creature,2+d10,10,7,2,"Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold.
 
 Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.",Goblin,Greedy / Humanoid,
 Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack deals half damage.,Goblin,Greedy / Humanoid,
@@ -226,3 +226,7 @@ Radiance (when this creature is restored past its max HP, it gains your choice o
 
 Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
 Market research,Spell,N/A,N/A,N/A,,Pay 4 gold: Search your deck for a 'Greedy' creature and put it into your hand.,Goblin,,
+Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: send a card from your hand to Oblivion. Gain 3 flux this turn.
+
+The warning lights are mostly decorative.",,,
+Blood Ledger,Field Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP to draw 1 card.",Blood Demon,,
