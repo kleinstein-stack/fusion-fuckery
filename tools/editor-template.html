@@ -230,6 +230,23 @@
   a.jump { color: #c9a6ff; text-decoration: none; } a.jump:hover { text-decoration: underline; }
   .good { color: var(--ok); }
   .tbl { overflow-x: auto; }
+  /* battle sim */
+  .bs-ctl { display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; margin: 4px 0 12px; }
+  .bs-ctl label { display: inline-flex; gap: 6px; align-items: center; }
+  .bs-ctl label.inline { margin-left: 0; }
+  .bs-prog { display: flex; gap: 10px; align-items: center; color: var(--muted); margin-bottom: 12px; }
+  .bs-prog .bar { flex: 1; max-width: 420px; margin: 0; }
+  .bs-flags { margin: 0; padding-left: 18px; line-height: 1.7; }
+  .bs-log { max-height: 480px; overflow: auto; font: 12.5px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; background: rgba(255,255,255,.03);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-top: 8px; }
+  .bs-log div { white-space: pre-wrap; }
+  .bs-log .t { color: #c9a6ff; font-weight: 600; margin-top: 8px; }
+  .bs-log .s { color: var(--muted); padding-left: 16px; }
+  .bs-log .end { color: var(--ok); font-weight: 600; margin-top: 8px; }
+  .bs-notes { margin-top: 22px; color: var(--muted); line-height: 1.55; }
+  .bs-notes summary { cursor: pointer; color: var(--text); font-weight: 600; }
+  .bs-notes li { margin: 4px 0; }
+  .atable td.num, .atable th.num { text-align: right; }
   table.atable { border-collapse: collapse; width: 100%; font-size: 13px; }
   .atable th, .atable td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
   .atable th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--panel); }
@@ -377,6 +394,7 @@
       <button class="chip" data-t="compare">Compare versions</button>
       <button class="chip" data-t="sim">Hand test</button>
       <button class="chip" data-t="lanes">Lane sim</button>
+      <button class="chip" data-t="battle">Battle sim</button>
     </div>
     <button class="btn" onclick="this.closest('dialog').close()">✕</button>
   </div>
@@ -419,6 +437,7 @@
 </dialog>
 
 <script src="art/art.js"></script>
+<script id="battleEngine">__BATTLE_ENGINE__</script>
 <script>
 const EMBEDDED_CSV = __CSV_DATA__;
 const EMBEDDED_NAME = "Base set - Fusion Fuckery - v6.csv";
@@ -1850,7 +1869,7 @@ function openAnalysis(tab) {
   dlg.querySelectorAll(".ana-tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === anaTab));
   const body = document.getElementById("anaBody");
   body.innerHTML = `<div class="dp-empty">Working…</div>`;
-  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim, lanes: renderLanes })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
+  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim, lanes: renderLanes, battle: renderBattle })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
 }
 function jumpTo(name) {
   const c = cards.find(x => cardKey(x) === name) || cards.find(x => lc(cardKey(x)) === lc(name));
@@ -2138,6 +2157,266 @@ function renderLanes(body) {
     laneSim.log.unshift(entry); laneSim.log.length = Math.min(laneSim.log.length, 8);   // newest first
     rerender();
   });
+}
+
+/* ---------- 7. battle simulator ----------
+   Whole games between random decks, played by tools/battle-sim.js (inlined by tools/build.ps1 as #battleEngine).
+   Big runs go to Web Workers started from that script's text; where the browser won't start workers, they run
+   here 10 games at a time so the page stays usable. */
+const battleSim = { n: 1000, saved: true, run: null, res: null, watchA: "", watchB: "", log: null };
+function battleDefs() {
+  const seen = new Set();
+  return cards.filter(c => !isCold(c) && cardKey(c) && !seen.has(cardKey(c)) && seen.add(cardKey(c))).map(c => {
+    const fusion = isFusionCard(c), dice = diceOf(c), rec = fusion ? parseRecipe(c) : null;
+    return { name: cardKey(c), kind: fusion ? "fusion" : category(c) === "Creature" ? "creature" : (spellKind(c) || "spell"),
+      flux: fluxOf(c), atk: dice ? dice.base : (parseInt(c.data[COLS.atk], 10) || 0), die: dice ? dice.die : 0, hp: hpNum(c) || 0,
+      spd: speedOf(c) ?? PLAY.speedNormal, attrs: attrsOf(c).map(lc), factions: factions(c), bp: bloodPriceOf(c),
+      radiance: /\bradiance\b/i.test(c.data[COLS.desc]), text: c.data[COLS.desc],
+      recipe: rec && { distinct: rec.distinct, parts: rec.parts.map(p => ({ kind: p.kind, value: p.value, count: p.count })) } };
+  });
+}
+const savedBattleDecks = () => deckState.decks.filter(d => Object.keys(d.cards).length).map(d => ({ label: d.name, cards: Object.entries(d.cards) }));
+function startBattles() {
+  const defs = battleDefs(), fixed = battleSim.saved ? savedBattleDecks() : [];
+  const run = battleSim.run = { n: battleSim.n, done: 0, recs: [], workers: [], seed: Math.floor(Math.random() * 2 ** 31), t0: performance.now() };
+  battleSim.res = null;
+  run.finish = () => {
+    if (run.over) return;
+    run.over = true;
+    run.workers.forEach(w => w.terminate());
+    if (battleSim.run === run) battleSim.run = null;
+    battleSim.res = run.error ? { error: run.error } : run.recs.length ? battleStats(run.recs, defs, { ms: performance.now() - run.t0, stopped: !!run.stopped, asked: run.n }) : null;
+    refreshBattle();
+  };
+  const local = () => {   // no Web Workers: play them here
+    run.local = true; run.workers.forEach(w => w.terminate()); run.workers = []; run.recs = []; run.done = 0;
+    let start = 0;
+    const step = () => {
+      if (run.over) return;
+      if (run.stopped || start >= run.n) return run.finish();
+      const count = Math.min(10, run.n - start);
+      try { run.recs.push(...BattleSim.runMany(defs, { fixed, seed: run.seed, start, count })); } catch (e) { run.error = e.message; return run.finish(); }
+      start += count; run.done = run.recs.length; battleProgress(); setTimeout(step, 0);
+    };
+    step();
+  };
+  let url = null;
+  try { url = URL.createObjectURL(new Blob([document.getElementById("battleEngine").textContent], { type: "text/javascript" })); } catch {}
+  const parts = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1, Math.ceil(run.n / 100))), per = Math.ceil(run.n / parts);
+  let left = 0;
+  try {
+    if (!url) throw new Error("no workers");
+    for (let k = 0; k < parts; k++) {
+      const start = k * per, count = Math.min(per, run.n - start); if (count <= 0) break;
+      const w = new Worker(url); run.workers.push(w); left++;
+      w.onmessage = e => {
+        const m = e.data; if (run.over || run.local) return;
+        if (m.type === "batch") { run.recs.push(...m.recs); run.done = run.recs.length; battleProgress(); }
+        else if (m.type === "done") { if (--left === 0) run.finish(); }
+        else if (m.type === "error") { run.error = m.message; run.finish(); }
+      };
+      w.onerror = e => { e.preventDefault(); if (run.over || run.local) return; if (run.recs.length) { run.error = e.message || "A worker stopped."; run.finish(); } else local(); };
+      w.postMessage({ defs, fixed, seed: run.seed, start, count });
+    }
+  } catch { local(); }
+  refreshBattle();
+}
+function refreshBattle() { if (document.getElementById("anaDlg").open && anaTab === "battle") renderBattle(document.getElementById("anaBody")); }
+const battleProgHTML = r => `<div class="bs-prog"><div class="bar ok"><i style="width:${Math.round(r.done / r.n * 100)}%"></i></div>
+  <span>${r.done.toLocaleString()} / ${r.n.toLocaleString()} games${r.local ? " (this browser won't run them in the background, so the page may feel slow)" : ""}</span></div>`;
+function battleProgress() { const el = document.getElementById("bsProg"); if (el && battleSim.run) el.innerHTML = battleProgHTML(battleSim.run); }
+
+function battleStats(recs, defs, meta) {
+  // Card stats only use random decks (saved decks get their own table). Whether a card sits in the top cards of the
+  // shuffled deck is pure chance, so "won when it was there" vs "won when it wasn't" is a fair test of the card,
+  // free of the bias that cards drawn late only show up in long games.
+  const N = defs.length;
+  const C = defs.map(d => ({ d, deckN: 0, deckW: 0, inN: 0, inW: 0, outN: 0, outW: 0, drawnN: 0, playN: 0, madeN: 0, madeW: 0 }));
+  const pairs = new Map(), arch = new Map(), fixed = new Map(), ends = { php: 0, deck: 0, limit: 0 };
+  let firstW = 0, decided = 0, turns = 0;
+  for (const r of recs) {
+    turns += r.t; ends[r.end] = (ends[r.end] || 0) + 1;
+    if (r.w >= 0) { decided++; if (r.w === r.f) firstW++; }
+    r.p.forEach((pl, i) => {
+      const win = r.w < 0 ? 0.5 : r.w === i ? 1 : 0, opp = r.p[1 - i];
+      if (pl.fixed) { const e = fixed.get(pl.label) || { n: 0, w: 0, t: 0 }; e.n++; e.w += win; e.t += r.t; fixed.set(pl.label, e); return; }
+      if (!opp.fixed) { const k = pl.arch + "\t" + opp.arch, e = arch.get(k) || { n: 0, w: 0 }; e.n++; e.w += win; arch.set(k, e); }
+      const top = new Set(pl.top), drawn = new Set(pl.drawn), played = new Set(pl.played), fused = new Set(pl.fused), fus = new Set(pl.fus);
+      for (const x of pl.main) {
+        const s = C[x]; s.deckN++; s.deckW += win;
+        if (top.has(x)) { s.inN++; s.inW += win; } else { s.outN++; s.outW += win; }
+        if (drawn.has(x)) { s.drawnN++; if (played.has(x)) s.playN++; }
+      }
+      // fusions: decks that could make it, with it in the Fusion Deck vs without
+      for (const x of pl.elig || []) {
+        const s = C[x];
+        if (fus.has(x)) { s.deckN++; s.deckW += win; s.inN++; s.inW += win; if (fused.has(x)) { s.madeN++; s.madeW += win; } } else { s.outN++; s.outW += win; }
+      }
+      // pairs of Main Deck cards, split by which of the two were in the top cards
+      const deck = pl.main.slice().sort((a, b) => a - b);
+      for (let a = 0; a < deck.length; a++) for (let b = a + 1; b < deck.length; b++) {
+        const k = deck[a] * N + deck[b]; let e = pairs.get(k);
+        if (!e) pairs.set(k, e = new Float64Array(8));
+        const cell = 2 * ((top.has(deck[a]) ? 2 : 0) + (top.has(deck[b]) ? 1 : 0)); e[cell]++; e[cell + 1] += win;
+      }
+    });
+  }
+  const rate = (w, n) => n ? w / n : NaN;
+  const rows = C.filter(s => s.deckN).map(s => {
+    const pi = rate(s.inW, s.inN), po = rate(s.outW, s.outN);
+    const se = Math.sqrt((s.inN ? Math.max(pi * (1 - pi), 0.05) / s.inN : 0.25) + (s.outN ? Math.max(po * (1 - po), 0.05) / s.outN : 0.25));
+    const r = { ...s, fusion: s.d.kind === "fusion", deckWR: rate(s.deckW, s.deckN), inWR: pi, outWR: po, impact: pi - po, se,
+      playRate: s.drawnN ? s.playN / s.drawnN : 0, madeRate: s.inN ? s.madeN / s.inN : 0, madeWR: rate(s.madeW, s.madeN) };
+    r.enough = r.inN >= 20 && r.outN >= 20; r.z = r.impact / se;
+    r.verdict = !r.enough ? "" : r.impact >= 0.1 && r.z >= 3 ? "Too strong?" : r.impact >= 0.05 && r.z >= 2.5 ? "Strong" : r.impact <= -0.05 && r.z <= -2.5 ? "Weak" : "";
+    return r;
+  });
+  rows.sort((a, b) => (b.enough - a.enough) || (b.impact - a.impact));
+  // Combos: in decks with both cards, does having both early win more than the two cards' separate effects add up to?
+  // Measured on the log-odds scale (two strong cards can't push a 70% deck to 110%), then shown as "expected vs got".
+  // Hundreds of pairs are tested at once, so a pair only counts as a combo when it passes a false-discovery check (10%).
+  const lg = x => { x = Math.min(0.98, Math.max(0.02, x)); return Math.log(x / (1 - x)); }, sig = x => 1 / (1 + Math.exp(-x));
+  const erfc = x => { const z = Math.abs(x), u = 1 / (1 + z / 2), r = u * Math.exp(-z * z - 1.26551223 + u * (1.00002368 + u * (0.37409196 + u * (0.09678418 + u * (-0.18628806
+    + u * (0.27886807 + u * (-1.13520398 + u * (1.48851587 + u * (-0.82215223 + u * 0.17087277))))))))); return x >= 0 ? r : 2 - r; };
+  const pairList = [];
+  for (const [k, e] of pairs) {
+    if (Math.min(e[0], e[2], e[4], e[6]) < 30) continue;
+    const r = c => e[c + 1] / e[c], v = c => { const q = Math.min(0.98, Math.max(0.02, r(c))); return 1 / (e[c] * q * (1 - q)); };
+    const synL = lg(r(6)) - lg(r(4)) - lg(r(2)) + lg(r(0)), z = synL / Math.sqrt(v(0) + v(2) + v(4) + v(6));
+    const expected = sig(lg(r(4)) + lg(r(2)) - lg(r(0)));
+    pairList.push({ a: C[Math.floor(k / N)].d.name, b: C[k % N].d.name, n: e[6], both: r(6), onlyA: r(4), onlyB: r(2), neither: r(0), expected, syn: r(6) - expected, z, p: erfc(z / Math.SQRT2) / 2 });
+  }
+  pairList.sort((x, y) => x.p - y.p);
+  let cut = -1; pairList.forEach((x, i) => { if (x.p <= (i + 1) / pairList.length * 0.1) cut = i; });
+  pairList.forEach((x, i) => { x.sure = i <= cut && x.syn >= 0.03; });
+  const combos = pairList.filter(x => x.sure), nearCombos = pairList.filter(x => !x.sure && x.syn >= 0.03 && x.z >= 2).slice(0, 8);
+  const archNames = [...new Set([...arch.keys()].map(k => k.split("\t")[0]))].sort();
+  const archTot = archNames.map(a => { let n = 0, w = 0; for (const [k, e] of arch) if (k.split("\t")[0] === a) { n += e.n; w += e.w; } return { a, n, w }; });
+  let fusedGames = 0, players = 0; for (const r of recs) for (const pl of r.p) if (!pl.fixed) { players++; if (pl.fused.length) fusedGames++; }
+  const avgImpact = list => { const l = list.filter(r => r.enough), w = l.reduce((a, r) => a + r.deckN, 0); return w ? l.reduce((a, r) => a + r.impact * r.deckN, 0) / w : NaN; };
+  return { games: recs.length, meta, firstWR: decided ? firstW / decided : NaN, turns: turns / recs.length, ends, rows, combos: combos.slice(0, 15), nearCombos, pairsTested: pairList.length, arch, archNames, archTot, fixed,
+    fusedRate: players ? fusedGames / players : NaN, creatureImpact: avgImpact(rows.filter(r => r.d.kind === "creature")), spellImpact: avgImpact(rows.filter(r => !isUnitKind(r.d.kind))) };
+}
+const bsPct = x => isNaN(x) ? "–" : Math.round(x * 100) + "%";
+const bsSigned = x => isNaN(x) ? "–" : (x >= 0 ? "+" : "−") + Math.abs(x * 100).toFixed(1) + "%";
+const isUnitKind = k => k === "creature" || k === "fusion";
+const bsLink = n => `<a href="#" class="jump" data-n="${esc(n)}">${esc(n)}</a>`;
+const bsKind = d => d.kind === "fusion" ? "Fusion" : d.kind === "creature" ? `Creature, ${d.flux} flux` : ({ instant: "Instant Spell", continuous: "Continuous Spell", field: "Field Spell" })[d.kind] || "Spell";
+function battleResultsHTML(s) {
+  if (s.error) return `<div class="issues"><li>The simulation stopped with an error: ${esc(s.error)}</li></div>`;
+  const G = s.games, vc = v => v === "Weak" ? "lo" : v ? "hi" : "";
+  const strong = s.rows.filter(r => r.verdict && r.impact > 0), weak = s.rows.filter(r => r.verdict === "Weak").reverse();
+  weak.splice(5);   // the 5 weakest; the tables have the rest
+  const flag = r => `<li><b class="${vc(r.verdict)}">${r.verdict}</b> ${bsLink(r.d.name)}: ${r.fusion
+      ? `decks that could make it won <b>${bsPct(r.inWR)}</b> with it in the Fusion Deck and ${bsPct(r.outWR)} without it`
+      : `decks won <b>${bsPct(r.inWR)}</b> of games where it was drawn early and ${bsPct(r.outWR)} where it wasn't`} (${bsSigned(r.impact)}, ±${Math.round(1.96 * r.se * 100)}%).</li>`;
+  const combo = c => `<li><b class="hi">Combo</b> ${bsLink(c.a)} + ${bsLink(c.b)}: decks with both won <b>${bsPct(c.both)}</b> when both were drawn early (${c.n} games),
+    where ${bsPct(c.expected)} was expected from ${bsPct(c.onlyA)} with only the first, ${bsPct(c.onlyB)} with only the second and ${bsPct(c.neither)} with neither.</li>`;
+  const pairRow = c => `<tr><td>${bsLink(c.a)} + ${bsLink(c.b)}</td><td class="num">${c.n}</td><td class="num">${bsPct(c.neither)}</td><td class="num">${bsPct(c.onlyA)}</td><td class="num">${bsPct(c.onlyB)}</td>
+    <td class="num">${bsPct(c.expected)}</td><td class="num"><b>${bsPct(c.both)}</b></td><td class="num hi">${bsSigned(c.syn)}</td><td>${c.sure ? "Combo" : "not sure yet"}</td></tr>`;
+  const main = s.rows.filter(r => !r.fusion), fus = s.rows.filter(r => r.fusion);
+  const row = r => `<tr><td>${bsLink(r.d.name)}</td>${r.fusion ? "" : `<td>${esc(bsKind(r.d))}</td>`}<td class="num">${r.deckN}</td>
+    ${r.fusion ? `<td class="num">${bsPct(r.madeRate)}</td><td class="num">${bsPct(r.madeWR)}</td>` : `<td class="num">${bsPct(r.deckWR)}</td>`}
+    <td class="num">${bsPct(r.inWR)}</td><td class="num">${bsPct(r.outWR)}</td><td class="num ${vc(r.verdict)}">${r.enough ? bsSigned(r.impact) : "–"}</td>
+    <td class="num">${r.enough ? "±" + Math.round(1.96 * r.se * 100) + "%" : "few games"}</td>${r.fusion ? "" : `<td class="num">${bsPct(r.playRate)}</td>`}<td class="${vc(r.verdict)}">${r.verdict}</td></tr>`;
+  const ends = s.ends;
+  return `<p class="ana-lead"><b>${G.toLocaleString()}</b> games${s.meta.stopped ? ` (stopped early, out of ${s.meta.asked.toLocaleString()})` : ""} in ${(s.meta.ms / 1000).toFixed(1)} s ·
+      the player going first won <b>${bsPct(s.firstWR)}</b> · a game lasts <b>${(s.turns / 2).toFixed(1)}</b> turns each ·
+      ${bsPct(ends.php / G)} ended in combat or effect damage, ${bsPct(ends.deck / G)} by running out of cards, ${bsPct(ends.limit / G)} were draws at the ${BattleSim.R.turnLimit}-turn limit ·
+      a player made at least one fusion in <b>${bsPct(s.fusedRate)}</b> of games · getting a creature early is worth ${bsSigned(s.creatureImpact)} on average, a spell ${bsSigned(s.spellImpact)}.</p>
+    <h3>Look at these first</h3>
+    ${strong.length || weak.length || s.combos.length ? `<ul class="bs-flags">${strong.map(flag).join("")}${s.combos.slice(0, 6).map(combo).join("")}${weak.map(flag).join("")}</ul>`
+      : `<p class="good">Nothing stands out after ${G.toLocaleString()} games. More games show smaller differences.</p>`}
+    <h3>Main Deck cards <span class="n">${main.length}</span></h3>
+    <p class="ana-lead">"Drawn early" means it was in the top ${BattleSim.R.early} cards of the shuffled deck (the opening hand and about 7 draws). That's down to luck, so comparing
+      those games with the rest shows what the card itself does. <b>Impact</b> is the difference: how much more often a deck wins when it gets this card early instead of another card from the same deck.</p>
+    <div class="tbl"><table class="atable"><tr><th>Card</th><th>Type</th><th class="num">Games in a deck</th><th class="num">Deck won</th><th class="num">Won when drawn early</th>
+      <th class="num">Won when not</th><th class="num">Impact</th><th class="num">±</th><th class="num">Played when drawn</th><th></th></tr>${main.map(row).join("")}</table></div>
+    <h3>Fusions <span class="n">${fus.length}</span></h3>
+    <p class="ana-lead">Random decks put each fusion they can make in their Fusion Deck 60% of the time. Impact compares those decks with the ones that left it out.
+      "Won when made" looks good for every fusion, because the player who fuses is usually already ahead.</p>
+    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th class="num">Games in a Fusion Deck</th><th class="num">Made in</th><th class="num">Won when made</th><th class="num">Won with it</th>
+      <th class="num">Won without it</th><th class="num">Impact</th><th class="num">±</th><th></th></tr>${fus.map(row).join("")}</table></div>
+    <h3>Card pairs</h3>
+    <p class="ana-lead">Pairs of Main Deck cards that win more together than apart (${s.pairsTested.toLocaleString()} pairs had enough games to test). "Expected" is what both early
+      should win if the two cards didn't help each other. With this many pairs a few look good by luck, so only the ones that pass a check for that say <b>Combo</b>.</p>
+    ${s.combos.length + s.nearCombos.length ? `<div class="tbl"><table class="atable"><tr><th>Pair</th><th class="num">Games with both early</th><th class="num">Neither</th><th class="num">Only the first</th>
+      <th class="num">Only the second</th><th class="num">Expected</th><th class="num">Both</th><th class="num">Extra</th><th></th></tr>${s.combos.concat(s.nearCombos).map(pairRow).join("")}</table></div>`
+      : `<p class="good">No pair stands out yet.</p>`}
+    <h3>Factions</h3>
+    <p class="ana-lead">Win % of the row's random decks against the column's. "Angel + Goblin" is a deck mixing both. The small number is how many games.</p>
+    <div class="tbl"><table class="atable"><tr><th></th><th class="num">Overall</th>${s.archNames.map(n => `<th class="num">vs ${esc(n)}</th>`).join("")}</tr>
+      ${s.archTot.map(t => `<tr><td>${esc(t.a)}</td><td class="num"><b>${bsPct(t.w / t.n)}</b> <small>${t.n}</small></td>${s.archNames.map(b => {
+        const e = s.arch.get(t.a + "\t" + b); return `<td class="num">${t.a === b ? "–" : e ? `${bsPct(e.w / e.n)} <small>${e.n}</small>` : ""}</td>`; }).join("")}</tr>`).join("")}
+    </table></div>
+    ${s.fixed.size ? `<h3>Your saved decks</h3><p class="ana-lead">Each one played every other game against a random deck.</p>
+      <div class="tbl"><table class="atable"><tr><th>Deck</th><th class="num">Games</th><th class="num">Won</th><th class="num">±</th><th class="num">Turns each</th></tr>
+      ${[...s.fixed].map(([name, e]) => `<tr><td>${esc(name)}</td><td class="num">${e.n}</td><td class="num"><b>${bsPct(e.w / e.n)}</b></td>
+        <td class="num">±${Math.round(1.96 * Math.sqrt(Math.max(e.w / e.n * (1 - e.w / e.n), 0.05) / e.n) * 100)}%</td><td class="num">${(e.t / e.n / 2).toFixed(1)}</td></tr>`).join("")}</table></div>` : ""}`;
+}
+function playWatchGame() {
+  const raw = battleDefs(), D = BattleSim.prep(raw), seed = Math.floor(Math.random() * 2 ** 31), rng = BattleSim.rngFrom(seed + 1);
+  const deckOf = name => { const d = name && deckState.decks.find(x => x.name === name); return d ? BattleSim.deckFromList(D, d.name, Object.entries(d.cards)) : BattleSim.randomDeck(D, rng); };
+  const A = deckOf(battleSim.watchA), B = deckOf(battleSim.watchB);
+  const g = BattleSim.playGame(D, A, B, seed, true);
+  const list = names => { const m = new Map(); names.forEach(n => m.set(n, (m.get(n) || 0) + 1)); return [...m].map(([n, q]) => `${q}× ${esc(n)}`).join(", ") || "none"; };
+  battleSim.log = { lines: g.log, decks: [A, B].map((d, i) => `<b>${esc(g.names[i])}</b>: ${list(d.main)}. <i>Fusion Deck:</i> ${list(d.fusion)}.`) };
+}
+function battleWatchHTML() {
+  const opts = sel => `<option value="">Random deck</option>` + deckState.decks.filter(d => Object.keys(d.cards).length)
+    .map(d => `<option value="${esc(d.name)}" ${d.name === sel ? "selected" : ""}>${esc(d.name)}</option>`).join("");
+  const lg = battleSim.log;
+  const line = l => l.startsWith("— Turn") ? `<div class="t">${esc(l)}</div>` : l.startsWith("  ") ? `<div class="s">${esc(l.trim())}</div>`
+    : /wins \(|draw\.$/.test(l) ? `<div class="end">${esc(l)}</div>` : `<div>${esc(l)}</div>`;
+  return `<h3>Watch one game</h3>
+    <p class="ana-lead">See how the AI plays a whole game, turn by turn. <select id="bwA">${opts(battleSim.watchA)}</select> vs <select id="bwB">${opts(battleSim.watchB)}</select>
+      <button class="btn" id="bwGo">Play a game</button></p>
+    ${lg ? `<details class="ana-lead"><summary>The two decks</summary>${lg.decks.map(d => `<p>${d}</p>`).join("")}</details><div class="bs-log">${lg.lines.map(line).join("")}</div>` : ""}`;
+}
+function battleNotesHTML() {
+  const cov = BattleSim.coverage(battleDefs());
+  return `<details class="bs-notes" ${cov.missing.length || cov.changed.length ? "open" : ""}><summary>How the sim plays, and what it can't tell you</summary><ul>
+    <li>Both players use the same simple AI. It plays the creatures and fusion that use its flux and lanes best, pays Blood Price PHP when it can spare it,
+      uses removal, heals and gold when they're worth it, and attacks when the trade is good. Dice count at their average when it decides, then get rolled.
+      It doesn't mulligan and doesn't look at the other player's hand.</li>
+    <li>A misplayed card looks weaker than it is. Use <b>Watch one game</b> to check how a card gets played.</li>
+    <li><b>Impact</b>: win % when a card was in the top ${BattleSim.R.early} cards of the shuffled deck minus win % when it wasn't (a fusion: in the Fusion Deck or not).
+      <b>±</b> is how sure that is: the real number is very likely within it. Differences under 5% need a few thousand games to show. Card stats only count random decks.</li>
+    <li><b>Combos</b> compare the same decks with both cards drawn early, only one, or neither. A combo wins more with both than the two cards' separate effects add up to.
+      Pairs of cards from different factions only meet in mixed decks, so they need more games.</li>
+    <li>Rules the sim follows on top of the rulebook: once-per-turn effects count per card name (15.7); a game nobody has won after ${BattleSim.R.turnLimit} turns each is a draw (half a win).</li>
+    <li>Calls the sim makes where cards are open to reading: Goblin Stock Broker is a coin flip. Microwave takes creatures, not fusions.
+      Space Squid's creature moves to an empty lane on your side until the end of the turn. Unfuse sends the fusion back to its Fusion Deck and puts its splices
+      back on the field at full HP. Skinless Titan's 2 damage only triggers on combat kills. Goblin Pit Boss only rerolls on its own turn. Loaded Dice rerolls dice ATK.
+      Hemogoblin's Speed ability and Goblin Miner's extra flux are used rarely.</li>
+    ${cov.missing.length ? `<li class="hi">Played with stats only, because the sim has no code for their effect yet: ${cov.missing.map(bsLink).join(", ")}. Spells among them are left out of random decks.</li>` : ""}
+    ${cov.changed.length ? `<li class="hi">Card text changed since the sim's version of the effect was written, so it may still play them the old way: ${cov.changed.map(bsLink).join(", ")}.</li>` : ""}
+  </ul></details>`;
+}
+function renderBattle(body) {
+  const r = battleSim.run, res = battleSim.res;
+  body.innerHTML = `<p class="ana-lead">Plays whole games by the Rulebook v4.2 rules between <b>random decks</b> made from the cards outside cold storage, with the same simple AI on both sides.
+      Each random deck picks 1 faction (sometimes 2), a normal flux curve, spells that fit it, and fusions its own creatures can make.
+      Cards and pairs that win clearly more often than average show up under <b>Look at these first</b>.</p>
+    <div class="bs-ctl">
+      <label>Games <select id="bsN" ${r ? "disabled" : ""}>${[100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000].map(v => `<option value="${v}" ${v === battleSim.n ? "selected" : ""}>${v.toLocaleString()}</option>`).join("")}</select></label>
+      <label class="inline"><input type="checkbox" id="bsSaved" ${battleSim.saved ? "checked" : ""} ${r ? "disabled" : ""}> Also play my saved decks against random decks</label>
+      ${r ? `<button class="btn" id="bsStop">■ Stop</button>` : `<button class="btn primary" id="bsRun">▶ Run</button>`}
+    </div>
+    <div id="bsProg">${r ? battleProgHTML(r) : ""}</div>
+    <div id="bsOut">${res ? battleResultsHTML(res) : r ? "" : `<p class="dp-empty">Pick how many games and press Run.</p>`}</div>
+    ${battleWatchHTML()}${battleNotesHTML()}`;
+  const $ = s => body.querySelector(s);
+  $("#bsN").onchange = e => { battleSim.n = +e.target.value; };
+  $("#bsSaved").onchange = e => { battleSim.saved = e.target.checked; };
+  if ($("#bsRun")) $("#bsRun").onclick = startBattles;
+  if ($("#bsStop")) $("#bsStop").onclick = () => { const run = battleSim.run; if (!run) return; run.stopped = true; if (!run.local) run.finish(); };
+  $("#bwA").onchange = e => { battleSim.watchA = e.target.value; };
+  $("#bwB").onchange = e => { battleSim.watchB = e.target.value; };
+  $("#bwGo").onclick = () => {
+    try { playWatchGame(); } catch (e) { battleSim.log = { lines: ["The game stopped with an error: " + e.message], decks: [] }; }
+    renderBattle(body); const lg = body.querySelector(".bs-log"); if (lg) lg.previousElementSibling.scrollIntoView({ block: "start" });
+  };
 }
 
 document.getElementById("anaBtn").onclick = () => openAnalysis();

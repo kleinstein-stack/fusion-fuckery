@@ -230,6 +230,23 @@
   a.jump { color: #c9a6ff; text-decoration: none; } a.jump:hover { text-decoration: underline; }
   .good { color: var(--ok); }
   .tbl { overflow-x: auto; }
+  /* battle sim */
+  .bs-ctl { display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; margin: 4px 0 12px; }
+  .bs-ctl label { display: inline-flex; gap: 6px; align-items: center; }
+  .bs-ctl label.inline { margin-left: 0; }
+  .bs-prog { display: flex; gap: 10px; align-items: center; color: var(--muted); margin-bottom: 12px; }
+  .bs-prog .bar { flex: 1; max-width: 420px; margin: 0; }
+  .bs-flags { margin: 0; padding-left: 18px; line-height: 1.7; }
+  .bs-log { max-height: 480px; overflow: auto; font: 12.5px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; background: rgba(255,255,255,.03);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-top: 8px; }
+  .bs-log div { white-space: pre-wrap; }
+  .bs-log .t { color: #c9a6ff; font-weight: 600; margin-top: 8px; }
+  .bs-log .s { color: var(--muted); padding-left: 16px; }
+  .bs-log .end { color: var(--ok); font-weight: 600; margin-top: 8px; }
+  .bs-notes { margin-top: 22px; color: var(--muted); line-height: 1.55; }
+  .bs-notes summary { cursor: pointer; color: var(--text); font-weight: 600; }
+  .bs-notes li { margin: 4px 0; }
+  .atable td.num, .atable th.num { text-align: right; }
   table.atable { border-collapse: collapse; width: 100%; font-size: 13px; }
   .atable th, .atable td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
   .atable th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--panel); }
@@ -377,6 +394,7 @@
       <button class="chip" data-t="compare">Compare versions</button>
       <button class="chip" data-t="sim">Hand test</button>
       <button class="chip" data-t="lanes">Lane sim</button>
+      <button class="chip" data-t="battle">Battle sim</button>
     </div>
     <button class="btn" onclick="this.closest('dialog').close()">✕</button>
   </div>
@@ -419,6 +437,1135 @@
 </dialog>
 
 <script src="art/art.js"></script>
+<script id="battleEngine">/* Fusion Fuckery battle simulator (Rulebook v4.2, gameplay v2).
+   Plays whole games between two decks with a rule-of-thumb AI, so the editor's Battle sim tab can play thousands
+   of them and show which cards and combinations win too often. No DOM in here: tools/build.ps1 inlines this file
+   into the editor, which runs it on the page (to watch one game) and in Web Workers (for big runs).
+   Card effects are written per card name in FX (creatures, fusions) and SPELLS. A card without an entry plays with
+   its stats only and the editor lists it. FX_TEXT remembers the card text each effect was written for, so the
+   editor can say when a card's text has changed since. */
+var BattleSim = (function () {
+"use strict";
+
+const R = { php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
+  handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
+  early: 12 };   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
+
+/* ---------------- helpers ---------------- */
+function rngFrom(seed) {   // mulberry32: same seed, same game
+  let a = seed >>> 0;
+  return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function shuffle(rng, a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const pick = (rng, a) => a[Math.floor(rng() * a.length)];
+const lc = s => String(s || "").toLowerCase();
+const isUnitKind = k => k === "creature" || k === "fusion";
+const NB = [[1], [0, 2], [1]];   // the lanes next to each lane
+const LANE = ["left", "middle", "right"];
+const units = p => p.lanes.filter(Boolean);
+const foe = (g, p) => g.p[1 - p.i];
+const allUnits = g => units(g.p[0]).concat(units(g.p[1]));
+const onField = (g, u) => !!u && g.p[u.ctrl].lanes[u.lane] === u;
+const fxOf = u => u.negated ? null : u.d.fx;
+const emptyLanes = p => [0, 1, 2].filter(l => !p.lanes[l]);
+const hasAttr = (d, a) => d.attrs.includes(a);
+const spellsOf = p => p.field ? p.zones.concat([p.field]) : p.zones;
+const freeZone = p => p.zones.length < R.zones;
+const canPay = (p, n) => p.php > n;   // the AI never pays itself to 0
+const L = (g, s) => { if (g.log) g.log.push(s); };
+const who = (g, p) => g.names[p.i];
+function textHash(s) {
+  s = lc(s).replace(/\s+/g, " ").trim(); let h = 5381;
+  for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+// average of a die, or of the higher of two dice ("roll twice and keep the higher result")
+const dieAvg = (n, adv) => { if (!n) return 0; if (!adv) return (n + 1) / 2; let s = 0; for (let k = 1; k <= n; k++) s += k * (2 * k - 1); return s / (n * n); };
+
+/* ---------------- stats the AI and the rules read ---------------- */
+function advantage(g, u) {
+  if (!u.die) return false;
+  const f = fxOf(u); if (f && f.selfAdvantage) return true;
+  if (!hasAttr(u.d, "greedy")) return false;
+  return units(g.p[u.ctrl]).some(k => { const kf = fxOf(k); return kf && (kf.greedyAdvantage === "all" || (kf.greedyAdvantage === "others" && k !== u)); });
+}
+function atkOf(g, u) {   // ATK without the die
+  let a = u.atk + u.pAtk + u.tAtk + u.radAtk;
+  const p = g.p[u.ctrl];
+  for (const k of units(p)) { const f = fxOf(k); if (f && f.aura) a += f.aura(g, k, u); }
+  for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.aura) a += f.aura(g, p, u); }
+  return Math.max(0, a);
+}
+const expAtk = (g, u) => atkOf(g, u) + dieAvg(u.die, advantage(g, u));
+const speedOf = u => u.spd + u.tSpd;
+function valueOf(g, u) { const f = fxOf(u); return expAtk(g, u) + Math.max(0, u.hp) / 2 + (speedOf(u) - 2) + (f && f.value || 0); }
+const defValue = d => d.atk + dieAvg(d.die) + d.hp / 2 + (d.spd - 2) + (d.fx && d.fx.value || 0);
+// how much the AI cares about 1 PHP / 1 gold right now
+function phpW(g, p) {   // the same curve the attacker uses for damage to the other player (scoreFace)
+  const threat = units(foe(g, p)).reduce((s, u) => s + expAtk(g, u), 0);
+  return (0.45 + 6 / Math.max(1, p.php)) * (p.php - threat <= 6 ? 1.5 : 1);
+}
+function goldW(g, p) {
+  const sink = units(p).some(u => { const f = fxOf(u); return f && f.goldSink; }) || p.hand.some(c => c.d.fx && c.d.fx.goldSink);
+  return sink ? 0.7 : 0.25;
+}
+function goldReserve(g, p, except) {   // gold the AI keeps for Bull Run / Goblin King / a gold card in hand
+  let r = spellsOf(p).some(z => z.c.d.fx && z.c.d.fx.wantsGold5) || units(p).some(u => fxOf(u) && fxOf(u).wantsGold5) ? 5 : 0;
+  for (const c of p.hand) if (c !== except && c.d.fx && c.d.fx.goldCost) r = Math.max(r, c.d.fx.goldCost);
+  return r;
+}
+// what losing u costs its controller (a Blood Frenzy creature is sacrificed at the end of the turn anyway, once it has attacked)
+const keepWorth = (g, u) => u.stolen ? -valueOf(g, u) * 0.6 : u.frenzy ? (u.attacked ? 0 : 4) : valueOf(g, u);
+function killWorth(g, p, u) {   // what destroying u is worth to p
+  if (u.ctrl === p.i) return -keepWorth(g, u);
+  let v = valueOf(g, u) + 1;
+  const f = fxOf(u);
+  if (f && f.survive && !u.chapel) v *= 0.25;
+  if (f && f.returns && !u.c.lazarusUsed) v *= 0.5;
+  if (f && f.deathPenalty) v -= f.deathPenalty;
+  return v;
+}
+function damageWorth(g, p, u, n) {   // non-combat damage
+  if (n <= 0) return 0;
+  if (n >= u.hp) return killWorth(g, p, u);
+  const v = (n / Math.max(1, u.maxHp)) * valueOf(g, u) * 0.5;
+  return u.ctrl === p.i && !u.stolen ? -v : v;
+}
+const radiant = u => u.d.radiance && !u.negated;
+const wantsAtk = (g, u) => g.active === u.ctrl && g.phase <= 2 && !u.attacked;   // Radiance: +ATK before it attacks, else +HP
+function healWorth(g, u, n) {
+  const missing = Math.max(0, u.maxHp - u.hp), healed = Math.min(n, missing), extra = n - healed;
+  let s = healed * 0.45 * (u.hp <= u.maxHp / 3 ? 1.5 : 1);
+  if (extra > 0 && radiant(u)) s += extra * (wantsAtk(g, u) ? 0.8 : 0.3);
+  return s;
+}
+function bestHeal(g, p, n, exclude) {   // n: a number or u => number
+  let best = null;
+  for (const u of units(p)) {
+    if (u === exclude || u.stolen) continue;
+    const amt = typeof n === "function" ? n(u) : n, s = healWorth(g, u, amt);
+    if (!best || s > best.s) best = { u, s, n: amt };
+  }
+  return best;
+}
+function sacrificeBonus(g, p) { let s = 0; for (const k of units(p)) { const f = fxOf(k); if (f && f.sacValue) s += f.sacValue(g, k); } return s; }
+function wasteSpare(p) {   // Waste Repository cards the AI is happiest to banish, first
+  const rank = c => isUnitKind(c.d.kind) ? (hasAttr(c.d, "unholy") ? (c.d.hp <= 5 ? 3 : 2) : 1) : 0;
+  return p.waste.filter(c => !p.lazarus.includes(c)).sort((a, b) => rank(a) - rank(b));
+}
+const wasteUnholy = p => wasteSpare(p).filter(c => isUnitKind(c.d.kind) && hasAttr(c.d, "unholy"));
+function keepValue(g, p, c) {   // for discarding and Goblin Shuffle
+  const d = c.d;
+  if (d.kind === "creature") return (d.flux || 0) - (d.bp || 0) > p.maxFlux + 1 ? 1 : 3 + defValue(d) * 0.1;
+  return 3.5;
+}
+
+/* ---------------- the rules ---------------- */
+function checkEnd(g) {
+  if (g.over) return true;
+  const a = g.p[0].php <= 0, b = g.p[1].php <= 0;
+  if (a || b) { g.over = true; g.winner = a && b ? -1 : a ? 1 : 0; g.endReason = g.lastLoss || "php"; }
+  return g.over;
+}
+function draw(g, p, n) {
+  for (let k = 0; k < n && !g.over; k++) {
+    if (!p.deck.length) { L(g, `${who(g, p)} has no cards left to draw and loses ${R.emptyDeck} PHP.`); losePHP(g, p, R.emptyDeck, { deck: true }); continue; }
+    const c = p.deck.pop(); p.hand.push(c); if (c.owner === p.i) p.st.drawn.add(c.d.ix);
+  }
+}
+function losePHP(g, p, n, info) {
+  if (n <= 0 || g.over) return;
+  info = info || {};
+  p.php -= n; g.lastLoss = info.deck ? "deck" : "php";
+  if (checkEnd(g)) return;
+  for (const u of units(p)) { const f = fxOf(u); if (f && f.onLosePHP) f.onLosePHP(g, u, n, info); }
+}
+const payPHP = (g, p, n) => losePHP(g, p, n, { paid: true });
+function gainPHP(g, p, n) { p.php += n; }
+function restorePHP(g, p, n) { if (p.php < R.php) p.php = Math.min(R.php, p.php + n); }
+function gainGold(g, p, n) {
+  if (n <= 0) return;
+  for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.goldBonus && p.bullTurn !== g.turnNo) { p.bullTurn = g.turnNo; n += 1; } }
+  p.gold += n;
+  L(g, `  ${who(g, p)} gains ${n} gold (${p.gold}).`);
+  for (const u of units(p)) { const f = fxOf(u); if (f && f.onGainGold) f.onGainGold(g, u, n); }
+}
+function restoreHP(g, by, u, n) {
+  if (n <= 0 || !onField(g, u)) return;
+  const missing = Math.max(0, u.maxHp - u.hp), healed = Math.min(n, missing), extra = n - healed;
+  u.hp += healed;
+  let bonus = "";
+  if (extra > 0 && radiant(u)) {
+    if (wantsAtk(g, u)) { u.radAtk += extra; bonus = ` (Radiance: +${extra} ATK)`; } else { u.hp += extra; u.radHp += extra; bonus = ` (Radiance: +${extra} HP)`; }
+  }
+  if (!healed && !bonus) return;
+  L(g, `  ${u.d.name} is restored ${n} HP${bonus}.`);
+  for (const k of units(by)) { const f = fxOf(k); if (f && f.onYouRestore) f.onYouRestore(g, k); }
+}
+function damage(g, u, n, info) {
+  if (n <= 0 || !onField(g, u)) return 0;
+  u.hp -= n; u.radHp = Math.max(0, u.radHp - n);
+  if (!info || !info.combat) L(g, `  ${u.d.name} takes ${n} damage.`);
+  if (u.hp <= 0) kill(g, u, info || {});
+  return n;
+}
+function kill(g, u, info) {   // "destroyed": Chapel Guard survives the first time
+  const f = fxOf(u);
+  if (f && f.survive && !u.chapel) { u.chapel = true; u.hp = 1; L(g, `  ${u.d.name} survives with 1 HP.`); return false; }
+  destroy(g, u, info);
+  return true;
+}
+const toWaste = (g, c) => g.p[c.owner].waste.push(c);
+function destroy(g, u, info) {
+  const p = g.p[u.ctrl];
+  if (p.lanes[u.lane] !== u) return;
+  p.lanes[u.lane] = null;
+  const f = fxOf(u);
+  toWaste(g, u.c); u.splices.forEach(c => toWaste(g, c));
+  g.deaths++;
+  L(g, `  ${u.d.name} is destroyed${info.sacrifice ? " (sacrificed)" : ""}.`);
+  if (f && f.returns && !u.c.lazarusUsed) { u.c.lazarusUsed = true; g.p[u.c.owner].lazarus.push(u.c); }
+  if (info.src && info.combat) { const kf = fxOf(info.src); if (kf && kf.onKill && onField(g, info.src)) kf.onKill(g, info.src, u); }
+  if (f && f.onDeath) f.onDeath(g, u, info);
+  for (const k of allUnits(g)) { const kf = fxOf(k); if (kf && kf.onAnyDeath) kf.onAnyDeath(g, k, u); }
+}
+function banishUnit(g, u) {
+  const p = g.p[u.ctrl];
+  if (p.lanes[u.lane] !== u) return;
+  p.lanes[u.lane] = null;
+  g.p[u.c.owner].oblivion.push(u.c); u.splices.forEach(c => toWaste(g, c));
+  L(g, `  ${u.d.name} is banished.`);
+}
+function banishFromWaste(g, p, list) { for (const c of list) { const i = p.waste.indexOf(c); if (i >= 0) { p.waste.splice(i, 1); p.oblivion.push(c); } } }
+function sacrifice(g, p, u) {
+  if (!onField(g, u)) return;
+  L(g, `${who(g, p)} sacrifices ${u.d.name}.`);
+  destroy(g, u, { sacrifice: true });
+  for (const k of units(p)) { const f = fxOf(k); if (f && f.onSacrifice) f.onSacrifice(g, k, u); }
+}
+function makeUnit(g, p, c, lane, halved) {
+  const d = c.d, h = x => halved ? Math.floor(x / 2) : x, hp = Math.max(1, h(d.hp));
+  return { c, d, uid: g.uid++, owner: c.owner, ctrl: p.i, lane, atk: h(d.atk), die: halved ? Math.floor(d.die / 2) : d.die,
+    maxHp: hp, hp, spd: Math.max(1, h(d.spd)), pAtk: 0, tAtk: 0, tSpd: 0, radAtk: 0, radHp: 0,
+    attacked: false, negated: false, chapel: false, splices: [], stolen: null, frenzy: false, minerFlux: false };
+}
+function materialize(g, p, c, lane, how) {
+  if (lane == null || p.lanes[lane]) return null;
+  const u = makeUnit(g, p, c, lane, how === "lazarus");
+  p.lanes[lane] = u;
+  if (c.owner === p.i && how !== "lazarus") p.st.played.add(c.d.ix);
+  L(g, `${who(g, p)} ${how === "hand" ? "plays" : how === "lazarus" ? "brings back" : "materializes"} ${c.d.name} (${LANE[lane]} lane)${how === "lazarus" ? " at half stats" : ""}.`);
+  const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
+  return u;
+}
+function cast(g, p, c, effect) {   // a one-shot Spell or Instant: it uses a spell zone while it resolves
+  const i = p.hand.indexOf(c); if (i < 0) return;
+  p.hand.splice(i, 1);
+  if (c.owner === p.i) p.st.played.add(c.d.ix);
+  L(g, `${who(g, p)} casts ${c.d.name}.`);
+  effect();
+  toWaste(g, c);
+}
+function putInPlay(g, p, c) {   // Continuous or Field Spell
+  const i = p.hand.indexOf(c); if (i < 0) return;
+  p.hand.splice(i, 1);
+  if (c.owner === p.i) p.st.played.add(c.d.ix);
+  L(g, `${who(g, p)} puts ${c.d.name} into play.`);
+  if (c.d.kind === "field") { if (p.field) toWaste(g, p.field.c); p.field = { c }; } else p.zones.push({ c });
+}
+function removeSpell(g, q, z, why) {
+  if (q.field === z) q.field = null; else { const i = q.zones.indexOf(z); if (i < 0) return; q.zones.splice(i, 1); }
+  toWaste(g, z.c);
+  L(g, `  ${z.c.d.name} is destroyed${why ? " by " + why : ""}.`);
+}
+function fitsPart(d, part) {
+  if (part.kind === "card") return d.name === part.value;
+  if (part.kind === "attr") return d.attrs.includes(part.value);
+  if (part.kind === "faction") return d.factions.some(f => lc(f) === part.value);
+  return false;
+}
+function recipeFits(rec, defs) {
+  if (!rec || !rec.parts.length || rec.parts.some(x => x.kind === "unknown")) return false;
+  if (rec.distinct && new Set(defs.map(d => d.name)).size < defs.length) return false;
+  const slots = []; rec.parts.forEach(x => { for (let k = 0; k < x.count; k++) slots.push(x); });
+  if (slots.length !== defs.length) return false;
+  slots.sort((x, y) => (x.kind === "card" ? 0 : 1) - (y.kind === "card" ? 0 : 1));
+  const used = defs.map(() => false);
+  const go = i => {
+    if (i === slots.length) return true;
+    for (let j = 0; j < defs.length; j++) if (!used[j] && fitsPart(defs[j], slots[i])) { used[j] = true; if (go(i + 1)) return true; used[j] = false; }
+    return false;
+  };
+  return go(0);
+}
+const pitOk = d => d.kind === "creature" && hasAttr(d, "unholy") && d.flux >= 3 && d.flux <= 4;
+function fuse(g, p, a, b, fc, pay) {
+  if (!onField(g, a) || !onField(g, b) || p.fused || p.fdeck.indexOf(fc) < 0) return;
+  if (pay.kind === "flux") p.flux -= R.fuseFlux;
+  else if (pay.kind === "estate") { const i = p.hand.indexOf(pay.card); if (i < 0) return; p.hand.splice(i, 1); if (pay.card.owner === p.i) p.st.played.add(pay.card.d.ix); L(g, `${who(g, p)} casts ${pay.card.d.name}.`); toWaste(g, pay.card); }
+  else if (pay.kind === "altar") { sacrifice(g, p, pay.victim); if (g.over || !onField(g, a) || !onField(g, b)) return; }
+  if (pay.pit) { const c = wasteUnholy(p)[0]; if (c) banishFromWaste(g, p, [c]); p.once.add("Ritual Pit"); }
+  const lane = a.lane === 1 || b.lane === 1 ? 1 : a.lane;
+  p.lanes[a.lane] = null; p.lanes[b.lane] = null;
+  p.fdeck.splice(p.fdeck.indexOf(fc), 1);
+  const u = makeUnit(g, p, fc, lane, false);
+  u.splices = [a.c, b.c];
+  p.lanes[lane] = u; p.fused = true; p.st.fused.add(fc.d.ix);
+  L(g, `${who(g, p)} fuses ${a.d.name} + ${b.d.name} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's free fuse-estate)" : pay.kind === "altar" ? " (Crimson Altar instead of flux)" : ""}${pay.pit ? " (Ritual Pit)" : ""}.`);
+  const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
+}
+function unfuse(g, by, u) {
+  const p = g.p[u.ctrl];
+  if (!onField(g, u)) return;
+  p.lanes[u.lane] = null;
+  g.p[u.c.owner].fdeck.push(u.c);
+  L(g, `  ${u.d.name} breaks back into ${u.splices.map(c => c.d.name).join(" + ")}.`);
+  u.splices.forEach((c, k) => {
+    const q = g.p[c.owner], lane = k === 0 && q === p ? u.lane : emptyLanes(q)[0];
+    if (lane === undefined) { toWaste(g, c); return; }
+    q.lanes[lane] = makeUnit(g, q, c, lane, false);
+  });
+}
+function steal(g, p, u) {   // Space Squid: until the end of this turn
+  const o = g.p[u.ctrl], free = emptyLanes(p);
+  if (!free.length || !onField(g, u)) return;
+  const lane = free.includes(u.lane) ? u.lane : free[0];
+  o.lanes[u.lane] = null;
+  u.stolen = { home: u.lane }; u.ctrl = p.i; u.lane = lane; u.attacked = false;
+  p.lanes[lane] = u;
+  L(g, `  ${who(g, p)} takes control of ${u.d.name} for the turn.`);
+}
+function giveBack(g, u) {
+  const p = g.p[u.ctrl], o = g.p[u.owner];
+  p.lanes[u.lane] = null;
+  const lane = !o.lanes[u.stolen.home] ? u.stolen.home : emptyLanes(o)[0];
+  u.stolen = null;
+  if (lane === undefined) { toWaste(g, u.c); u.splices.forEach(c => toWaste(g, c)); L(g, `  ${u.d.name} has no lane to go back to and goes to the Waste Repository.`); return; }
+  u.ctrl = o.i; u.lane = lane; o.lanes[lane] = u;
+}
+
+/* ---------------- combat ---------------- */
+function guardOf(g, u) {   // Sanctified Knight: 1 less combat damage for creatures next to it
+  let n = 0; const p = g.p[u.ctrl];
+  for (const l of NB[u.lane]) { const k = p.lanes[l], f = k && fxOf(k); if (f && f.guardNeighbors) n += f.guardNeighbors; }
+  return n;
+}
+function useLoadedDice(g, q) {
+  const c = q.hand.find(x => x.d.fx && x.d.fx.loaded);
+  if (!c || !freeZone(q)) return false;
+  cast(g, q, c, () => {});
+  return true;
+}
+function pitBossReroll(g, q) {   // an activated effect, so only on its controller's own turn
+  if (g.active !== q.i || q.gold < 1 || q.once.has("Goblin Pit Boss:reroll")) return false;
+  if (!units(q).some(k => { const f = fxOf(k); return f && f.rerolls; })) return false;
+  q.once.add("Goblin Pit Boss:reroll"); q.gold -= 1;
+  L(g, `  ${who(g, q)} pays 1 gold to reroll (Goblin Pit Boss).`);
+  return true;
+}
+function rollDie(g, u, noReroll) {
+  const p = g.p[u.ctrl], o = foe(g, p), adv = advantage(g, u), greedy = hasAttr(u.d, "greedy");
+  const once = () => { let r = 1 + Math.floor(g.rng() * u.die); if (adv) r = Math.max(r, 1 + Math.floor(g.rng() * u.die)); return r; };
+  let r = once();
+  const f = fxOf(u);
+  if (noReroll) { /* the hit is prevented anyway */ }
+  else if ((u.die >= 6 && r <= u.die * 0.34) || (f && f.orc && r === 1)) {
+    if ((greedy && pitBossReroll(g, p)) || useLoadedDice(g, p)) { const was = r; r = once(); L(g, `  ${u.d.name} rerolls its ${was}: ${r}.`); }
+  } else if (u.die >= 8 && r >= u.die * 0.8) {
+    if ((greedy && pitBossReroll(g, o)) || useLoadedDice(g, o)) { const was = r; r = once(); L(g, `  ${u.d.name}'s ${was} is rerolled: ${r}.`); }
+  }
+  if (r === u.die && greedy) for (const k of units(p)) { const kf = fxOf(k); if (kf && kf.onMaxRoll) kf.onMaxRoll(g, k, u); }
+  return r;
+}
+function hitUnit(g, src, tgt, n, ctx, rolled) {
+  n = ctx.shelter === tgt ? 0 : Math.max(0, n - guardOf(g, tgt));
+  L(g, `  ${src.d.name} hits ${tgt.d.name} for ${n}${rolled ? ` (rolled ${rolled})` : ""}${ctx.shelter === tgt ? " (Divine Shelter)" : ""}.`);
+  if (n <= 0) return 0;
+  const dealt = damage(g, tgt, n, { src, combat: true });
+  const f = fxOf(src); if (f && f.onCombatDamage) f.onCombatDamage(g, src, dealt);
+  return dealt;
+}
+function strike(g, src, tgt, ctx) {
+  if (g.over || !onField(g, src) || !onField(g, tgt)) return 0;
+  let n = atkOf(g, src), nat = 0;
+  if (src.die) { nat = rollDie(g, src, ctx.shelter === tgt); n += nat; }
+  const f = fxOf(src), orc = f && f.orc && ctx.attack && src.die === 20;
+  if (orc && nat === 1) n = Math.floor(n / 2);
+  const side = g.p[tgt.ctrl], lane = tgt.lane;
+  const dealt = hitUnit(g, src, tgt, n, ctx, nat);
+  if (orc && nat === 20) for (const l of NB[lane]) { const t2 = side.lanes[l]; if (t2) hitUnit(g, src, t2, n, ctx, 0); }
+  return dealt;
+}
+function expHit(g, src, tgt) { return Math.max(0, expAtk(g, src) - guardOf(g, tgt)); }
+function survives(u, hp) { const f = fxOf(u); return hp > 0 || !!(f && f.survive && !u.chapel); }
+function previewFight(g, att, def) {   // expected outcome, dice at their average
+  let aHp = att.hp, dHp = def.hp;
+  if (speedOf(att) + 1 >= speedOf(def)) { dHp -= expHit(g, att, def); if (survives(def, dHp)) aHp -= expHit(g, def, att); }
+  else { aHp -= expHit(g, def, att); if (survives(att, aHp)) dHp -= expHit(g, att, def); }
+  if (aHp <= 0 && survives(att, aHp)) aHp = 1;
+  if (dHp <= 0 && survives(def, dHp)) dHp = 1;
+  return { aDies: aHp <= 0, dDies: dHp <= 0, aLoss: att.hp - Math.max(0, aHp), dLoss: def.hp - Math.max(0, dHp) };
+}
+function scoreFight(g, att, def) {
+  const p = g.p[att.ctrl], r = previewFight(g, att, def), ka = keepWorth(g, att);
+  let s = r.dDies ? killWorth(g, p, def) + 0.5 : (r.dLoss / Math.max(1, def.maxHp)) * valueOf(g, def) * 0.6;
+  s -= r.aDies ? ka : (r.aLoss / Math.max(1, att.maxHp)) * ka * 0.5;
+  return s;
+}
+function scoreFace(g, att) {
+  const p = g.p[att.ctrl], o = foe(g, p), aS = speedOf(att) + 1;
+  const backs = NB[att.lane].map(l => o.lanes[l]).filter(Boolean);
+  let hp = att.hp, face = 0;
+  for (const e of backs) if (speedOf(e) > aS) hp -= expHit(g, e, att);
+  if (survives(att, hp)) {
+    face = expAtk(g, att); if (hp <= 0) hp = 1;
+    for (const e of backs) if (speedOf(e) <= aS) hp -= expHit(g, e, att);
+  }
+  const ka = keepWorth(g, att), dies = !survives(att, hp);
+  const w = face >= o.php ? 100 : 0.55 + 6 / Math.max(1, o.php - face);
+  return face * w - (dies ? ka : ((att.hp - Math.max(0, hp)) / Math.max(1, att.maxHp)) * ka * 0.5);
+}
+function bestAttack(g, u) {   // AI: the best score u can get from one attack this turn
+  const o = foe(g, g.p[u.ctrl]); let best = -Infinity;
+  for (const l of [u.lane].concat(NB[u.lane])) if (o.lanes[l]) best = Math.max(best, scoreFight(g, u, o.lanes[l]));
+  if (!o.lanes[u.lane]) best = Math.max(best, scoreFace(g, u));
+  return best;
+}
+function shelterResponse(g, o, att, def, ctx) {
+  const c = o.hand.find(x => x.d.fx && x.d.fx.shelter);
+  if (!c || !freeZone(o)) return;
+  const r = previewFight(g, att, def), v = valueOf(g, def);
+  if ((r.dDies && v >= 5) || (r.dLoss >= def.hp * 0.6 && v >= 9)) cast(g, o, c, () => { ctx.shelter = def; });
+}
+function fight(g, att, def) {
+  const o = g.p[def.ctrl];
+  att.attacked = true;
+  L(g, `${att.d.name} attacks ${def.d.name}.`);
+  const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, def);
+  if (g.over || !onField(g, att) || !onField(g, def)) return;
+  const ctx = { shelter: null };
+  shelterResponse(g, o, att, def, ctx);
+  const attFirst = speedOf(att) + 1 >= speedOf(def), a = attFirst ? att : def, b = attFirst ? def : att;
+  strike(g, a, b, { shelter: ctx.shelter, attack: a === att });
+  if (onField(g, a) && onField(g, b)) strike(g, b, a, { shelter: ctx.shelter, attack: b === att });
+}
+function directAttack(g, att) {
+  const p = g.p[att.ctrl], o = foe(g, p), aS = speedOf(att) + 1;
+  att.attacked = true;
+  L(g, `${att.d.name} attacks ${who(g, o)} directly.`);
+  const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, null);
+  const backs = NB[att.lane].map(l => o.lanes[l]).filter(Boolean);
+  for (const e of backs) if (speedOf(e) > aS) strike(g, e, att, {});
+  if (onField(g, att) && !g.over) {
+    let n = atkOf(g, att), nat = 0;
+    if (att.die) { nat = rollDie(g, att); n += nat; }
+    const af = fxOf(att); if (af && af.orc && nat === 1) n = Math.floor(n / 2);
+    L(g, `  ${att.d.name} hits ${who(g, o)} for ${n}${nat ? ` (rolled ${nat})` : ""}.`);
+    if (n > 0) {
+      p.st.face += n;
+      losePHP(g, o, n, { combat: true });
+      if (af && af.onCombatDamage) af.onCombatDamage(g, att, n);
+    }
+  }
+  for (const e of backs) if (speedOf(e) <= aS && onField(g, att) && onField(g, e)) strike(g, e, att, {});
+}
+
+/* ---------------- card effects ---------------- */
+const destroyAct = (maxHp, php) => ({ id: "destroy", pri: 1, ai(g, u) {
+  const p = g.p[u.ctrl]; if (!canPay(p, php)) return null;
+  let best = null;
+  for (const t of units(foe(g, p))) if (t.hp <= maxHp) { const s = killWorth(g, p, t) - php * phpW(g, p); if (!best || s > best.s) best = { t, s }; }
+  return best && best.s > 0.5 ? { score: best.s, run: () => { L(g, `${u.d.name} pays ${php} PHP to destroy ${best.t.d.name}.`); payPHP(g, p, php); if (!g.over && onField(g, best.t)) kill(g, best.t, {}); } } : null;
+} });
+const investAct = rate => ({ id: "invest", pri: 3, ai(g, u) {
+  const p = g.p[u.ctrl]; if (u.stolen) return null;
+  const n = p.gold - goldReserve(g, p); if (n <= 0) return null;
+  return { score: n * rate * 0.6, run: () => {
+    p.gold -= n; let atk = 0, hp = 0;
+    for (let k = 0; k < n; k++) { if (u.hp + hp <= 3) hp += rate; else atk += rate; }
+    u.pAtk += atk; u.maxHp += hp; u.hp += hp;
+    L(g, `${who(g, p)} invests ${n} gold in ${u.d.name} (+${atk} ATK, +${hp} HP).`);
+  } };
+} });
+const healAct = (n, self) => ({ id: "heal", pri: 3, ai(g, u) {
+  const p = g.p[u.ctrl], t = bestHeal(g, p, n, self ? null : u);
+  return t && t.s > 0.3 ? { score: t.s, run: () => restoreHP(g, p, t.u, n) } : null;
+} });
+function boomOption(g, u, alive) {   // Gob-omber: pay X gold, deal X to every creature
+  const p = g.p[u.ctrl];
+  if (alive && (g.active !== p.i || u.stolen)) return null;
+  let best = null;
+  for (let x = 1; x <= p.gold; x++) {
+    let s = -x * goldW(g, p) * 0.5 - (alive ? keepWorth(g, u) : 0);
+    for (const t of allUnits(g)) if (t !== u) s += damageWorth(g, p, t, x);
+    if (!best || s > best.s) best = { x, s };
+  }
+  if (!best || best.s < 2) return null;
+  return { score: best.s, run: () => {
+    if (alive) { if (!onField(g, u)) return; banishUnit(g, u); }
+    else { const q = g.p[u.c.owner], i = q.waste.indexOf(u.c); if (i < 0) return; q.waste.splice(i, 1); q.oblivion.push(u.c); }
+    p.gold -= best.x;
+    L(g, `${who(g, p)} pays ${best.x} gold: Gob-omber explodes for ${best.x} damage to every creature.`);
+    for (const t of allUnits(g)) damage(g, t, best.x, {});
+  } };
+}
+function angelZap(g, u) {   // Fallen Angel
+  const p = g.p[u.ctrl], key = "Fallen Angel:zap";
+  if (p.once.has(key) || !onField(g, u)) return;
+  const t = foe(g, p).lanes[u.lane]; if (!t) return;
+  p.once.add(key); L(g, `  Fallen Angel deals 2 damage to ${t.d.name}.`); damage(g, t, 2, {});
+}
+function chooseLane(g, p, d) {
+  const free = emptyLanes(p); if (free.length <= 1) return free[0];
+  let best = free[0], bs = -Infinity;
+  for (const l of free) {
+    let s = 0;
+    if (d.flux >= R.fuseMin || pitOk(d)) for (const nl of NB[l]) {
+      const nu = p.lanes[nl];
+      if (nu && nu.d.kind === "creature" && p.fdeck.some(fc => recipeFits(fc.d.recipe, [d, nu.d]))) s += 4;
+    }
+    if (l === 1) s += (d.atk + dieAvg(d.die)) * 0.15;
+    const e = foe(g, p).lanes[l];
+    if (e) s += expAtk(g, e) * (p.php <= 15 ? 0.6 : 0.35) - (expAtk(g, e) >= d.hp ? 1.5 : 0);   // blocks its direct attacks
+    else s += 0.5 + (d.atk + dieAvg(d.die)) * 0.1;   // free to hit the player
+    if (s > bs) { bs = s; best = l; }
+  }
+  return best;
+}
+
+const FX = {
+  "Cherub": { value: 1, onPlay(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 2, u); if (t && t.s > 0) restoreHP(g, p, t.u, 2); } },
+  "Holy Acolyte": { value: 2, acts: [healAct(2, false)] },
+  "Sanctified Knight": { value: 2, guardNeighbors: 1 },
+  "Judicator Angel": { value: 2, onAttack(g, u) { const p = g.p[u.ctrl]; NB[u.lane].forEach(l => { if (p.lanes[l]) restoreHP(g, p, p.lanes[l], 2); }); } },
+  "Chapel Guard": { value: 3, survive: true },
+  "Purifier Nun": { value: 2, onPlay(g, u) {
+    const p = g.p[u.ctrl]; let best = null;
+    for (const t of allUnits(g)) {
+      const s = hasAttr(t.d, "unholy") ? damageWorth(g, p, t, 3) : t.ctrl === p.i && !t.stolen ? healWorth(g, t, 3) : -1;
+      if (!best || s > best.s) best = { t, s };
+    }
+    if (!best || best.s <= 0) return;
+    if (hasAttr(best.t.d, "unholy")) { L(g, `  Purifier Nun deals 3 damage to ${best.t.d.name}.`); damage(g, best.t, 3, {}); } else restoreHP(g, p, best.t, 3);
+  } },
+  "Bellkeeper Monk": { value: 3, startTurn(g, u) {
+    const p = g.p[u.ctrl], n = g.p.some(q => q.field && q.field.c.d.fx && q.field.c.d.fx.bells) ? 2 : 1;
+    units(p).forEach(t => restoreHP(g, p, t, n));
+  } },
+  "Archangel": { value: 2, acts: [healAct(2, true)] },
+  "Pain Drinker": { value: 1, onLosePHP(g, u) { u.tAtk += 1; } },
+  "Carrion Duchess": { value: 3, endTurn(g, u) {
+    const p = g.p[u.ctrl]; if (!emptyLanes(p).length || !canPay(p, 2)) return;
+    let best = null;
+    for (const c of p.waste) if (c.d.kind === "creature" && hasAttr(c.d, "unholy") && c.d.hp <= 5) { const v = defValue(c.d); if (!best || v > best.v) best = { c, v }; }
+    if (!best || best.v - 2 * phpW(g, p) <= 0.5) return;
+    L(g, `${who(g, p)} pays 2 PHP (Carrion Duchess).`);
+    payPHP(g, p, 2); if (g.over) return;
+    p.waste.splice(p.waste.indexOf(best.c), 1);
+    materialize(g, p, best.c, chooseLane(g, p, best.c.d), "effect");
+  } },
+  "Nomed The Dark Viscount": { value: 2, onCombatDamage(g, u) { gainPHP(g, g.p[u.ctrl], 1); } },
+  "Renroc The Dark Marquis": { value: 4, acts: [destroyAct(4, 2)] },
+  "Blood Priest": { value: 2, sacValue: (g, k) => 2 * phpW(g, g.p[k.ctrl]), onSacrifice(g, u) { gainPHP(g, g.p[u.ctrl], 2); } },
+  "Blood Imp": { value: 1, deathPenalty: 1.5, onDeath(g, u) {
+    const p = g.p[u.ctrl], o = foe(g, p), es = units(o);
+    if (!es.length) { L(g, `  Blood Imp deals 2 damage to ${who(g, o)}.`); losePHP(g, o, 2, {}); return; }
+    let best = null; for (const t of es) { const s = damageWorth(g, p, t, 2); if (!best || s > best.s) best = { t, s }; }
+    L(g, `  Blood Imp deals 2 damage to ${best.t.d.name}.`); damage(g, best.t, 2, {});
+  } },
+  "Vein Ripper": {},
+  "Flesh Collector": { value: 3, bpWaste: true, acts: [{ id: "eat", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl]; let best = null;
+    for (const t of units(p)) { if (t === u) continue; const s = 3.5 + sacrificeBonus(g, p) - keepWorth(g, t) + (fxOf(t) && fxOf(t).deathPenalty ? 1.5 : 0); if (!best || s > best.s) best = { t, s }; }
+    return best && best.s > 0.5 ? { score: best.s, run: () => {
+      sacrifice(g, p, best.t);
+      if (!g.over && onField(g, u)) { draw(g, p, 1); u.pAtk += 2; u.maxHp += 2; u.hp += 2; }
+    } } : null;
+  } }] },
+  "Hemogoblin": { value: 2, acts: [{ id: "gold", pri: 0, ai(g, u) {
+    const p = g.p[u.ctrl]; if (!canPay(p, 2)) return null;
+    const s = 2 * goldW(g, p) - 2 * phpW(g, p);
+    return s > 0.3 ? { score: s, run: () => { L(g, `${who(g, p)} pays 2 PHP for 2 gold (Hemogoblin).`); payPHP(g, p, 2); if (!g.over) gainGold(g, p, 2); } } : null;
+  } }] },
+  "Goblin": { value: 1, goldSink: true, acts: [investAct(1)] },
+  "Penny Stock Goblin": { value: 0.5, onGainGold(g, u) { u.tAtk += 1; }, acts: [{ id: "cash", pri: 0, ai(g, u) {
+    const p = g.p[u.ctrl]; if (g.phase !== 1 || u.stolen || emptyLanes(p).length) return null;
+    const crea = handCreatureOpts(g, p), more = bestSubset(g, p, crea, p.flux, 1, p.pact).score;
+    const s = more - keepWorth(g, u) + goldW(g, p);
+    return s > 1 ? { score: s, run: () => { banishUnit(g, u); gainGold(g, p, 1); } } : null;
+  } }] },
+  "Goblin General": { value: 3, greedyAdvantage: "others", acts: [{ id: "mend", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl], x = Math.min(u.maxHp - u.hp, p.gold - goldReserve(g, p)); if (x <= 0) return null;
+    const s = x * 0.45 - x * goldW(g, p) * 0.5;
+    return s > 0.3 ? { score: s, run: () => { p.gold -= x; restoreHP(g, p, u, x); } } : null;
+  } }] },
+  "Gob-omber": { value: 3, goldSink: true, acts: [{ id: "boom", pri: 1, ai: (g, u) => boomOption(g, u, true) }],
+    onDeath(g, u) { const o = boomOption(g, u, false); if (o) o.run(); } },
+  "Goblin Miner": { value: 2, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); },
+    startTurn(g, u) { const p = g.p[u.ctrl]; if (u.minerFlux) { u.minerFlux = false; p.flux += 1; L(g, `  Goblin Miner gives 1 flux.`); } else gainGold(g, p, 1); },
+    acts: [{ id: "flux", pri: 4, ai(g, u) {
+      const p = g.p[u.ctrl]; if (g.phase !== 3 || u.minerFlux || u.stolen || p.gold - 2 < goldReserve(g, p)) return null;
+      const s = 1.2 - 2 * goldW(g, p);
+      return s > 0.4 ? { score: s, run: () => { p.gold -= 2; u.minerFlux = true; } } : null;
+    } }] },
+  "Goblin Pit Boss": { value: 3, rerolls: true, onMaxRoll(g, k) { L(g, `  Goblin Pit Boss: highest roll, +2 gold.`); gainGold(g, g.p[k.ctrl], 2); } },
+  "Orc": { value: 1, orc: true },
+  "Seraphim Wall": {},
+  "Fallen Angel": { value: 3, onYouRestore(g, u) { angelZap(g, u); }, onLosePHP(g, u, n, info) { if (info.paid) angelZap(g, u); } },
+  "Lord Lazarus": { value: 4, returns: true },
+  "Arch Cleric": { value: 3, startTurn(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 3); if (t && t.s > 0) restoreHP(g, p, t.u, 3); } },
+  "Skinless Titan": { value: 2, endTurn(g, u) { L(g, `  Skinless Titan: ${who(g, g.p[u.ctrl])} loses 2 PHP.`); losePHP(g, g.p[u.ctrl], 2, {}); },
+    onLosePHP(g, u) { u.tAtk += 1; },
+    onKill(g, u) { L(g, `  Skinless Titan deals 2 damage to each enemy creature.`); units(foe(g, g.p[u.ctrl])).forEach(t => damage(g, t, 2, {})); } },
+  "The Meat Cathedral": { value: 4, sacValue: () => 2, onSacrifice(g, u) { u.pAtk += 2; }, acts: [{ id: "feast", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl], spare = wasteSpare(p); if (spare.length < 2) return null;
+    const t = bestHeal(g, p, 5), hs = t ? t.s : 0, ps = 5 * phpW(g, p), s = Math.max(hs, ps) - 0.6;
+    return s > 0.3 ? { score: s, run: () => { banishFromWaste(g, p, spare.slice(0, 2)); if (hs >= ps) restoreHP(g, p, t.u, 5); else { L(g, `  The Meat Cathedral: +5 PHP.`); gainPHP(g, p, 5); } } } : null;
+  } }] },
+  "Ergof The Dark Emperor": { value: 5, acts: [destroyAct(6, 3)] },
+  "Hop Goblin": { value: 3, selfAdvantage: true, goldSink: true, acts: [investAct(2)] },
+  "Soul Sucker": { value: 3,
+    startTurn(g, u) { const n = g.deaths - g.p[u.ctrl].deathMark; if (n > 0) { u.pAtk += n; L(g, `  Soul Sucker gains +${n} ATK.`); } },
+    onAnyDeath(g, u) { const p = g.p[u.ctrl]; if (goldW(g, p) > phpW(g, p)) gainGold(g, p, 1); else gainPHP(g, p, 1); } },
+  "Seraph of Judgment": { value: 2, onAttack(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 2); if (t) restoreHP(g, p, t.u, 2); } },
+  "Goblin King": { value: 4, greedyAdvantage: "all", wantsGold5: true, startTurn(g, u) { gainGold(g, g.p[u.ctrl], 1); },
+    aura(g, k, u) { return hasAttr(u.d, "greedy") ? Math.floor(g.p[k.ctrl].gold / 5) : 0; } },
+  "Goblin Bombardier": { value: 4, goldSink: true, acts: [{ id: "bomb", pri: 1, ai(g, u) {
+    const p = g.p[u.ctrl], o = foe(g, p); let best = null;
+    for (const t of units(o)) for (let x = 1; x <= p.gold; x++) {
+      let s = damageWorth(g, p, t, x) - x * goldW(g, p) * 0.6;
+      for (const l of NB[t.lane]) if (o.lanes[l]) s += damageWorth(g, p, o.lanes[l], Math.floor(x / 2));
+      if (!best || s > best.s) best = { t, x, s };
+    }
+    return best && best.s > 1 ? { score: best.s, run: () => {
+      const side = NB[best.t.lane].map(l => o.lanes[l]).filter(Boolean);
+      p.gold -= best.x; L(g, `${who(g, p)} pays ${best.x} gold (Goblin Bombardier).`);
+      damage(g, best.t, best.x, {}); side.forEach(t => damage(g, t, Math.floor(best.x / 2), {}));
+    } } : null;
+  } }] },
+  "Indulgence Seller": { value: 3, goldSink: true, acts: [{ id: "sell", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl], avail = p.gold - goldReserve(g, p); if (avail <= 0) return null;
+    let best = null;
+    for (const t of units(p)) {
+      if (t.stolen) continue;
+      const x = radiant(t) && wantsAtk(g, t) ? avail : Math.min(avail, Math.ceil(Math.max(0, t.maxHp - t.hp) / 2));
+      if (!x) continue;
+      const s = healWorth(g, t, 2 * x) - x * goldW(g, p) * 0.5;
+      if (!best || s > best.s) best = { t, x, s };
+    }
+    return best && best.s > 0.3 ? { score: best.s, run: () => { p.gold -= best.x; restoreHP(g, p, best.t, 2 * best.x); } } : null;
+  } }] },
+};
+
+// one-shot spells: play(g, p, card) returns { pri, score, run } or null. pri: 0 setup, 1 removal, 2 creatures (the plan), 3 after
+const SPELLS = {
+  "Ritual Pit": { perm: true, needs: x => x.fusions > 0 && x.pitTargets > 0, score: (g, p) => p.fdeck.length ? 2.2 : 0.6 },
+  "Bull Run": { perm: true, goldBonus: true, wantsGold5: true, aura: (g, p, u) => hasAttr(u.d, "greedy") && p.gold >= 5 ? 1 : 0, score: () => 2.5 },
+  "Goblin Bank": { perm: true, startTurn(g, p) { if (p.gold < 5) gainGold(g, p, 1); }, score: () => 2.5 },
+  "Sanctuary Bells": { perm: true, bells: true, score: () => 2.5,
+    startTurn(g, p) { units(p).forEach(u => { if (hasAttr(u.d, "holy")) restoreHP(g, p, u, 1); }); },
+    endEachTurn(g) { g.p.forEach(q => restorePHP(g, q, 1)); } },
+  "Crimson Altar": { perm: true, altar: true, needs: x => x.fusions > 0 && x.unholy >= 4, score: (g, p) => p.fdeck.length ? 2 : 0.5 },
+  "Divine Shelter": { shelter: true },
+  "Loaded Dice": { loaded: true, needs: x => x.dice >= 4 },
+  "It's free fuse-estate": { estate: true, needs: x => x.fusions > 0 },
+  "Jar of Materialism": { play(g, p, c) {
+    if (p.deck.length < 2) return null;
+    return { pri: 0, score: 5, run: () => cast(g, p, c, () => draw(g, p, 2)) };
+  } },
+  "Energy drink": { play(g, p, c) {
+    const t = bestHeal(g, p, u => Math.floor(u.maxHp / 2));
+    return t && t.s > 1.2 ? { pri: 3, score: t.s - 0.8, run: () => cast(g, p, c, () => restoreHP(g, p, t.u, t.n)) } : null;
+  } },
+  "Open Vein": { play(g, p, c) {
+    if (!canPay(p, 3)) return null;
+    let best = null;
+    for (const t of units(foe(g, p))) { const s = damageWorth(g, p, t, t.hp < t.maxHp ? 5 : 3) - 3 * phpW(g, p) - 0.8; if (!best || s > best.s) best = { t, s }; }
+    return best && best.s > 0.5 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => {
+      const n = best.t.hp < best.t.maxHp ? 5 : 3;
+      payPHP(g, p, 3); if (!g.over && onField(g, best.t)) damage(g, best.t, n, {});
+    }) } : null;
+  } },
+  "Sacrificial Lamb": { needs: x => x.unholy >= 5, play(g, p, c) {
+    const us = wasteUnholy(p); if (us.length < 2) return null;
+    const s = 6 * phpW(g, p) - 1.2 - (us.length < 4 ? 0.5 : 0);
+    return s > 0.3 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { banishFromWaste(g, p, us.slice(0, 2)); gainPHP(g, p, 6); L(g, `  +6 PHP.`); }) } : null;
+  } },
+  "Market Crash": { goldCost: 5, goldSink: true, play(g, p, c) {
+    if (g.phase !== 1 || g.turnNo === 1 || p.gold < 5) return null;
+    const att = units(p).filter(u => hasAttr(u.d, "greedy") && !u.attacked && !u.stolen);
+    if (!att.length) return null;
+    let gain = 0;
+    for (const u of att) { const before = Math.max(0, bestAttack(g, u)); u.tAtk += 3; gain += Math.max(0, bestAttack(g, u) - before); u.tAtk -= 3; }
+    const s = gain - 5 * goldW(g, p) * 0.6 - 0.5;
+    return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { p.gold -= 5; att.forEach(u => { u.tAtk += 3; }); }) } : null;
+  } },
+  "Blood Frenzy": { needs: x => x.unholy >= 4, play(g, p, c) {
+    if (g.phase !== 1 || g.turnNo === 1) return null;
+    let best = null;
+    for (const u of units(p)) {
+      if (!hasAttr(u.d, "unholy") || u.attacked || u.frenzy) continue;
+      const before = Math.max(0, bestAttack(g, u));
+      u.tAtk += 4; u.tSpd += 1; const fr = u.frenzy; u.frenzy = true;
+      const after = bestAttack(g, u);
+      u.tAtk -= 4; u.tSpd -= 1; u.frenzy = fr;
+      const s = after - before - keepWorth(g, u) + sacrificeBonus(g, p) - 0.8;
+      if (!best || s > best.s) best = { u, s };
+    }
+    return best && best.s > 0.5 ? { pri: 3, score: best.s, run: () => cast(g, p, c, () => { best.u.tAtk += 4; best.u.tSpd += 1; best.u.frenzy = true; L(g, `  ${best.u.d.name} gets +4 ATK and +1 Speed.`); }) } : null;
+  } },
+  "Blood Pact Summoning Circle": { needs: x => x.unholy >= 4, play(g, p, c) {
+    if (g.phase !== 1 || p.pact || !canPay(p, 4) || !p.hand.some(x => x.d.kind === "creature" && hasAttr(x.d, "unholy"))) return null;
+    const base = bestPlan(g, p).score; p.pact = 2; const withIt = bestPlan(g, p).score; p.pact = 0;
+    const s = withIt - base - 4 * phpW(g, p) - 0.5;
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => { payPHP(g, p, 4); p.pact = 2; }) } : null;
+  } },
+  "Goblin Shuffle": { play(g, p, c) {
+    if (g.phase !== 1) return null;
+    const back = p.hand.filter(x => x !== c && keepValue(g, p, x) < 3).slice(0, 5);
+    if (!back.length || p.deck.length < back.length) return null;
+    const gold = back.filter(x => isUnitKind(x.d.kind) && hasAttr(x.d, "greedy")).length;
+    const s = gold * 0.9 + back.length * 0.5 - 0.6;
+    return s > 0.4 ? { pri: 0, score: s, run: () => cast(g, p, c, () => {
+      back.forEach(x => { p.hand.splice(p.hand.indexOf(x), 1); p.deck.unshift(x); });   // the end of the array is the top
+      draw(g, p, back.length); gainGold(g, p, gold);
+      L(g, `  puts back ${back.length}, draws ${back.length}${gold ? `, +${gold} gold` : ""}.`);
+    }) } : null;
+  } },
+  "Goblin Stock Broker": { goldCost: 3, play(g, p, c) {
+    if (p.gold < 3 || p.gold - 3 < goldReserve(g, p, c)) return null;
+    return { pri: 3, score: 0.6, run: () => cast(g, p, c, () => { p.gold -= 3; p.broker.push(3); }) };
+  } },
+  "Market research": { goldCost: 4, goldSink: true, play(g, p, c) {
+    if (g.phase !== 1 || p.gold < 4) return null;
+    const pool = p.deck.filter(x => x.d.kind === "creature" && hasAttr(x.d, "greedy"));
+    if (!pool.length) return null;
+    const soon = pool.filter(x => x.d.flux <= p.maxFlux + 1).sort((a, b) => defValue(b.d) - defValue(a.d));
+    const best = soon[0] || pool.sort((a, b) => a.d.flux - b.d.flux)[0];
+    const s = 0.6 + (p.hand.filter(x => isUnitKind(x.d.kind)).length < 2 ? 2 : 0) + defValue(best.d) * 0.05 - (p.gold - 4 < goldReserve(g, p, c) ? 1 : 0);
+    return s > 0.4 ? { pri: 0, score: s, run: () => cast(g, p, c, () => {
+      p.gold -= 4; p.deck.splice(p.deck.indexOf(best), 1); p.hand.push(best); p.st.drawn.add(best.d.ix); shuffle(g.rng, p.deck);
+      L(g, `  finds ${best.d.name}.`);
+    }) } : null;
+  } },
+  "Microwave": { play(g, p, c) {
+    if (!emptyLanes(p).length) return null;
+    let best = null;
+    for (const q of g.p) for (const x of q.waste) if (x.d.kind === "creature") { const v = defValue(x.d); if (!best || v > best.v) best = { x, q, v }; }
+    if (!best || best.v - 2 <= 0.4) return null;
+    const handBest = g.phase === 1 ? Math.max(0, ...p.hand.filter(x => x.d.kind === "creature" && (x.d.flux - (x.d.bp || 0)) <= p.flux).map(x => defValue(x.d))) : 0;
+    return { pri: best.v >= Math.max(7, handBest) ? 1 : 3, score: best.v - 2, run: () => cast(g, p, c, () => {
+      const i = best.q.waste.indexOf(best.x); if (i < 0 || !emptyLanes(p).length) return;
+      best.q.waste.splice(i, 1); materialize(g, p, best.x, chooseLane(g, p, best.x.d), "effect");
+    }) };
+  } },
+  "Pipebomb": { play(g, p, c) {
+    const o = foe(g, p), ts = spellsOf(o).filter(z => !z.bomb);
+    if (!ts.length) return null;
+    const z = ts.find(x => x === o.field) || ts[0];
+    return { pri: 1, score: 2.5, run: () => cast(g, p, c, () => { z.bomb = { by: p.i }; L(g, `  Pipebomb is placed on ${z.c.d.name}.`); }) };
+  } },
+  "Space Squid": { play(g, p, c) {
+    if (g.phase !== 1 || g.turnNo === 1 || !emptyLanes(p).length) return null;
+    const o = foe(g, p);
+    const outlet = units(p).some(u => fxOf(u) && fxOf(u).bpWaste && !p.once.has(u.d.name + ":eat")) || p.hand.some(x => x.d.name === "Blood Frenzy");
+    let best = null;
+    for (const t of units(o)) {
+      let s = valueOf(g, t) * (outlet ? 1.1 : 0.35);
+      for (const u of units(p)) if (u.lane === t.lane && !u.attacked) s += expAtk(g, u) * 0.4;
+      if (!best || s > best.s) best = { t, s };
+    }
+    if (!best || best.s - 1.5 <= 0.5) return null;
+    return { pri: best.s >= 8 ? 1 : 3, score: best.s - 1.5, run: () => cast(g, p, c, () => steal(g, p, best.t)) };
+  } },
+  "Unfuse": { play(g, p, c) {
+    let best = null;
+    for (const t of units(foe(g, p))) if (t.d.kind === "fusion" && t.splices.length) {
+      const s = valueOf(g, t) - t.splices.reduce((a, x) => a + defValue(x.d), 0) * 0.8 + 0.2;
+      if (!best || s > best.s) best = { t, s };
+    }
+    return best && best.s > 1 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => unfuse(g, p, best.t)) } : null;
+  } },
+  "Divine Silence": { play(g, p, c) {   // before attacking: negate the enemy whose effect is in the way of this turn's attacks
+    if (g.phase !== 1 || g.turnNo === 1) return null;
+    const mine = units(p).filter(u => !u.attacked && expAtk(g, u) > 0);
+    if (!mine.length) return null;
+    const attacks = () => mine.reduce((s, u) => s + Math.max(0, bestAttack(g, u)), 0), base = attacks();
+    let best = null;
+    for (const t of units(foe(g, p))) {
+      if (!fxOf(t)) continue;
+      t.negated = true; const s = attacks() - base; t.negated = false;
+      if (!best || s > best.s) best = { t, s };
+    }
+    return best && best.s - 0.8 > 0.5 ? { pri: 1, score: best.s - 0.8, run: () => cast(g, p, c, () => { best.t.negated = true; L(g, `  ${best.t.d.name} is negated until end of turn.`); }) } : null;
+  } },
+};
+
+// The card text each effect above was written for (textHash). The editor compares it with the current text.
+const FX_TEXT = {
+  "Ritual Pit": "1y1hlbr",
+  "Bull Run": "1tu3f7v",
+  "Goblin Bank": "2h6mga",
+  "Cherub": "1i4xkro",
+  "Holy Acolyte": "1gn0xd8",
+  "Sanctified Knight": "kxmoya",
+  "Judicator Angel": "1s5f5uq",
+  "Chapel Guard": "rqexuo",
+  "Purifier Nun": "1vnz049",
+  "Bellkeeper Monk": "1puh9sl",
+  "Pain Drinker": "169aojl",
+  "Carrion Duchess": "ywk7kl",
+  "Nomed The Dark Viscount": "ntpdy7",
+  "Renroc The Dark Marquis": "1vm6v6c",
+  "Blood Priest": "1eg1uiq",
+  "Blood Imp": "1shj6kh",
+  "Vein Ripper": "8rzk2y",
+  "Flesh Collector": "1q5hw2w",
+  "Hemogoblin": "kt81l8",
+  "Goblin": "15jv2o1",
+  "Penny Stock Goblin": "xjpujb",
+  "Sanctuary Bells": "j3nzxp",
+  "Seraphim Wall": "1eozs5j",
+  "Fallen Angel": "q4xo63",
+  "Lord Lazarus": "1bdvnko",
+  "Arch Cleric": "jyr4g9",
+  "Skinless Titan": "18zgfwi",
+  "The Meat Cathedral": "1om48",
+  "Ergof The Dark Emperor": "faf0qc",
+  "Hop Goblin": "pm1wvk",
+  "Divine Silence": "16r81in",
+  "Divine Shelter": "103rf6k",
+  "Open Vein": "1h3uaxc",
+  "Sacrificial Lamb": "14qq9lo",
+  "Market Crash": "7o36jn",
+  "Loaded Dice": "zx6hut",
+  "Blood Frenzy": "j4iw80",
+  "Blood Pact Summoning Circle": "1jpgxtw",
+  "Goblin Shuffle": "k2msak",
+  "Goblin Stock Broker": "clhl85",
+  "Energy drink": "idjnd2",
+  "Jar of Materialism": "emr87t",
+  "Microwave": "1ks3k2m",
+  "Pipebomb": "1p8ppap",
+  "Space Squid": "15lzgsl",
+  "Unfuse": "1i5una4",
+  "Goblin General": "v3esdv",
+  "Gob-omber": "t7o3k6",
+  "Goblin Miner": "jwdpgh",
+  "Soul Sucker": "2l5tm3",
+  "Archangel": "23e116",
+  "Goblin Pit Boss": "1l9geuw",
+  "Orc": "1y9qf3n",
+  "It's free fuse-estate": "15ldyzt",
+  "Crimson Altar": "1svaf0d",
+  "Seraph of Judgment": "1io6xgj",
+  "Goblin King": "1p28xfm",
+  "Goblin Bombardier": "70thxd",
+  "Indulgence Seller": "ogn18i",
+  "Market research": "1rqsaa3",
+};
+
+/* ---------------- the AI ---------------- */
+function handCreatureOpts(g, p) {   // hand creatures with every way to pay for them (Blood Price)
+  const W = phpW(g, p), spare = Math.floor(wasteSpare(p).length / 2), out = [];
+  for (const c of p.hand) {
+    const d = c.d; if (d.kind !== "creature" || d.flux == null) continue;
+    const opts = [];
+    for (let k = 0; k <= (d.bp || 0); k++) {
+      let php = 3 * k, waste = 0;
+      if (d.fx && d.fx.bpWaste) { const w = Math.min(k, spare); waste = 2 * w; php = 3 * (k - w); }
+      opts.push({ flux: d.flux - k, php, waste, cost: php * W + waste * 0.15 });
+    }
+    out.push({ c, d, value: defValue(d), opts, unholy: hasAttr(d, "unholy") });
+  }
+  out.sort((a, b) => a.d.ix - b.d.ix);   // copies next to each other, for the de-dupe below
+  return out;
+}
+function bestSubset(g, p, crea, flux, lanes, pact) {
+  let best = { score: 0, list: [] };
+  const cur = [];
+  const rec = (i, fl, ln, sc, php, waste, pactLeft) => {
+    if (sc > best.score) best = { score: sc, list: cur.slice() };
+    if (!ln) return;
+    for (let k = i; k < crea.length; k++) {
+      if (k > i && crea[k].d === crea[k - 1].d) continue;   // a second copy only after the first
+      const e = crea[k], disc = pactLeft && e.unholy ? pact : 0;
+      for (const o of e.opts) {
+        const f = o.flux - disc;
+        if (f > fl || php + o.php >= p.php || waste + o.waste > p.waste.length) continue;
+        cur.push({ e, o });
+        rec(k + 1, fl - f, ln - 1, sc + e.value - o.cost, php + o.php, waste + o.waste, pactLeft && !e.unholy);
+        cur.pop();
+      }
+    }
+  };
+  rec(0, flux, lanes, 0, 0, 0, pact > 0);
+  return best;
+}
+function fusionOpts(g, p) {
+  if (p.fused || !p.fdeck.length) return [];
+  const out = [];
+  const pit = spellsOf(p).some(z => z.c.d.name === "Ritual Pit") && !p.once.has("Ritual Pit") && wasteUnholy(p).length > 0;
+  const estate = p.hand.find(c => c.d.fx && c.d.fx.estate);
+  const altar = !!(p.field && p.field.c.d.fx && p.field.c.d.fx.altar);
+  for (const [l1, l2] of [[0, 1], [1, 2]]) {
+    const a = p.lanes[l1], b = p.lanes[l2];
+    if (!a || !b || a.d.kind !== "creature" || b.d.kind !== "creature") continue;
+    const okA = a.d.flux >= R.fuseMin, okB = b.d.flux >= R.fuseMin;
+    const usesPit = !(okA && okB);
+    if (usesPit && !(pit && ((okA && pitOk(b.d)) || (okB && pitOk(a.d))))) continue;
+    const seen = new Set();
+    for (const fc of p.fdeck) {
+      if (seen.has(fc.d.name)) continue; seen.add(fc.d.name);
+      if (!recipeFits(fc.d.recipe, [a.d, b.d])) continue;
+      const gain = defValue(fc.d) - keepWorth(g, a) - keepWorth(g, b) - (usesPit ? 0.5 : 0) + 1;
+      if (p.flux >= R.fuseFlux) out.push({ gain, flux: R.fuseFlux, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "flux", pit: usesPit }) });
+      if (estate) out.push({ gain: gain - 0.8, flux: 0, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "estate", card: estate, pit: usesPit }) });
+      if (altar) for (const v of units(p)) if (v !== a && v !== b && hasAttr(v.d, "unholy"))
+        out.push({ gain: gain - keepWorth(g, v) + sacrificeBonus(g, p), flux: 0, lanes: 2, run: () => fuse(g, p, a, b, fc, { kind: "altar", victim: v, pit: usesPit }) });
+    }
+  }
+  return out;
+}
+function bestPlan(g, p) {   // which fusion (if any) and which hand creatures make the most of this turn's flux and lanes
+  const crea = handCreatureOpts(g, p), empty = emptyLanes(p).length;
+  let best = null;
+  for (const fo of [null].concat(fusionOpts(g, p))) {
+    const sub = bestSubset(g, p, crea, p.flux - (fo ? fo.flux : 0), empty + (fo ? fo.lanes : 0), p.pact);
+    const score = (fo ? fo.gain : 0) + sub.score;
+    if (!best || score > best.score) best = { score, fo, sub };
+  }
+  return best;
+}
+function naturalPlay(g, p, c, o) {
+  let f = o.flux;
+  if (p.pact && hasAttr(c.d, "unholy")) { f -= p.pact; p.pact = 0; }
+  if (f > p.flux || p.hand.indexOf(c) < 0) return;
+  if (o.php) { L(g, `${who(g, p)} pays ${o.php} PHP to lower ${c.d.name}'s cost.`); payPHP(g, p, o.php); if (g.over) return; }
+  if (o.waste) banishFromWaste(g, p, wasteSpare(p).slice(0, o.waste));
+  p.flux -= f;   // a cost below 0 gives flux
+  p.hand.splice(p.hand.indexOf(c), 1);
+  materialize(g, p, c, chooseLane(g, p, c.d), "hand");
+}
+function planOption(g, p) {
+  const b = bestPlan(g, p);
+  if (!b || b.score <= 0.4) return null;
+  if (b.fo) return { pri: 2, score: b.score, run: b.fo.run };
+  if (!b.sub.list.length) return null;
+  const s = b.sub.list.slice().sort((x, y) => x.o.flux - y.o.flux)[0];
+  return { pri: 2, score: b.score, run: () => naturalPlay(g, p, s.e.c, s.o) };
+}
+function permOption(g, p, c) {
+  const f = c.d.fx;
+  if (c.d.kind === "field") { if (p.field) return null; }
+  else {
+    if (!freeZone(p) || p.zones.some(z => z.c.d.name === c.d.name)) return null;
+    if (p.zones.length >= R.zones - 1 && p.hand.some(x => x !== c && !isUnitKind(x.d.kind) && !(x.d.fx && x.d.fx.perm))) return null;   // keep a zone for one-shots
+  }
+  return { pri: 0, score: f.score ? f.score(g, p) : 2, run: () => putInPlay(g, p, c) };
+}
+function mainPhase(g, p) {
+  for (let guard = 0; guard < 40 && !g.over; guard++) {
+    const opts = [], seen = new Set();
+    const add = o => { if (o && o.score > 0.4) opts.push(o); };
+    for (const c of p.hand) {
+      const f = c.d.fx; if (!f || isUnitKind(c.d.kind) || seen.has(c.d.name)) continue;
+      seen.add(c.d.name);
+      if (f.perm) add(permOption(g, p, c));
+      else if (f.play && freeZone(p)) add(f.play(g, p, c));
+    }
+    for (const u of units(p)) {
+      const f = fxOf(u); if (!f || !f.acts) continue;
+      for (const a of f.acts) {
+        const key = u.d.name + ":" + a.id;
+        if (p.once.has(key)) continue;
+        const o = a.ai(g, u); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
+      }
+    }
+    if (g.phase === 1) add(planOption(g, p));
+    if (!opts.length) break;
+    opts.sort((a, b) => (a.pri - b.pri) || (b.score - a.score));
+    const o = opts[0];
+    if (o.key) p.once.add(o.key);
+    o.run();
+    checkEnd(g);
+  }
+}
+function battle(g, p) {
+  const o = foe(g, p);
+  for (let guard = 0; guard < 10 && !g.over; guard++) {
+    let best = null;
+    for (const u of units(p)) {
+      if (u.attacked || expAtk(g, u) <= 0) continue;
+      for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t); if (!best || s > best.s) best = { s, u, t }; } }
+      if (!o.lanes[u.lane]) { const s = scoreFace(g, u); if (!best || s > best.s) best = { s, u, t: null }; }
+    }
+    if (!best || best.s <= 0.2) break;
+    if (best.t) fight(g, best.u, best.t); else directAttack(g, best.u);
+  }
+}
+function endTurn(g, p) {
+  for (const u of units(p)) { const f = fxOf(u); if (f && f.endTurn) f.endTurn(g, u); if (g.over) return; }
+  for (const u of units(p)) if (u.frenzy) { sacrifice(g, p, u); if (g.over) return; }
+  for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.endEachTurn) q.field.c.d.fx.endEachTurn(g, q);
+  for (const u of units(p)) if (u.stolen) giveBack(g, u);
+  for (const u of allUnits(g)) { u.tAtk = 0; u.tSpd = 0; u.negated = false; }
+  while (p.hand.length > R.handLimit) {
+    const c = p.hand.slice().sort((a, b) => keepValue(g, p, a) - keepValue(g, p, b))[0];
+    p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c);
+  }
+}
+function playTurn(g) {
+  const p = g.p[g.active], o = foe(g, p);
+  g.turnNo++; p.turns++;
+  g.p.forEach(q => q.once.clear());
+  p.fused = false; p.pact = 0; g.phase = 0;
+  const first = p.turns === 1;
+  if (!(first && g.first === p.i)) { draw(g, p, 1); if (g.over) return; }
+  if (!first) p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1);
+  p.flux = p.maxFlux + (first && g.first !== p.i ? R.secondFlux : 0);
+  L(g, `— Turn ${g.turnNo}: ${who(g, p)} · ${p.php} PHP vs ${o.php} · ${p.flux} flux${p.gold ? ` · ${p.gold} gold` : ""} —`);
+  if (g.log) L(g, `  Hand: ${p.hand.map(c => c.d.name).join(", ") || "empty"}.`);
+  for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; }
+  for (const q of g.p) for (const z of spellsOf(q).slice()) if (z.bomb && z.bomb.by === p.i) removeSpell(g, q, z, "Pipebomb");
+  for (const c of p.lazarus.splice(0)) { const i = p.waste.indexOf(c); if (i >= 0 && emptyLanes(p).length) { p.waste.splice(i, 1); materialize(g, p, c, chooseLane(g, p, c.d), "lazarus"); } }
+  for (const u of units(p)) { const f = fxOf(u); if (f && f.startTurn) f.startTurn(g, u); if (g.over) return; }
+  for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.startTurn) f.startTurn(g, p, z); }
+  for (const amt of p.broker.splice(0)) {
+    if (g.rng() < 0.5) { L(g, `  Goblin Stock Broker: the price rose, +${amt * 2} gold.`); gainGold(g, p, amt * 2); } else L(g, `  Goblin Stock Broker: the price fell.`);
+  }
+  p.deathMark = g.deaths;
+  if (checkEnd(g)) return;
+  g.phase = 1; mainPhase(g, p); if (g.over) return;
+  if (g.turnNo > 1) { g.phase = 2; battle(g, p); if (g.over) return; }
+  g.phase = 3; mainPhase(g, p); if (g.over) return;
+  g.phase = 4; endTurn(g, p);
+}
+
+/* ---------------- decks and games ---------------- */
+function prep(raw) {
+  const defs = new Map();
+  raw.forEach((d, ix) => defs.set(d.name, Object.assign({}, d, { ix, attrs: (d.attrs || []).map(lc), factions: d.factions || [], fx: FX[d.name] || SPELLS[d.name] || null })));
+  return defs;
+}
+const simulated = d => !!(FX[d.name] || SPELLS[d.name]);
+function deckFromList(defs, label, list) {   // list: [[name, copies], ...]
+  const main = [], fusion = [];
+  for (const [n, q] of list) { const d = defs.get(n); if (!d) continue; for (let k = 0; k < q; k++) (d.kind === "fusion" ? fusion : main).push(n); }
+  return { label, arch: label, fixed: true, main, fusion };
+}
+// A random but sensible deck: 1 faction (sometimes 2), a flux curve, spells that fit it, every fusion it can make.
+function randomDeck(defs, rng) {
+  const all = [...defs.values()];
+  const cre = all.filter(d => d.kind === "creature" && d.flux != null && d.factions.length);
+  const facs = [...new Set(cre.flatMap(d => d.factions))].filter(f => cre.filter(d => d.factions.includes(f)).length >= 4).sort();
+  if (!facs.length) return null;
+  const prim = pick(rng, facs), sec = facs.length > 1 && rng() < 0.35 ? pick(rng, facs.filter(f => f !== prim)) : null;
+  const inF = d => d.factions.includes(prim) || (!!sec && d.factions.includes(sec));
+  const wshuffle = list => list.map(d => ({ d, k: Math.pow(rng(), 1 / (sec && d.factions.includes(prim) ? 2 : 1)) })).sort((a, b) => b.k - a.k).map(x => x.d);
+  const counts = new Map(); let n = 0;
+  const add = (d, k) => { const have = counts.get(d.name) || 0; k = Math.max(0, Math.min(k, 3 - have, 30 - n)); if (k) { counts.set(d.name, have + k); n += k; } return k; };
+  const copies = () => { const r = rng(); return r < 0.2 ? 1 : r < 0.6 ? 2 : 3; };
+  const pool = cre.filter(inF);
+  const nCre = 14 + Math.floor(rng() * 6);
+  const tier = f => f <= 3 ? 0 : f <= 5 ? 1 : f <= 8 ? 2 : 3, share = [0.36, 0.3, 0.24, 0.1];
+  let spill = 0;
+  for (let t = 0; t < 4; t++) {
+    let want = Math.round(nCre * share[t]) + spill;
+    for (const d of wshuffle(pool.filter(d => tier(d.flux) === t))) { if (want <= 0) break; want -= add(d, Math.min(want, copies())); }
+    spill = Math.max(0, want);
+  }
+  for (const d of wshuffle(pool)) { if (n >= nCre) break; add(d, Math.min(nCre - n, copies())); }
+  // fusions it can make from its own 5+ flux creatures (or a 3-4 flux Unholy one with Ritual Pit)
+  const deckCre = [...counts.keys()].map(k => defs.get(k));
+  const pitTargets = deckCre.filter(pitOk).length;
+  const canPit = pitTargets && all.some(d => d.name === "Ritual Pit" && inF(d));
+  const big = deckCre.filter(d => d.flux >= R.fuseMin);
+  const fusions = all.filter(d => d.kind === "fusion" && (big.some((a, i) => big.some((b, j) => (i !== j || counts.get(a.name) > 1) && recipeFits(d.recipe, [a, b])))
+    || (canPit && big.some(a => deckCre.some(b => pitOk(b) && recipeFits(d.recipe, [a, b]))))));
+  // each fusion it could make goes in 60% of the time, so the stats can compare decks with and without it
+  const fcounts = new Map(); let fn = 0;
+  for (const d of shuffle(rng, fusions.slice())) { if (rng() >= 0.6) continue; const k = Math.min(10 - fn, rng() < 0.5 ? 1 : 2); if (k > 0) { fcounts.set(d.name, k); fn += k; } }
+  const ctx = { fusions: fn, pitTargets, unholy: 0, dice: 0 };
+  for (const [k, q] of counts) { const d = defs.get(k); if (hasAttr(d, "unholy")) ctx.unholy += q; if (d.die) ctx.dice += q; }
+  const spells = all.filter(d => !isUnitKind(d.kind) && simulated(d) && (!d.factions.length || inF(d)) && !(d.fx && d.fx.needs && !d.fx.needs(ctx)));
+  const sw = list => list.map(d => ({ d, k: Math.pow(rng(), 1 / (d.factions.length ? 2 : 1)) })).sort((a, b) => b.k - a.k).map(x => x.d);
+  for (const d of sw(spells)) { if (n >= 30) break; const r = rng(); add(d, r < 0.4 ? 1 : r < 0.8 ? 2 : 3); }
+  for (let guard = 0; n < 30 && guard < 5; guard++) for (const d of wshuffle(pool.concat(spells))) { if (n >= 30) break; add(d, 1); }
+  const expand = m => [...m].flatMap(([k, q]) => Array(q).fill(k));
+  const label = prim + (sec ? " + " + sec : "");
+  return { label, arch: [prim, sec].filter(Boolean).sort().join(" + "), main: expand(counts), fusion: expand(fcounts), elig: fusions.map(d => d.name) };
+}
+function newPlayer(g, i, deck) {
+  const p = { i, php: R.php, gold: 0, flux: 0, maxFlux: R.fluxStart, deck: [], hand: [], waste: [], oblivion: [], fdeck: [],
+    lanes: [null, null, null], zones: [], field: null, turns: 0, once: new Set(), fused: false, pact: 0,
+    broker: [], lazarus: [], deathMark: 0, bullTurn: -1, st: { drawn: new Set(), played: new Set(), fused: new Set(), face: 0 } };
+  const card = d => ({ d, owner: i, uid: g.uid++, lazarusUsed: false });
+  deck.main.forEach(n => { const d = g.defs.get(n); if (d) p.deck.push(card(d)); });
+  deck.fusion.forEach(n => { const d = g.defs.get(n); if (d) p.fdeck.push(card(d)); });
+  shuffle(g.rng, p.deck);
+  p.top = [...new Set(p.deck.slice(-R.early).map(c => c.d.ix))];   // the end of the array is the top
+  return p;
+}
+function playGame(defs, A, B, seed, withLog) {
+  const g = { defs, rng: rngFrom(seed), uid: 1, turnNo: 0, deaths: 0, over: false, winner: -1, endReason: "limit",
+    log: withLog ? [] : null, phase: 0, names: [`P1 (${A.label})`, `P2 (${B.label})`] };
+  g.first = g.rng() < 0.5 ? 0 : 1;
+  g.p = [newPlayer(g, 0, A), newPlayer(g, 1, B)];
+  g.p.forEach(p => draw(g, p, R.hand));
+  L(g, `${who(g, g.p[g.first])} goes first.`);
+  g.active = g.first;
+  while (!g.over && g.turnNo < R.turnLimit * 2) { playTurn(g); if (!g.over) g.active = 1 - g.active; }
+  if (!g.over) { g.over = true; g.winner = -1; g.endReason = "limit"; L(g, `Turn limit reached: draw.`); }
+  else L(g, g.winner < 0 ? "Both players hit 0 PHP: draw." : `${g.names[g.winner]} wins (${g.p[0].php} PHP vs ${g.p[1].php}).`);
+  return g;
+}
+function record(g, A, B) {
+  const uniq = list => [...new Set(list.map(n => g.defs.get(n).ix))];
+  return { w: g.winner, t: g.turnNo, end: g.endReason, f: g.first, p: [A, B].map((D, i) => {
+    const p = g.p[i];
+    return { label: D.label, arch: D.arch, fixed: !!D.fixed, main: uniq(D.main), fus: uniq(D.fusion), elig: D.elig ? uniq(D.elig) : null, top: p.top,
+      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face };
+  }) };
+}
+// o: { count, start, seed, fixed: [{ label, cards: [[name, copies]] }] }. Saved decks play every other game, against a random deck.
+// Game number start + k always gets the same decks and dice, however the games are split between workers.
+function runMany(raw, o, onBatch) {
+  const defs = prep(raw);
+  const fixed = (o.fixed || []).map(d => deckFromList(defs, d.label, d.cards)).filter(d => d.main.length);
+  const recs = []; let chunk = [];
+  for (let k = 0; k < o.count; k++) {
+    const gi = o.start + k, seed = (Math.imul(o.seed >>> 0, 1000003) + Math.imul(gi, 7919)) >>> 0, rng = rngFrom(seed ^ 0x5bd1e995);
+    let A = randomDeck(defs, rng); const B = randomDeck(defs, rng);
+    if (fixed.length && gi % 2 === 1) A = fixed[((gi - 1) / 2) % fixed.length];
+    if (!A || !B) break;
+    const r = record(playGame(defs, A, B, seed, false), A, B);
+    recs.push(r); chunk.push(r);
+    if (onBatch && chunk.length >= 10) { onBatch(chunk); chunk = []; }
+  }
+  if (onBatch && chunk.length) onBatch(chunk);
+  return recs;
+}
+function coverage(raw) {   // which cards the sim plays without their effect, or wrote for older text
+  const missing = [], changed = [];
+  raw.forEach(d => {
+    const rest = String(d.text || "").replace(/\{[^}]*\}?/, "").replace(/\s+/g, " ").trim();
+    if (!FX[d.name] && !SPELLS[d.name]) { if (rest && !/^pay \d+ php( per flux)?: reduce this creature's flux cost by (up to )?\d+\.?$/i.test(rest)) missing.push(d.name); }
+    else if (FX_TEXT[d.name] && FX_TEXT[d.name] !== textHash(d.text)) changed.push(d.name);
+  });
+  return { missing, changed };
+}
+
+if (typeof importScripts === "function" && typeof window === "undefined") {   // running as a Web Worker
+  self.onmessage = e => {
+    const m = e.data;
+    try { runMany(m.defs, m, recs => self.postMessage({ type: "batch", recs })); self.postMessage({ type: "done" }); }
+    catch (err) { self.postMessage({ type: "error", message: String(err && err.stack || err) }); }
+  };
+}
+return { R, FX, SPELLS, FX_TEXT, textHash, rngFrom, prep, randomDeck, deckFromList, playGame, record, runMany, coverage };
+})();
+</script>
 <script>
 const EMBEDDED_CSV = "Name,Type,ATK,HP,Flux Cost,Speed,Description,Faction,Attribute,Cold Storage\r\nRitual Pit,Continuous Spell,N/A,N/A,,,Once per turn: Banish an \u0027Unholy\u0027 creature from your Waste Repository. Your next fusion this turn may use an \u0027Unholy\u0027 creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,\r\nThe bodega,Continuous Spell,N/A,N/A,N/A,,\"During your End Phase, you may discard 1 card, then draw 1 card. If the card you discarded was a Mundane Creature, choose 1 Mundane Creature on the field; it gains +2 ATK.\",Mundane,,yes\r\nPrimordial Soup,Continuous Spell,N/A,N/A,N/A,,\"At the end of each turn, all Dino creatures you control gain +1 HP. Once per turn, the first Dino creature you Materialize costs 1 less Flux.\nOnce per game you may banish 3 \u0027Dino\u0027 cards from your waste repository, then as long as this card is on the field at the start of every turn roll a d20 if it lands on 1 all cards on either side of the field get destroyed.\",Dino,,yes\r\nBull Run,Continuous Spell,N/A,N/A,N/A,,\"The first time each turn you gain gold, gain 1 additional gold. While you have 5 or more gold in your pool, your \u0027Greedy\u0027 creatures gain +1 ATK.\",Goblin,,\r\nGoblin Bank,Continuous Spell,N/A,N/A,N/A,,\"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.\",Goblin,,\r\nNuclear Waste,Continuous Spell,N/A,N/A,N/A,,At the end of your turn: a random \u0027Mutant\u0027 creature mutates. ,Mutant,,yes\r\nCherub,Creature,1,2,1,3,\"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nWhen materialized: Restore 2 HP to another creature.\",Angel,Holy / Humanoid / Winged,\r\nHoly Acolyte,Creature,1,5,2,1,\"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nOnce per turn: Restore 2 HP to another creature.\",Angel,Holy / Humanoid,\r\nSanctified Knight,Creature,4,10,5,2,Your creatures in the lanes next to this creature take 1 less combat damage.,Angel,Holy / Humanoid / Noble,\r\nJudicator Angel,Creature,5,10,7,4,\"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nWhen this creature attacks: Restore 2 HP to your creatures in the lanes next to it.\",Angel,Holy / Humanoid / Winged / Noble,\r\nChapel Guard,Creature,4,12,5,1,\"The first time this creature would be destroyed, it survives with 1 HP instead.\",Angel,Holy / Humanoid,\r\nPurifier Nun,Creature,2,10,4,2,\"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nWhen materialized: Restore 3 HP to any creature. If it\u0027s \u0027Unholy\u0027, deal 3 damage to it instead.\",Angel,Holy / Humanoid,\r\nBellkeeper Monk,Creature,3,14,6,1,\"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nAt the start of your turn: Restore 1 HP to each of your creatures (2 HP while \u0027Sanctuary Bells\u0027 is in play).\",Angel,Holy / Humanoid,\r\nPain Drinker,Creature,5,4,5,3,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1.\nWhenever you lose PHP: This creature gains +1 ATK until end of turn.\",Blood Demon,Unholy / Humanoid,\r\nCarrion Duchess,Creature,3,8,5,2,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1.\nAt the end of your turn: You may pay 2 PHP to return an \u0027Unholy\u0027 creature with 5 or less max HP from your Waste Repository to the field.\",Blood Demon,Unholy / Humanoid / Noble,\r\nNomed The Dark Viscount,Creature,6,9,7,3,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 2.\nWhenever this creature deals combat damage: Gain 1 PHP.\",Blood Demon,Unholy / Humanoid / Noble,\r\nRenroc The Dark Marquis,Creature,5,6,7,3,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 2.\nOnce per turn: Pay 2 PHP to destroy a creature with 4 or less HP.\",Blood Demon,Unholy / Humanoid / Noble,\r\nBlood Priest,Creature,4,6,5,2,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1.\nWhenever you sacrifice a creature: Gain 2 PHP.\",Blood Demon,Unholy / Humanoid,\r\nBlood Imp,Creature,1,1,1,2,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1.\nWhen this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.\",Blood Demon,Unholy / Beast / Winged,\r\nVein Ripper,Creature,4,2,3,3,Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 2.,Blood Demon,Unholy / Beast,\r\nFlesh Collector,Creature,7,10,9,1,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.\n\nOnce per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.\",Blood Demon,Unholy / Amorphous,\r\nHemogoblin,Creature,1+d8,8,6,3,\"Once per turn: Pay 2 PHP to gain 2 gold.\nOnce per turn: Pay 2 gold: This creature gains +1 Speed until end of turn.\",Goblin,Greedy / Humanoid / Unholy,\r\nAnkylosaurus,Creature,3,11,4,,\"The first time each turn this creature would take combat damage, reduce that damage by 2.\",Dino,Prehistoric / Beast,yes\r\nBrontosaurus,Creature,2,10,3,,\"This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!\",Dino,Prehistoric / Beast,yes\r\nTriceratops,Creature,4,6,3,,\"When this creature attacks, you may deal 2 damage to a creature adjacent to the one targeted.\",Dino,Prehistoric / Beast,yes\r\nT-Rex,Creature,6(bleed2),9,,,Can only be materialized by hatching from a Dino Egg.,Dino,Prehistoric / Beast,yes\r\nVelociraptor,Creature,4(bleed1),3,2,,\"When this creature attacks, it may deal 1 damage (no bleed) to a creature adjacent to the one targeted.\",Dino,Prehistoric / Beast,yes\r\nDino egg,Creature,1,2,1,,\"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including \u0027T-Rex\u0027). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.\",Dino,Prehistoric / Beast,yes\r\nGalorpian,Creature,4,7,3,,\"Why are you blue?\nOnce per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.\",Galorpian,Amorphous,yes\r\nGoblin,Creature,1+d4,3,2,2,\"Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently.\",Goblin,Greedy / Humanoid,\r\nPenny Stock Goblin,Creature,1+d2,2,1,2,\"Whenever you gain gold: This creature gains +1 ATK until end of turn.\n\nOn your turn: You may banish this creature to gain 1 gold.\",Goblin,Greedy / Humanoid,\r\nJonnhy \u00275 inches\u0027,Creature,3,5,2,,He\u0027s walking here! Legend says he\u0027s Gregg’s cousing from New York. Whenever another Mundane creature is Materialized: Restore 1 HP to this creature.,Mundane,Humanoid / Greedy,yes\r\nGregg,Creature,4,6,3,,\"Gregg has no effect, he\u0027s just a dude.\",Mundane,Humanoid,yes\r\nGregg\u0027s Friend Joe,Creature,4,4,2,,When this creature attacks: Another Mundane creature gains +1 ATK until end of turn.,Mundane,Humanoid,yes\r\nGregg\u0027s Dawg ,Creature,3,9,3,,The first time each turn another Mundane creature would take combat damage: Reduce that damage by 1.,Mundane,Beast / Guardian,yes\r\nBunny,Creature,2,3,1,,\"Your opponent can only attack creatures with the name \u0027Bunny\u0027 or fusions which have splices named \u0027bunny\u0027 while this card is on the field.\n\",Mundane,Beast,yes\r\nCat,Creature,3,6,2,,If this creature doesn’t attack: Restore 1 HP to it at end phase.,Mundane,Beast,yes\r\nSpine Crawler,Creature,4,4,2,,Whenever this creature mutates: it gains +1 ATK.,Mutant,Fractured / Amorphous,yes\r\nFailed Clone,Creature,2,3,1,,When materialized: Mutate (D6).,Mutant,Fractured / Humanoid,yes\r\nMutation Host,Creature,4,5,3,,Once per turn: You may force another creature to mutate.,Mutant,Fractured / Amorphous,yes\r\nAdaptive Horror,Creature,7,8,5,,\"Whenever this creature mutates, it gains +1 ATK and +1 HP permanently.\n\",Mutant,Fractured / Humanoid,yes\r\nFlesh Lump,Creature,2,8,2,,Whenever this creature survives damage: Mutate (D6).,Mutant,Fractured / Amorphous,yes\r\nRadiation Hound,Creature,4,5,3,,Whenever another creature on the field mutates this creature mutates as well. (doesn\u0027t affect other radiation hounds),Mutant,Fractured / Beast,yes\r\nLab Escapee,Creature,3,5,2,,\"When materialized: Mutate (D6).\nWhen this creature mutates, you may restore 1hp to another \u0027Mutant\u0027 creature you control.\",Mutant,Fractured / Humanoid,yes\r\nBrain Sucker,Creature,3,5,3,,\"While attached, this creature gains +1 ATK for each card effect the host has.\",Parasite,Insect / Psychic,yes\r\nMind Worm,Creature,2,4,2,,\"When this card Infests a creature, the host\u0027s effects are negated until this card leaves the field.\",Parasite,Insect / Psychic,yes\r\nBone Leech,Creature,3,5,2,,\"While attached, the host\u0027s maximum HP is reduced by 2 HP. \",Parasite,Insect,yes\r\nCyst Spreader,Creature,4,4,3,,\"When the host this card is attached to is destroyed, you may Infest another enemy creature a ‘Parasite’ creature from your Waste Repository.\",Parasite,Insect,yes\r\nFlesh Tick,Creature,2,5,2,,\"When attached to a creature, the host cannot gain HP.\",Parasite,Insect,yes\r\nParasite Larva,Creature,1,3,1,,\"While attached, the host\u0027s damage get\u0027s reduced by -1 ATK. At the end of each turn, the host takes 1 damage.\n\",Parasite,Insect,yes\r\nEgg incubator,Equipment,N/A,N/A,N/A,,\"Equip this \u0027Egg incubator\u0027 to any \u0027egg\u0027 creature. The first time this equiped \u0027egg\u0027 were to take damage from a creature in combat, negate this damage.\",,,yes\r\nGregg\u0027s Vape,Equipment/Mundane,N/A,N/A,N/A,,Equip this to a card that has \u0027Gregg\u0027 in the name (including Ggrreegg). The creature gains +4 ATK.,Mundane,,yes\r\nSanctuary Bells,Field Spell,,,,,\"At the end of each turn: Each player restores 1 PHP.\nAt the start of your turn: Restore 1 HP to each of your \u0027Holy\u0027 creatures.\",Angel,,\r\nGreggs,Field Spell,N/A,N/A,N/A,,All \u0027Gregg\u0027 cards on your field restore +1 hp at the end of every turn.,Mundane,,yes\r\nBrood Fog,Field Spell,N/A,N/A,N/A,,\"At the end of your turn, each Infested creature takes 1 damage.\nIf an Infested creature dies, the player controlling that creature draws 1 card.\",Parasite,,yes\r\nSeraphim Wall,Fusion,7,30,,1,\"{Chapel Guard + any Holy creature}\n\",Angel,Holy / Guardian / Heavy,\r\nCrimson Cherub,Fusion,4,8,,,{Cherub + Blood Imp},Angel / Blood Demon,Abomination / (Un)Holy / Winged,yes\r\nAlexandru,Creature/Thiefling,3,5,3,,\"Once per turn, flip all coins you control. For each heads: steal a random card from your opponent’s hand, reveal it and put it on top of their deck.\",,,yes\r\nAlexanduex,Creature/Thiefling,7,15,N/A,,\"{2 \u0027Thiefling\u0027 creatures with \u0027Alex\u0027 in their name}\nOnce per turn, flip all coins you control. For each heads, choose one:\n• Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck.\n• Steal a card from your opponent’s field and shuffle it into their hand.\nTails do nothing.\",,,yes\r\nAlexandre,Creature/Thiefling,4,8,5,,\"Whenever you steal a card, coin, or Flux, this creature gains +1 ATK permanently.\",,,yes\r\nFallen Angel,Fusion,11,20,,3,\"{any Holy creature + any Unholy creature}\n\nOnce per turn, when you restore HP to a creature or pay PHP: Deal 2 damage to the enemy creature in front of this creature.\",Angel / Blood Demon,Holy / Unholy / Winged,\r\nLord Lazarus,Fusion,9,22,,2,\"{any 2 Noble creatures}\n\nThe first time this creature is destroyed, return it from your Waste Repository to the field at the start of your next turn, with its ATK, HP and Speed halved (4 ATK / 11 HP / 1 Speed).\",Angel / Blood Demon,Noble,\r\nArch Cleric,Fusion,7,26,,2,\"{Bellkeeper Monk + any Holy creature}\nRadiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nAt the start of your turn: Restore 3 HP to a creature you control.\",Angel,Holy / Cleric,\r\nSkinless Titan,Fusion,14,18,N/A,2,\"{Pain Drinker + any Unholy creature}\nAt the end of your turn: Lose 2 PHP. Whenever you lose PHP: This creature gains +1 ATK until end of turn.\nWhenever this creature destroys a creature: Deal 2 damage to each enemy creature.\",Blood Demon,Unholy / Heavy,\r\nThe Meat Cathedral,Fusion,8,28,N/A,1,\"{Blood Priest + any Unholy creature}\nOnce per turn: Banish 2 cards from your Waste Repository to restore 5 HP to a creature or gain 5 PHP.\nWhenever you sacrifice a creature: This creature gains +2 ATK permanently.\",Blood Demon,Unholy / Guardian / Heavy,\r\nErgof The Dark Emperor,Fusion,9,20,N/A,3,\"{Nomed The Dark Viscount + Renroc The Dark Marquis}\nOnce per turn: Pay 3 PHP to destroy a creature with 6 or less HP.\",Blood Demon,Humanoid / Unholy / Noble / Winged,\r\nTT-rex,Fusion,15(bleed5),30,N/A,,\"{T-Rex + T-Rex}\n\nLife... uh, finds a way\",Dino,Beast / Carnivore / Heavy,yes\r\nHop Goblin,Fusion,5+d12,20,N/A,2,\"{any 2 Greedy creatures}\nThis creature rolls its die twice and keeps the higher result.\n\nOnce per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently.\",Goblin,Small  / Greedy / Heavy,\r\nPurrramid,Fusion,10,20,N/A,,\"{3 Cats} This furry purrramid is just so cute! :3 \nIf this creature doesn’t attack: Restore 3 HP to it at end phase.\n\",Mundane,Beast / Heavy,yes\r\nCabbit,Fusion,4,8,N/A,,\"{Cat + Bunny}\nIf this creature doesn’t attack: Restore 1 HP to it at end phase.\nYour opponent can only attack creatures with the name \u0027Bunny\u0027 or fusions which have splices named \u0027bunny\u0027 while this card is on the field.\n\",Mundane,,yes\r\nHOA President,Fusion,12,30,,,\"{Suburbia + any Mundane Fusion}\n\nOnce per turn, Choose one:\n- Negate a creature’s effects until end of turn.\n- Restore 3 HP to all Mundane creatures you control.\n- All Mundane creatures you control gain +2 ATK until end of turn.\",Mundane,,yes\r\nShort Change,Instant Spell/Thiefling,,,,,\"Target opponent loses 1 Flux. You gain 1 Flux this turn. If they had no Flux, draw 1 card.\",,,yes\r\nThe Local Legend,Fusion,8,16,,,\"{Any 2 Mundane creatures with different names}\nOnce per turn: Another Mundane creature gains +2 ATK until end of turn.\",Mundane,,yes\r\nPatient Zero,Fusion,6,13,N/A,,\"{Mutation Host + any \u0027Mutant\u0027 creature}\nOnce per turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.\",Mutant,Abomination / Humanoid,yes\r\nThe Aberration,Fusion,7,12,N/A,,\"{2 Mutants}\nAt the start of your turn, you may place 1 Mutant from your Waste Repository under this card as a Fusion Splice. Max 3 Fusion Splices. Once per turn, you may banish 1 Fusion Splice and Horrifically Mutate (D12) this creature.\",Mutant,Abomination / Heavy,yes\r\nBrood Core,Fusion,5,18,N/A,,\"{Parasite Larva + Mind Worm}\nAttached enemy creatures have their effects negated. At the end of your turn, restore 2 HP to this card for each Infested creature on the field.\",Parasite,Insect / Psychic,yes\r\nThe Swarm Mind,Fusion,9,14,N/A,,\"{Queen Parasite + any Parasite}\nOnce per turn, you may move one attached Parasite from one host to another enemy creature. Whenever a Parasite is moved this way, the new host takes 2 damage.\",Parasite,Insect / Psychic,yes\r\nDivine Silence,Instant Spell,,,,,Choose a creature: Negate its effects until end of turn.,Angel,,\r\nDivine Shelter,Instant Spell,,,,,When an enemy creature attacks a creature you control: Prevent all damage that would be dealt to your creature in that fight.,Angel,,\r\nOpen Vein,Instant Spell,,,,,\"Pay 3 PHP: Deal 3 damage to a creature. If that creature was already damaged, deal 5 damage instead.\",Blood Demon,,\r\nDetroit,Field Spell/Thiefling,N/A,N/A,N/A,,\"Can\u0027t have shit...\nAnytime a player steals an amount of cards, double that amount. Only one \u0027Detroit\u0027 field spell can be active at the same time.\n\n(Field Spell)\",,,yes\r\nSacrificial Lamb,Instant Spell,N/A,N/A,N/A,,Banish 2 \u0027Unholy\u0027 creatures from your Waste Repository to gain 6 PHP.,Blood Demon,,\r\nMarket Crash,Instant Spell,,,,,Pay 5 gold: All \u0027Greedy\u0027 creatures you control gain +3 ATK until end of turn.,Goblin,,\r\nHOA Complaint,Instant Spell,,,,,\"Target a creature, it loses 2 ATK until end of turn. If that creature is not a Mundane: It also loses its effects until end of turn.\",Mundane,,yes\r\nTax Evasion,Instant Spell,,,,,Prevent up to 5 combat damage that would be dealt to a Mundane creature this battle.,Mundane,,yes\r\n\"RS PRO 115mm Stainless Steel Curved Tweezers\n\",Instant Spell,N/A,N/A,N/A,,\"Remove one attached \u0027Parasite\u0027 creature from an infested creature (that \u0027Parasite\u0027 creature goes to your hand). If you do, deal 2 damage to that infested creature.\",Parasite,,yes\r\nThiefling Sleight of Hand,Instant Spell/Thiefling,N/A,N/A,N/A,,\"When your opponent casts a spell, grab that spell card from your opponent and shuffle it in your deck.\n\n(Instant Spell)\n\",,,yes\r\nLoaded Dice,Instant Spell,,,,,Choose 1 coin flip or dice roll. Flip/roll again and use the second result.,,,\r\nBlood Frenzy,Spell,,,,,Choose an \u0027Unholy\u0027 creature you control: It gains +4 ATK and +1 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,\r\nBlood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next \u0027Unholy\u0027 creature you materialize this turn costs 2 less flux.,Blood Demon,,\r\nArchaeologist,Spell,N/A,N/A,N/A,,Banish 3 \u0027Dino\u0027 creatures from your Waste Repository. Materialize any \u0027Dino\u0027 creature that isn\u0027t a \u0027T-Rex\u0027 from your hand or deck.,Dino,,yes\r\nFossil Record,Spell,N/A,N/A,N/A,,\"Return a Dino creature from your Waste Repository to your hand. If it was a Dino Egg or T-Rex, draw 1 card.\",Dino,,yes\r\nGoblin Shuffle,Spell,N/A,N/A,N/A,,\"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.\n\nFor each \u0027Greedy\u0027 creature you put on the bottom of your deck this way, gain 1 gold.\",Goblin,,\r\nGoblin Stock Broker,Spell,N/A,N/A,N/A,,\"Pay 3 gold: Choose a real stock, ETF or cryptocurrency ticker and write down its price now.\n\nAt the start of your next turn, look up the same asset again:\n- If it rose, double the invested gold and add it to your pool.\n- If it fell, lose the invested gold.\nAfter that this card resolves.\",Goblin,,\r\nBad Bunny Concert tickets,Spell,N/A,N/A,N/A,,\"Turn any creature on the field into a creature named \u0027Bunny\u0027, it keeps it\u0027s ATK \u0026 HP but looses any effects and original atribute(s).\",Mundane,,yes\r\nCostco Hot Dog and Soda Comb for $1.5,Spell,,,,,Restore 4 HP to a Mundane creature. Draw 1 card.,Mundane,,yes\r\nGenetic Collapse,Spell,,,,,\"Destroy a ‘Mutant’ creature you control. Deal damage equal to its ATK, to any creature on the field.\",Mutant,,yes\r\nForced Evolution,Spell,,,,,\"Choose a creature. It restores +2 HP, then mutates.\",Mutant,,yes\r\nHost Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK and 3 HP permanently.,Parasite,,yes\r\nInfection Burst,Spell,N/A,N/A,N/A,,Infest a target creature with a \u0027Parasite\u0027 creature from your hand or Waste Repository.,Parasite,,yes\r\nAnd for my next trick...,Spell,N/A,N/A,N/A,,\"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don\u0027t have any coins left. After stealing their coin, add this card to their deck and shuffel.\",,,yes\r\nCrack a pack,Spell,N/A,N/A,N/A,,\"Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository. \",,,yes\r\nEnergy drink,Spell,N/A,N/A,N/A,,Choose 1 creature you control and restore half (rounded down) of it’s max hp.,,,\r\n\"Jar of Materialism\n\",Spell,N/A,N/A,N/A,,\"Just different enough not to get sued...\n\nDraw 1 card and then draw another card.\",,,\r\nMicrowave,Spell,N/A,N/A,N/A,,\"Reheat a creature from any Waste Repository and materialized it on your side of the field.\n\",,,\r\nPipebomb,Spell,N/A,N/A,N/A,,\"Target a Continuous/Field Spell or Equipment on the field and place a \u0027Pipebomb\u0027 on it. After 1 turn, the \u0027Pipebomb\u0027 explodes and destroys that card.\",,,\r\nSpace Squid,Spell,N/A,N/A,N/A,,Take control of one your opponent\u0027s creature cards for a turn.,,,\r\nUnfuse,Spell,N/A,N/A,N/A,,Break any fused creature down into it\u0027s base components.,,,\r\nGoblin General,Creature,1+d6,8,5,2,\"Your other \u0027Greedy\u0027 creatures roll their dice twice and keep the higher result.\n\nOnce per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.\",Goblin,Greedy / Humanoid,\r\nGob-omber,Creature,1+d6,6,5,3,\"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.\",Goblin,Greedy / Humanoid,\r\nGoblin Miner,Creature,d6,8,4,2,\"When materialized and at the start of your turn: Gain 1 gold.\n\nYou may pay 2 gold: At the start of your next turn, gain 1 flux instead of 1 gold.\",Goblin,Greedy / Humanoid,\r\nSoul Sucker,Fusion,4+d8,26,,2,\"{any Unholy creature + any Greedy creature}\nAt the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.\nWhenever a creature dies: Gain 1 gold or 1 PHP.\",Blood Demon / Goblin,Unholy / Greedy,\r\nArchangel,Creature,7,16,10,3,\"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nOnce per turn: Restore 2 HP to a creature you control.\",Angel,Holy / Humanoid / Winged,\r\nGoblin Pit Boss,Creature,2+d10,12,7,2,\"Whenever a \u0027Greedy\u0027 creature you control rolls the highest number on its die: Gain 2 gold.\n\nOnce per turn: Pay 1 gold to reroll a \u0027Greedy\u0027 creature\u0027s die.\",Goblin,Greedy / Humanoid,\r\nOrc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack deals half damage.,Goblin,Greedy / Humanoid,\r\nIt\u0027s free fuse-estate,Spell,N/A,N/A,N/A,,\"Fuse without paying the 2 flux.\n\n(Fusing: once per turn, 2 creatures you control in lanes next to each other that each cost 5 or more flux become the fusion splices of a fusion from your Fusion Deck whose recipe they meet. The fusion takes one of their lanes.)\",,,\r\nCrimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an \u0027Unholy\u0027 creature you control that isn\u0027t one of the fusion splices instead of paying the 2 flux.,Blood Demon,,\r\nSeraph of Judgment,Fusion,9,18,,4,\"{Judicator Angel + any Holy creature}\nRadiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nWhen this creature attacks: Restore 2 HP to a creature you control.\",Angel,Holy / Winged,\r\nGoblin King,Fusion,3+d10,24,,2,\"{Goblin General + any Greedy creature}\nYour \u0027Greedy\u0027 creatures roll their dice twice and keep the higher result. At the start of your turn: Gain 1 gold.\nYour \u0027Greedy\u0027 creatures gain +1 ATK for every 5 gold in your pool.\",Goblin,Greedy / Humanoid,\r\nGoblin Bombardier,Fusion,4+d8,22,,3,\"{Gob-omber + any Greedy creature}\nOnce per turn: Pay X gold. Deal X damage to an enemy creature and half of X (rounded down) to the creatures in the lanes next to it.\",Goblin,Greedy / Humanoid,\r\nIndulgence Seller,Fusion,8,24,,2,\"{any Holy creature + any Greedy creature}\nRadiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nOnce per turn: Pay X gold to restore 2X HP to a creature you control.\",Angel / Goblin,Holy / Greedy,\r\nMarket research,Spell,N/A,N/A,N/A,,Pay 4 gold: Search your deck for a \u0027Greedy\u0027 creature and put it into your hand.,Goblin,,\r\n";
 const EMBEDDED_NAME = "Base set - Fusion Fuckery - v6.csv";
@@ -1850,7 +2997,7 @@ function openAnalysis(tab) {
   dlg.querySelectorAll(".ana-tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === anaTab));
   const body = document.getElementById("anaBody");
   body.innerHTML = `<div class="dp-empty">Working…</div>`;
-  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim, lanes: renderLanes })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
+  setTimeout(() => { try { ({ check: renderCheck, balance: renderBalance, factions: renderFactions, compare: renderCompare, sim: renderSim, lanes: renderLanes, battle: renderBattle })[anaTab](body); } catch (e) { body.innerHTML = `<div class="issues"><li>${esc(e.message)}</li></div>`; } }, 20);
 }
 function jumpTo(name) {
   const c = cards.find(x => cardKey(x) === name) || cards.find(x => lc(cardKey(x)) === lc(name));
@@ -2138,6 +3285,266 @@ function renderLanes(body) {
     laneSim.log.unshift(entry); laneSim.log.length = Math.min(laneSim.log.length, 8);   // newest first
     rerender();
   });
+}
+
+/* ---------- 7. battle simulator ----------
+   Whole games between random decks, played by tools/battle-sim.js (inlined by tools/build.ps1 as #battleEngine).
+   Big runs go to Web Workers started from that script's text; where the browser won't start workers, they run
+   here 10 games at a time so the page stays usable. */
+const battleSim = { n: 1000, saved: true, run: null, res: null, watchA: "", watchB: "", log: null };
+function battleDefs() {
+  const seen = new Set();
+  return cards.filter(c => !isCold(c) && cardKey(c) && !seen.has(cardKey(c)) && seen.add(cardKey(c))).map(c => {
+    const fusion = isFusionCard(c), dice = diceOf(c), rec = fusion ? parseRecipe(c) : null;
+    return { name: cardKey(c), kind: fusion ? "fusion" : category(c) === "Creature" ? "creature" : (spellKind(c) || "spell"),
+      flux: fluxOf(c), atk: dice ? dice.base : (parseInt(c.data[COLS.atk], 10) || 0), die: dice ? dice.die : 0, hp: hpNum(c) || 0,
+      spd: speedOf(c) ?? PLAY.speedNormal, attrs: attrsOf(c).map(lc), factions: factions(c), bp: bloodPriceOf(c),
+      radiance: /\bradiance\b/i.test(c.data[COLS.desc]), text: c.data[COLS.desc],
+      recipe: rec && { distinct: rec.distinct, parts: rec.parts.map(p => ({ kind: p.kind, value: p.value, count: p.count })) } };
+  });
+}
+const savedBattleDecks = () => deckState.decks.filter(d => Object.keys(d.cards).length).map(d => ({ label: d.name, cards: Object.entries(d.cards) }));
+function startBattles() {
+  const defs = battleDefs(), fixed = battleSim.saved ? savedBattleDecks() : [];
+  const run = battleSim.run = { n: battleSim.n, done: 0, recs: [], workers: [], seed: Math.floor(Math.random() * 2 ** 31), t0: performance.now() };
+  battleSim.res = null;
+  run.finish = () => {
+    if (run.over) return;
+    run.over = true;
+    run.workers.forEach(w => w.terminate());
+    if (battleSim.run === run) battleSim.run = null;
+    battleSim.res = run.error ? { error: run.error } : run.recs.length ? battleStats(run.recs, defs, { ms: performance.now() - run.t0, stopped: !!run.stopped, asked: run.n }) : null;
+    refreshBattle();
+  };
+  const local = () => {   // no Web Workers: play them here
+    run.local = true; run.workers.forEach(w => w.terminate()); run.workers = []; run.recs = []; run.done = 0;
+    let start = 0;
+    const step = () => {
+      if (run.over) return;
+      if (run.stopped || start >= run.n) return run.finish();
+      const count = Math.min(10, run.n - start);
+      try { run.recs.push(...BattleSim.runMany(defs, { fixed, seed: run.seed, start, count })); } catch (e) { run.error = e.message; return run.finish(); }
+      start += count; run.done = run.recs.length; battleProgress(); setTimeout(step, 0);
+    };
+    step();
+  };
+  let url = null;
+  try { url = URL.createObjectURL(new Blob([document.getElementById("battleEngine").textContent], { type: "text/javascript" })); } catch {}
+  const parts = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1, Math.ceil(run.n / 100))), per = Math.ceil(run.n / parts);
+  let left = 0;
+  try {
+    if (!url) throw new Error("no workers");
+    for (let k = 0; k < parts; k++) {
+      const start = k * per, count = Math.min(per, run.n - start); if (count <= 0) break;
+      const w = new Worker(url); run.workers.push(w); left++;
+      w.onmessage = e => {
+        const m = e.data; if (run.over || run.local) return;
+        if (m.type === "batch") { run.recs.push(...m.recs); run.done = run.recs.length; battleProgress(); }
+        else if (m.type === "done") { if (--left === 0) run.finish(); }
+        else if (m.type === "error") { run.error = m.message; run.finish(); }
+      };
+      w.onerror = e => { e.preventDefault(); if (run.over || run.local) return; if (run.recs.length) { run.error = e.message || "A worker stopped."; run.finish(); } else local(); };
+      w.postMessage({ defs, fixed, seed: run.seed, start, count });
+    }
+  } catch { local(); }
+  refreshBattle();
+}
+function refreshBattle() { if (document.getElementById("anaDlg").open && anaTab === "battle") renderBattle(document.getElementById("anaBody")); }
+const battleProgHTML = r => `<div class="bs-prog"><div class="bar ok"><i style="width:${Math.round(r.done / r.n * 100)}%"></i></div>
+  <span>${r.done.toLocaleString()} / ${r.n.toLocaleString()} games${r.local ? " (this browser won't run them in the background, so the page may feel slow)" : ""}</span></div>`;
+function battleProgress() { const el = document.getElementById("bsProg"); if (el && battleSim.run) el.innerHTML = battleProgHTML(battleSim.run); }
+
+function battleStats(recs, defs, meta) {
+  // Card stats only use random decks (saved decks get their own table). Whether a card sits in the top cards of the
+  // shuffled deck is pure chance, so "won when it was there" vs "won when it wasn't" is a fair test of the card,
+  // free of the bias that cards drawn late only show up in long games.
+  const N = defs.length;
+  const C = defs.map(d => ({ d, deckN: 0, deckW: 0, inN: 0, inW: 0, outN: 0, outW: 0, drawnN: 0, playN: 0, madeN: 0, madeW: 0 }));
+  const pairs = new Map(), arch = new Map(), fixed = new Map(), ends = { php: 0, deck: 0, limit: 0 };
+  let firstW = 0, decided = 0, turns = 0;
+  for (const r of recs) {
+    turns += r.t; ends[r.end] = (ends[r.end] || 0) + 1;
+    if (r.w >= 0) { decided++; if (r.w === r.f) firstW++; }
+    r.p.forEach((pl, i) => {
+      const win = r.w < 0 ? 0.5 : r.w === i ? 1 : 0, opp = r.p[1 - i];
+      if (pl.fixed) { const e = fixed.get(pl.label) || { n: 0, w: 0, t: 0 }; e.n++; e.w += win; e.t += r.t; fixed.set(pl.label, e); return; }
+      if (!opp.fixed) { const k = pl.arch + "\t" + opp.arch, e = arch.get(k) || { n: 0, w: 0 }; e.n++; e.w += win; arch.set(k, e); }
+      const top = new Set(pl.top), drawn = new Set(pl.drawn), played = new Set(pl.played), fused = new Set(pl.fused), fus = new Set(pl.fus);
+      for (const x of pl.main) {
+        const s = C[x]; s.deckN++; s.deckW += win;
+        if (top.has(x)) { s.inN++; s.inW += win; } else { s.outN++; s.outW += win; }
+        if (drawn.has(x)) { s.drawnN++; if (played.has(x)) s.playN++; }
+      }
+      // fusions: decks that could make it, with it in the Fusion Deck vs without
+      for (const x of pl.elig || []) {
+        const s = C[x];
+        if (fus.has(x)) { s.deckN++; s.deckW += win; s.inN++; s.inW += win; if (fused.has(x)) { s.madeN++; s.madeW += win; } } else { s.outN++; s.outW += win; }
+      }
+      // pairs of Main Deck cards, split by which of the two were in the top cards
+      const deck = pl.main.slice().sort((a, b) => a - b);
+      for (let a = 0; a < deck.length; a++) for (let b = a + 1; b < deck.length; b++) {
+        const k = deck[a] * N + deck[b]; let e = pairs.get(k);
+        if (!e) pairs.set(k, e = new Float64Array(8));
+        const cell = 2 * ((top.has(deck[a]) ? 2 : 0) + (top.has(deck[b]) ? 1 : 0)); e[cell]++; e[cell + 1] += win;
+      }
+    });
+  }
+  const rate = (w, n) => n ? w / n : NaN;
+  const rows = C.filter(s => s.deckN).map(s => {
+    const pi = rate(s.inW, s.inN), po = rate(s.outW, s.outN);
+    const se = Math.sqrt((s.inN ? Math.max(pi * (1 - pi), 0.05) / s.inN : 0.25) + (s.outN ? Math.max(po * (1 - po), 0.05) / s.outN : 0.25));
+    const r = { ...s, fusion: s.d.kind === "fusion", deckWR: rate(s.deckW, s.deckN), inWR: pi, outWR: po, impact: pi - po, se,
+      playRate: s.drawnN ? s.playN / s.drawnN : 0, madeRate: s.inN ? s.madeN / s.inN : 0, madeWR: rate(s.madeW, s.madeN) };
+    r.enough = r.inN >= 20 && r.outN >= 20; r.z = r.impact / se;
+    r.verdict = !r.enough ? "" : r.impact >= 0.1 && r.z >= 3 ? "Too strong?" : r.impact >= 0.05 && r.z >= 2.5 ? "Strong" : r.impact <= -0.05 && r.z <= -2.5 ? "Weak" : "";
+    return r;
+  });
+  rows.sort((a, b) => (b.enough - a.enough) || (b.impact - a.impact));
+  // Combos: in decks with both cards, does having both early win more than the two cards' separate effects add up to?
+  // Measured on the log-odds scale (two strong cards can't push a 70% deck to 110%), then shown as "expected vs got".
+  // Hundreds of pairs are tested at once, so a pair only counts as a combo when it passes a false-discovery check (10%).
+  const lg = x => { x = Math.min(0.98, Math.max(0.02, x)); return Math.log(x / (1 - x)); }, sig = x => 1 / (1 + Math.exp(-x));
+  const erfc = x => { const z = Math.abs(x), u = 1 / (1 + z / 2), r = u * Math.exp(-z * z - 1.26551223 + u * (1.00002368 + u * (0.37409196 + u * (0.09678418 + u * (-0.18628806
+    + u * (0.27886807 + u * (-1.13520398 + u * (1.48851587 + u * (-0.82215223 + u * 0.17087277))))))))); return x >= 0 ? r : 2 - r; };
+  const pairList = [];
+  for (const [k, e] of pairs) {
+    if (Math.min(e[0], e[2], e[4], e[6]) < 30) continue;
+    const r = c => e[c + 1] / e[c], v = c => { const q = Math.min(0.98, Math.max(0.02, r(c))); return 1 / (e[c] * q * (1 - q)); };
+    const synL = lg(r(6)) - lg(r(4)) - lg(r(2)) + lg(r(0)), z = synL / Math.sqrt(v(0) + v(2) + v(4) + v(6));
+    const expected = sig(lg(r(4)) + lg(r(2)) - lg(r(0)));
+    pairList.push({ a: C[Math.floor(k / N)].d.name, b: C[k % N].d.name, n: e[6], both: r(6), onlyA: r(4), onlyB: r(2), neither: r(0), expected, syn: r(6) - expected, z, p: erfc(z / Math.SQRT2) / 2 });
+  }
+  pairList.sort((x, y) => x.p - y.p);
+  let cut = -1; pairList.forEach((x, i) => { if (x.p <= (i + 1) / pairList.length * 0.1) cut = i; });
+  pairList.forEach((x, i) => { x.sure = i <= cut && x.syn >= 0.03; });
+  const combos = pairList.filter(x => x.sure), nearCombos = pairList.filter(x => !x.sure && x.syn >= 0.03 && x.z >= 2).slice(0, 8);
+  const archNames = [...new Set([...arch.keys()].map(k => k.split("\t")[0]))].sort();
+  const archTot = archNames.map(a => { let n = 0, w = 0; for (const [k, e] of arch) if (k.split("\t")[0] === a) { n += e.n; w += e.w; } return { a, n, w }; });
+  let fusedGames = 0, players = 0; for (const r of recs) for (const pl of r.p) if (!pl.fixed) { players++; if (pl.fused.length) fusedGames++; }
+  const avgImpact = list => { const l = list.filter(r => r.enough), w = l.reduce((a, r) => a + r.deckN, 0); return w ? l.reduce((a, r) => a + r.impact * r.deckN, 0) / w : NaN; };
+  return { games: recs.length, meta, firstWR: decided ? firstW / decided : NaN, turns: turns / recs.length, ends, rows, combos: combos.slice(0, 15), nearCombos, pairsTested: pairList.length, arch, archNames, archTot, fixed,
+    fusedRate: players ? fusedGames / players : NaN, creatureImpact: avgImpact(rows.filter(r => r.d.kind === "creature")), spellImpact: avgImpact(rows.filter(r => !isUnitKind(r.d.kind))) };
+}
+const bsPct = x => isNaN(x) ? "–" : Math.round(x * 100) + "%";
+const bsSigned = x => isNaN(x) ? "–" : (x >= 0 ? "+" : "−") + Math.abs(x * 100).toFixed(1) + "%";
+const isUnitKind = k => k === "creature" || k === "fusion";
+const bsLink = n => `<a href="#" class="jump" data-n="${esc(n)}">${esc(n)}</a>`;
+const bsKind = d => d.kind === "fusion" ? "Fusion" : d.kind === "creature" ? `Creature, ${d.flux} flux` : ({ instant: "Instant Spell", continuous: "Continuous Spell", field: "Field Spell" })[d.kind] || "Spell";
+function battleResultsHTML(s) {
+  if (s.error) return `<div class="issues"><li>The simulation stopped with an error: ${esc(s.error)}</li></div>`;
+  const G = s.games, vc = v => v === "Weak" ? "lo" : v ? "hi" : "";
+  const strong = s.rows.filter(r => r.verdict && r.impact > 0), weak = s.rows.filter(r => r.verdict === "Weak").reverse();
+  weak.splice(5);   // the 5 weakest; the tables have the rest
+  const flag = r => `<li><b class="${vc(r.verdict)}">${r.verdict}</b> ${bsLink(r.d.name)}: ${r.fusion
+      ? `decks that could make it won <b>${bsPct(r.inWR)}</b> with it in the Fusion Deck and ${bsPct(r.outWR)} without it`
+      : `decks won <b>${bsPct(r.inWR)}</b> of games where it was drawn early and ${bsPct(r.outWR)} where it wasn't`} (${bsSigned(r.impact)}, ±${Math.round(1.96 * r.se * 100)}%).</li>`;
+  const combo = c => `<li><b class="hi">Combo</b> ${bsLink(c.a)} + ${bsLink(c.b)}: decks with both won <b>${bsPct(c.both)}</b> when both were drawn early (${c.n} games),
+    where ${bsPct(c.expected)} was expected from ${bsPct(c.onlyA)} with only the first, ${bsPct(c.onlyB)} with only the second and ${bsPct(c.neither)} with neither.</li>`;
+  const pairRow = c => `<tr><td>${bsLink(c.a)} + ${bsLink(c.b)}</td><td class="num">${c.n}</td><td class="num">${bsPct(c.neither)}</td><td class="num">${bsPct(c.onlyA)}</td><td class="num">${bsPct(c.onlyB)}</td>
+    <td class="num">${bsPct(c.expected)}</td><td class="num"><b>${bsPct(c.both)}</b></td><td class="num hi">${bsSigned(c.syn)}</td><td>${c.sure ? "Combo" : "not sure yet"}</td></tr>`;
+  const main = s.rows.filter(r => !r.fusion), fus = s.rows.filter(r => r.fusion);
+  const row = r => `<tr><td>${bsLink(r.d.name)}</td>${r.fusion ? "" : `<td>${esc(bsKind(r.d))}</td>`}<td class="num">${r.deckN}</td>
+    ${r.fusion ? `<td class="num">${bsPct(r.madeRate)}</td><td class="num">${bsPct(r.madeWR)}</td>` : `<td class="num">${bsPct(r.deckWR)}</td>`}
+    <td class="num">${bsPct(r.inWR)}</td><td class="num">${bsPct(r.outWR)}</td><td class="num ${vc(r.verdict)}">${r.enough ? bsSigned(r.impact) : "–"}</td>
+    <td class="num">${r.enough ? "±" + Math.round(1.96 * r.se * 100) + "%" : "few games"}</td>${r.fusion ? "" : `<td class="num">${bsPct(r.playRate)}</td>`}<td class="${vc(r.verdict)}">${r.verdict}</td></tr>`;
+  const ends = s.ends;
+  return `<p class="ana-lead"><b>${G.toLocaleString()}</b> games${s.meta.stopped ? ` (stopped early, out of ${s.meta.asked.toLocaleString()})` : ""} in ${(s.meta.ms / 1000).toFixed(1)} s ·
+      the player going first won <b>${bsPct(s.firstWR)}</b> · a game lasts <b>${(s.turns / 2).toFixed(1)}</b> turns each ·
+      ${bsPct(ends.php / G)} ended in combat or effect damage, ${bsPct(ends.deck / G)} by running out of cards, ${bsPct(ends.limit / G)} were draws at the ${BattleSim.R.turnLimit}-turn limit ·
+      a player made at least one fusion in <b>${bsPct(s.fusedRate)}</b> of games · getting a creature early is worth ${bsSigned(s.creatureImpact)} on average, a spell ${bsSigned(s.spellImpact)}.</p>
+    <h3>Look at these first</h3>
+    ${strong.length || weak.length || s.combos.length ? `<ul class="bs-flags">${strong.map(flag).join("")}${s.combos.slice(0, 6).map(combo).join("")}${weak.map(flag).join("")}</ul>`
+      : `<p class="good">Nothing stands out after ${G.toLocaleString()} games. More games show smaller differences.</p>`}
+    <h3>Main Deck cards <span class="n">${main.length}</span></h3>
+    <p class="ana-lead">"Drawn early" means it was in the top ${BattleSim.R.early} cards of the shuffled deck (the opening hand and about 7 draws). That's down to luck, so comparing
+      those games with the rest shows what the card itself does. <b>Impact</b> is the difference: how much more often a deck wins when it gets this card early instead of another card from the same deck.</p>
+    <div class="tbl"><table class="atable"><tr><th>Card</th><th>Type</th><th class="num">Games in a deck</th><th class="num">Deck won</th><th class="num">Won when drawn early</th>
+      <th class="num">Won when not</th><th class="num">Impact</th><th class="num">±</th><th class="num">Played when drawn</th><th></th></tr>${main.map(row).join("")}</table></div>
+    <h3>Fusions <span class="n">${fus.length}</span></h3>
+    <p class="ana-lead">Random decks put each fusion they can make in their Fusion Deck 60% of the time. Impact compares those decks with the ones that left it out.
+      "Won when made" looks good for every fusion, because the player who fuses is usually already ahead.</p>
+    <div class="tbl"><table class="atable"><tr><th>Fusion</th><th class="num">Games in a Fusion Deck</th><th class="num">Made in</th><th class="num">Won when made</th><th class="num">Won with it</th>
+      <th class="num">Won without it</th><th class="num">Impact</th><th class="num">±</th><th></th></tr>${fus.map(row).join("")}</table></div>
+    <h3>Card pairs</h3>
+    <p class="ana-lead">Pairs of Main Deck cards that win more together than apart (${s.pairsTested.toLocaleString()} pairs had enough games to test). "Expected" is what both early
+      should win if the two cards didn't help each other. With this many pairs a few look good by luck, so only the ones that pass a check for that say <b>Combo</b>.</p>
+    ${s.combos.length + s.nearCombos.length ? `<div class="tbl"><table class="atable"><tr><th>Pair</th><th class="num">Games with both early</th><th class="num">Neither</th><th class="num">Only the first</th>
+      <th class="num">Only the second</th><th class="num">Expected</th><th class="num">Both</th><th class="num">Extra</th><th></th></tr>${s.combos.concat(s.nearCombos).map(pairRow).join("")}</table></div>`
+      : `<p class="good">No pair stands out yet.</p>`}
+    <h3>Factions</h3>
+    <p class="ana-lead">Win % of the row's random decks against the column's. "Angel + Goblin" is a deck mixing both. The small number is how many games.</p>
+    <div class="tbl"><table class="atable"><tr><th></th><th class="num">Overall</th>${s.archNames.map(n => `<th class="num">vs ${esc(n)}</th>`).join("")}</tr>
+      ${s.archTot.map(t => `<tr><td>${esc(t.a)}</td><td class="num"><b>${bsPct(t.w / t.n)}</b> <small>${t.n}</small></td>${s.archNames.map(b => {
+        const e = s.arch.get(t.a + "\t" + b); return `<td class="num">${t.a === b ? "–" : e ? `${bsPct(e.w / e.n)} <small>${e.n}</small>` : ""}</td>`; }).join("")}</tr>`).join("")}
+    </table></div>
+    ${s.fixed.size ? `<h3>Your saved decks</h3><p class="ana-lead">Each one played every other game against a random deck.</p>
+      <div class="tbl"><table class="atable"><tr><th>Deck</th><th class="num">Games</th><th class="num">Won</th><th class="num">±</th><th class="num">Turns each</th></tr>
+      ${[...s.fixed].map(([name, e]) => `<tr><td>${esc(name)}</td><td class="num">${e.n}</td><td class="num"><b>${bsPct(e.w / e.n)}</b></td>
+        <td class="num">±${Math.round(1.96 * Math.sqrt(Math.max(e.w / e.n * (1 - e.w / e.n), 0.05) / e.n) * 100)}%</td><td class="num">${(e.t / e.n / 2).toFixed(1)}</td></tr>`).join("")}</table></div>` : ""}`;
+}
+function playWatchGame() {
+  const raw = battleDefs(), D = BattleSim.prep(raw), seed = Math.floor(Math.random() * 2 ** 31), rng = BattleSim.rngFrom(seed + 1);
+  const deckOf = name => { const d = name && deckState.decks.find(x => x.name === name); return d ? BattleSim.deckFromList(D, d.name, Object.entries(d.cards)) : BattleSim.randomDeck(D, rng); };
+  const A = deckOf(battleSim.watchA), B = deckOf(battleSim.watchB);
+  const g = BattleSim.playGame(D, A, B, seed, true);
+  const list = names => { const m = new Map(); names.forEach(n => m.set(n, (m.get(n) || 0) + 1)); return [...m].map(([n, q]) => `${q}× ${esc(n)}`).join(", ") || "none"; };
+  battleSim.log = { lines: g.log, decks: [A, B].map((d, i) => `<b>${esc(g.names[i])}</b>: ${list(d.main)}. <i>Fusion Deck:</i> ${list(d.fusion)}.`) };
+}
+function battleWatchHTML() {
+  const opts = sel => `<option value="">Random deck</option>` + deckState.decks.filter(d => Object.keys(d.cards).length)
+    .map(d => `<option value="${esc(d.name)}" ${d.name === sel ? "selected" : ""}>${esc(d.name)}</option>`).join("");
+  const lg = battleSim.log;
+  const line = l => l.startsWith("— Turn") ? `<div class="t">${esc(l)}</div>` : l.startsWith("  ") ? `<div class="s">${esc(l.trim())}</div>`
+    : /wins \(|draw\.$/.test(l) ? `<div class="end">${esc(l)}</div>` : `<div>${esc(l)}</div>`;
+  return `<h3>Watch one game</h3>
+    <p class="ana-lead">See how the AI plays a whole game, turn by turn. <select id="bwA">${opts(battleSim.watchA)}</select> vs <select id="bwB">${opts(battleSim.watchB)}</select>
+      <button class="btn" id="bwGo">Play a game</button></p>
+    ${lg ? `<details class="ana-lead"><summary>The two decks</summary>${lg.decks.map(d => `<p>${d}</p>`).join("")}</details><div class="bs-log">${lg.lines.map(line).join("")}</div>` : ""}`;
+}
+function battleNotesHTML() {
+  const cov = BattleSim.coverage(battleDefs());
+  return `<details class="bs-notes" ${cov.missing.length || cov.changed.length ? "open" : ""}><summary>How the sim plays, and what it can't tell you</summary><ul>
+    <li>Both players use the same simple AI. It plays the creatures and fusion that use its flux and lanes best, pays Blood Price PHP when it can spare it,
+      uses removal, heals and gold when they're worth it, and attacks when the trade is good. Dice count at their average when it decides, then get rolled.
+      It doesn't mulligan and doesn't look at the other player's hand.</li>
+    <li>A misplayed card looks weaker than it is. Use <b>Watch one game</b> to check how a card gets played.</li>
+    <li><b>Impact</b>: win % when a card was in the top ${BattleSim.R.early} cards of the shuffled deck minus win % when it wasn't (a fusion: in the Fusion Deck or not).
+      <b>±</b> is how sure that is: the real number is very likely within it. Differences under 5% need a few thousand games to show. Card stats only count random decks.</li>
+    <li><b>Combos</b> compare the same decks with both cards drawn early, only one, or neither. A combo wins more with both than the two cards' separate effects add up to.
+      Pairs of cards from different factions only meet in mixed decks, so they need more games.</li>
+    <li>Rules the sim follows on top of the rulebook: once-per-turn effects count per card name (15.7); a game nobody has won after ${BattleSim.R.turnLimit} turns each is a draw (half a win).</li>
+    <li>Calls the sim makes where cards are open to reading: Goblin Stock Broker is a coin flip. Microwave takes creatures, not fusions.
+      Space Squid's creature moves to an empty lane on your side until the end of the turn. Unfuse sends the fusion back to its Fusion Deck and puts its splices
+      back on the field at full HP. Skinless Titan's 2 damage only triggers on combat kills. Goblin Pit Boss only rerolls on its own turn. Loaded Dice rerolls dice ATK.
+      Hemogoblin's Speed ability and Goblin Miner's extra flux are used rarely.</li>
+    ${cov.missing.length ? `<li class="hi">Played with stats only, because the sim has no code for their effect yet: ${cov.missing.map(bsLink).join(", ")}. Spells among them are left out of random decks.</li>` : ""}
+    ${cov.changed.length ? `<li class="hi">Card text changed since the sim's version of the effect was written, so it may still play them the old way: ${cov.changed.map(bsLink).join(", ")}.</li>` : ""}
+  </ul></details>`;
+}
+function renderBattle(body) {
+  const r = battleSim.run, res = battleSim.res;
+  body.innerHTML = `<p class="ana-lead">Plays whole games by the Rulebook v4.2 rules between <b>random decks</b> made from the cards outside cold storage, with the same simple AI on both sides.
+      Each random deck picks 1 faction (sometimes 2), a normal flux curve, spells that fit it, and fusions its own creatures can make.
+      Cards and pairs that win clearly more often than average show up under <b>Look at these first</b>.</p>
+    <div class="bs-ctl">
+      <label>Games <select id="bsN" ${r ? "disabled" : ""}>${[100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000].map(v => `<option value="${v}" ${v === battleSim.n ? "selected" : ""}>${v.toLocaleString()}</option>`).join("")}</select></label>
+      <label class="inline"><input type="checkbox" id="bsSaved" ${battleSim.saved ? "checked" : ""} ${r ? "disabled" : ""}> Also play my saved decks against random decks</label>
+      ${r ? `<button class="btn" id="bsStop">■ Stop</button>` : `<button class="btn primary" id="bsRun">▶ Run</button>`}
+    </div>
+    <div id="bsProg">${r ? battleProgHTML(r) : ""}</div>
+    <div id="bsOut">${res ? battleResultsHTML(res) : r ? "" : `<p class="dp-empty">Pick how many games and press Run.</p>`}</div>
+    ${battleWatchHTML()}${battleNotesHTML()}`;
+  const $ = s => body.querySelector(s);
+  $("#bsN").onchange = e => { battleSim.n = +e.target.value; };
+  $("#bsSaved").onchange = e => { battleSim.saved = e.target.checked; };
+  if ($("#bsRun")) $("#bsRun").onclick = startBattles;
+  if ($("#bsStop")) $("#bsStop").onclick = () => { const run = battleSim.run; if (!run) return; run.stopped = true; if (!run.local) run.finish(); };
+  $("#bwA").onchange = e => { battleSim.watchA = e.target.value; };
+  $("#bwB").onchange = e => { battleSim.watchB = e.target.value; };
+  $("#bwGo").onclick = () => {
+    try { playWatchGame(); } catch (e) { battleSim.log = { lines: ["The game stopped with an error: " + e.message], decks: [] }; }
+    renderBattle(body); const lg = body.querySelector(".bs-log"); if (lg) lg.previousElementSibling.scrollIntoView({ block: "start" });
+  };
 }
 
 document.getElementById("anaBtn").onclick = () => openAnalysis();
