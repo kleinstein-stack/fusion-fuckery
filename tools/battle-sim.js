@@ -10,7 +10,15 @@ var BattleSim = (function () {
 
 const R = { php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
   handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
-  early: 12 };   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
+  early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
+  redraw: false,   // a rule to try: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
+  sick: false };   // a rule to try: creatures and fusions can't attack the turn they arrive
+const RULEBOOK = Object.assign({}, R);
+// Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
+function withRules(rules, fn) {
+  Object.assign(R, RULEBOOK, rules || {});
+  try { return fn(); } finally { Object.assign(R, RULEBOOK); }
+}
 
 /* ---------------- helpers ---------------- */
 function rngFrom(seed) {   // mulberry32: same seed, same game
@@ -19,6 +27,9 @@ function rngFrom(seed) {   // mulberry32: same seed, same game
 }
 function shuffle(rng, a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 const pick = (rng, a) => a[Math.floor(rng() * a.length)];
+function gauss(r) { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+// A sloppy player misjudges every choice by a random amount (sigma, in the AI's value points); 0 = the normal AI.
+const jitter = (g, p) => g.sigma[p.i] ? g.sigma[p.i] * gauss(g.noise) : 0;
 const lc = s => String(s || "").toLowerCase();
 const isUnitKind = k => k === "creature" || k === "fusion";
 const NB = [[1], [0, 2], [1]];   // the lanes next to each lane
@@ -40,6 +51,10 @@ function textHash(s) {
   for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) >>> 0;
   return h.toString(36);
 }
+// Numbers some effects read straight from the card text, so tweaking those numbers on the card also tweaks the sim.
+const num = (d, re, dflt) => { const m = String(d.text || "").match(re); return m ? +m[1] : dflt; };
+const says = (d, re) => re.test(String(d.text || ""));
+const goldCostOf = d => d.fx && d.fx.goldCost ? num(d, /pay (\d+) gold/i, d.fx.goldCost) : 0;
 // average of a die, or of the higher of two dice ("roll twice and keep the higher result")
 const dieAvg = (n, adv) => { if (!n) return 0; if (!adv) return (n + 1) / 2; let s = 0; for (let k = 1; k <= n; k++) s += k * (2 * k - 1); return s / (n * n); };
 
@@ -72,7 +87,7 @@ function goldW(g, p) {
 }
 function goldReserve(g, p, except) {   // gold the AI keeps for Bull Run / Goblin King / a gold card in hand
   let r = spellsOf(p).some(z => z.c.d.fx && z.c.d.fx.wantsGold5) || units(p).some(u => fxOf(u) && fxOf(u).wantsGold5) ? 5 : 0;
-  for (const c of p.hand) if (c !== except && c.d.fx && c.d.fx.goldCost) r = Math.max(r, c.d.fx.goldCost);
+  for (const c of p.hand) if (c !== except) r = Math.max(r, goldCostOf(c.d));
   return r;
 }
 // what losing u costs its controller (a Blood Frenzy creature is sacrificed at the end of the turn anyway, once it has attacked)
@@ -208,13 +223,14 @@ function makeUnit(g, p, c, lane, halved) {
   const d = c.d, h = x => halved ? Math.floor(x / 2) : x, hp = Math.max(1, h(d.hp));
   return { c, d, uid: g.uid++, owner: c.owner, ctrl: p.i, lane, atk: h(d.atk), die: halved ? Math.floor(d.die / 2) : d.die,
     maxHp: hp, hp, spd: Math.max(1, h(d.spd)), pAtk: 0, tAtk: 0, tSpd: 0, radAtk: 0, radHp: 0,
-    attacked: false, negated: false, chapel: false, splices: [], stolen: null, frenzy: false, minerFlux: false };
+    attacked: false, negated: false, chapel: false, splices: [], stolen: null, frenzy: false, minerFlux: false, arrived: g.turnNo };
 }
 function materialize(g, p, c, lane, how) {
   if (lane == null || p.lanes[lane]) return null;
   const u = makeUnit(g, p, c, lane, how === "lazarus");
   p.lanes[lane] = u;
   if (c.owner === p.i && how !== "lazarus") p.st.played.add(c.d.ix);
+  if (!p.st.firstCre) p.st.firstCre = p.turns;
   L(g, `${who(g, p)} ${how === "hand" ? "plays" : how === "lazarus" ? "brings back" : "materializes"} ${c.d.name} (${LANE[lane]} lane)${how === "lazarus" ? " at half stats" : ""}.`);
   const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
   return u;
@@ -326,7 +342,7 @@ function pitBossReroll(g, q) {   // an activated effect, so only on its controll
 }
 function rollDie(g, u, noReroll) {
   const p = g.p[u.ctrl], o = foe(g, p), adv = advantage(g, u), greedy = hasAttr(u.d, "greedy");
-  const once = () => { let r = 1 + Math.floor(g.rng() * u.die); if (adv) r = Math.max(r, 1 + Math.floor(g.rng() * u.die)); return r; };
+  const once = () => { let r = 1 + Math.floor(g.dice() * u.die); if (adv) r = Math.max(r, 1 + Math.floor(g.dice() * u.die)); return r; };
   let r = once();
   const f = fxOf(u);
   if (noReroll) { /* the hit is prevented anyway */ }
@@ -489,6 +505,7 @@ function chooseLane(g, p, d) {
     const e = foe(g, p).lanes[l];
     if (e) s += expAtk(g, e) * (p.php <= 15 ? 0.6 : 0.35) - (expAtk(g, e) >= d.hp ? 1.5 : 0);   // blocks its direct attacks
     else s += 0.5 + (d.atk + dieAvg(d.die)) * 0.1;   // free to hit the player
+    s += jitter(g, p) * 0.5;
     if (s > bs) { bs = s; best = l; }
   }
   return best;
@@ -501,8 +518,9 @@ const FX = {
   "Judicator Angel": { value: 2, onAttack(g, u) { const p = g.p[u.ctrl]; NB[u.lane].forEach(l => { if (p.lanes[l]) restoreHP(g, p, p.lanes[l], 2); }); } },
   "Chapel Guard": { value: 3, survive: true },
   "Purifier Nun": { value: 2, onPlay(g, u) {
-    const p = g.p[u.ctrl]; let best = null;
+    const p = g.p[u.ctrl], others = says(u.d, /restore \d+ HP to another creature/i); let best = null;
     for (const t of allUnits(g)) {
+      if (others && t === u) continue;
       const s = hasAttr(t.d, "unholy") ? damageWorth(g, p, t, 3) : t.ctrl === p.i && !t.stolen ? healWorth(g, t, 3) : -1;
       if (!best || s > best.s) best = { t, s };
     }
@@ -516,12 +534,13 @@ const FX = {
   "Archangel": { value: 2, acts: [healAct(2, true)] },
   "Pain Drinker": { value: 1, onLosePHP(g, u) { u.tAtk += 1; } },
   "Carrion Duchess": { value: 3, endTurn(g, u) {
-    const p = g.p[u.ctrl]; if (!emptyLanes(p).length || !canPay(p, 2)) return;
+    const p = g.p[u.ctrl], cost = num(u.d, /pay (\d+) PHP to return/i, 2), maxHp = num(u.d, /with (\d+) or less max HP/i, 5);
+    if (!emptyLanes(p).length || !canPay(p, cost)) return;
     let best = null;
-    for (const c of p.waste) if (c.d.kind === "creature" && hasAttr(c.d, "unholy") && c.d.hp <= 5) { const v = defValue(c.d); if (!best || v > best.v) best = { c, v }; }
-    if (!best || best.v - 2 * phpW(g, p) <= 0.5) return;
-    L(g, `${who(g, p)} pays 2 PHP (Carrion Duchess).`);
-    payPHP(g, p, 2); if (g.over) return;
+    for (const c of p.waste) if (c.d.kind === "creature" && hasAttr(c.d, "unholy") && c.d.hp <= maxHp) { const v = defValue(c.d); if (!best || v > best.v) best = { c, v }; }
+    if (!best || best.v - cost * phpW(g, p) <= 0.5) return;
+    L(g, `${who(g, p)} pays ${cost} PHP (Carrion Duchess).`);
+    payPHP(g, p, cost); if (g.over) return;
     p.waste.splice(p.waste.indexOf(best.c), 1);
     materialize(g, p, best.c, chooseLane(g, p, best.c.d), "effect");
   } },
@@ -562,7 +581,7 @@ const FX = {
   } }] },
   "Gob-omber": { value: 3, goldSink: true, acts: [{ id: "boom", pri: 1, ai: (g, u) => boomOption(g, u, true) }],
     onDeath(g, u) { const o = boomOption(g, u, false); if (o) o.run(); } },
-  "Goblin Miner": { value: 2, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); },
+  "Goblin Miner": { value: 2, onPlay(g, u) { if (says(u.d, /when materialized/i)) gainGold(g, g.p[u.ctrl], 1); },
     startTurn(g, u) { const p = g.p[u.ctrl]; if (u.minerFlux) { u.minerFlux = false; p.flux += 1; L(g, `  Goblin Miner gives 1 flux.`); } else gainGold(g, p, 1); },
     acts: [{ id: "flux", pri: 4, ai(g, u) {
       const p = g.p[u.ctrl]; if (g.phase !== 3 || u.minerFlux || u.stolen || p.gold - 2 < goldReserve(g, p)) return null;
@@ -620,19 +639,28 @@ const FX = {
 
 // one-shot spells: play(g, p, card) returns { pri, score, run } or null. pri: 0 setup, 1 removal, 2 creatures (the plan), 3 after
 const SPELLS = {
-  "Ritual Pit": { perm: true, needs: x => x.fusions > 0 && x.pitTargets > 0, score: (g, p) => p.fdeck.length ? 2.2 : 0.6 },
-  "Bull Run": { perm: true, goldBonus: true, wantsGold5: true, aura: (g, p, u) => hasAttr(u.d, "greedy") && p.gold >= 5 ? 1 : 0, score: () => 2.5 },
+  "Ritual Pit": { perm: true, pit: true, needs: x => x.fusions > 0 && x.pitTargets > 0, score: (g, p) => p.fdeck.length ? 2.2 : 0.6 },
+  "Bull Run": { perm: true, goldBonus: true, wantsGold5: true, score: () => 2.5,
+    aura: (g, p, u) => hasAttr(u.d, "greedy") && p.gold >= num(spellsOf(p).find(z => z.c.d.fx && z.c.d.fx.goldBonus).c.d, /while you have (\d+) or more gold/i, 5) ? 1 : 0 },
   "Goblin Bank": { perm: true, startTurn(g, p) { if (p.gold < 5) gainGold(g, p, 1); }, score: () => 2.5 },
   "Sanctuary Bells": { perm: true, bells: true, score: () => 2.5,
     startTurn(g, p) { units(p).forEach(u => { if (hasAttr(u.d, "holy")) restoreHP(g, p, u, 1); }); },
     endEachTurn(g) { g.p.forEach(q => restorePHP(g, q, 1)); } },
-  "Crimson Altar": { perm: true, altar: true, needs: x => x.fusions > 0 && x.unholy >= 4, score: (g, p) => p.fdeck.length ? 2 : 0.5 },
+  "Crimson Altar": { perm: true, altar: true, needs: x => x.fusions > 0 && x.unholy >= 4, score: (g, p) => p.fdeck.length ? 2 : 0.5,
+    acts: [{ id: "feed", pri: 3, ai(g, p, z) {   // only if its text has "sacrifice ... to draw N cards"
+      const n = num(z.c.d, /sacrifice[^.]*to draw (\d+) card/i, 0); if (!n) return null;
+      let best = null;
+      for (const u of units(p)) if (hasAttr(u.d, "unholy")) { const s = n * 2.2 + sacrificeBonus(g, p) - keepWorth(g, u) + (fxOf(u) && fxOf(u).deathPenalty ? 1.5 : 0); if (!best || s > best.s) best = { u, s }; }
+      return best && best.s > 0.5 ? { score: best.s, run: () => { sacrifice(g, p, best.u); if (!g.over) draw(g, p, n); } } : null;
+    } }] },
   "Divine Shelter": { shelter: true },
   "Loaded Dice": { loaded: true, needs: x => x.dice >= 4 },
   "It's free fuse-estate": { estate: true, needs: x => x.fusions > 0 },
   "Jar of Materialism": { play(g, p, c) {
-    if (p.deck.length < 2) return null;
-    return { pri: 0, score: 5, run: () => cast(g, p, c, () => draw(g, p, 2)) };
+    const cost = num(c.d, /pay (\d+) PHP/i, 0), n = num(c.d, /draw (\d+) cards/i, 2);
+    if (p.deck.length < n || (cost && !canPay(p, cost))) return null;
+    const s = 2.5 * n - cost * phpW(g, p);
+    return s > 0.4 ? { pri: 0, score: s, run: () => cast(g, p, c, () => { if (cost) payPHP(g, p, cost); if (!g.over) draw(g, p, n); }) } : null;
   } },
   "Energy drink": { play(g, p, c) {
     const t = bestHeal(g, p, u => Math.floor(u.maxHp / 2));
@@ -653,13 +681,14 @@ const SPELLS = {
     return s > 0.3 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { banishFromWaste(g, p, us.slice(0, 2)); gainPHP(g, p, 6); L(g, `  +6 PHP.`); }) } : null;
   } },
   "Market Crash": { goldCost: 5, goldSink: true, play(g, p, c) {
-    if (g.phase !== 1 || g.turnNo === 1 || p.gold < 5) return null;
+    const cost = goldCostOf(c.d), plus = num(c.d, /gain \+(\d+) ATK/i, 3);
+    if (g.phase !== 1 || g.turnNo === 1 || p.gold < cost) return null;
     const att = units(p).filter(u => hasAttr(u.d, "greedy") && !u.attacked && !u.stolen);
     if (!att.length) return null;
     let gain = 0;
-    for (const u of att) { const before = Math.max(0, bestAttack(g, u)); u.tAtk += 3; gain += Math.max(0, bestAttack(g, u) - before); u.tAtk -= 3; }
-    const s = gain - 5 * goldW(g, p) * 0.6 - 0.5;
-    return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { p.gold -= 5; att.forEach(u => { u.tAtk += 3; }); }) } : null;
+    for (const u of att) { const before = Math.max(0, bestAttack(g, u)); u.tAtk += plus; gain += Math.max(0, bestAttack(g, u) - before); u.tAtk -= plus; }
+    const s = gain - cost * goldW(g, p) * 0.6 - 0.5;
+    return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { p.gold -= cost; att.forEach(u => { u.tAtk += plus; }); }) } : null;
   } },
   "Blood Frenzy": { needs: x => x.unholy >= 4, play(g, p, c) {
     if (g.phase !== 1 || g.turnNo === 1) return null;
@@ -684,18 +713,20 @@ const SPELLS = {
   "Goblin Shuffle": { play(g, p, c) {
     if (g.phase !== 1) return null;
     const back = p.hand.filter(x => x !== c && keepValue(g, p, x) < 3).slice(0, 5);
-    if (!back.length || p.deck.length < back.length) return null;
+    const extra = num(c.d, /draw that many cards(?:\s*plus\s*|\s*\+\s*)(\d+)/i, 0);
+    if ((!back.length && !extra) || p.deck.length < back.length + extra) return null;
     const gold = back.filter(x => isUnitKind(x.d.kind) && hasAttr(x.d, "greedy")).length;
-    const s = gold * 0.9 + back.length * 0.5 - 0.6;
+    const s = gold * 0.9 + back.length * 0.5 + extra * 2.5 - 0.6;
     return s > 0.4 ? { pri: 0, score: s, run: () => cast(g, p, c, () => {
       back.forEach(x => { p.hand.splice(p.hand.indexOf(x), 1); p.deck.unshift(x); });   // the end of the array is the top
-      draw(g, p, back.length); gainGold(g, p, gold);
-      L(g, `  puts back ${back.length}, draws ${back.length}${gold ? `, +${gold} gold` : ""}.`);
+      draw(g, p, back.length + extra); gainGold(g, p, gold);
+      L(g, `  puts back ${back.length}, draws ${back.length + extra}${gold ? `, +${gold} gold` : ""}.`);
     }) } : null;
   } },
   "Goblin Stock Broker": { goldCost: 3, play(g, p, c) {
-    if (p.gold < 3 || p.gold - 3 < goldReserve(g, p, c)) return null;
-    return { pri: 3, score: 0.6, run: () => cast(g, p, c, () => { p.gold -= 3; p.broker.push(3); }) };
+    const cost = goldCostOf(c.d), n = num(c.d, /draw (\d+) card/i, 0);
+    if (p.gold < cost || p.gold - cost < goldReserve(g, p, c)) return null;
+    return { pri: n ? 0 : 3, score: 0.6 + n * 2.5, run: () => cast(g, p, c, () => { p.gold -= cost; p.broker.push(cost); if (n) draw(g, p, n); }) };
   } },
   "Market research": { goldCost: 4, goldSink: true, play(g, p, c) {
     if (g.phase !== 1 || p.gold < 4) return null;
@@ -749,8 +780,8 @@ const SPELLS = {
   } },
   "Divine Silence": { play(g, p, c) {   // before attacking: negate the enemy whose effect is in the way of this turn's attacks
     if (g.phase !== 1 || g.turnNo === 1) return null;
-    const mine = units(p).filter(u => !u.attacked && expAtk(g, u) > 0);
-    if (!mine.length) return null;
+    const mine = units(p).filter(u => !u.attacked && expAtk(g, u) > 0), n = num(c.d, /draw (\d+) card/i, 0);
+    if (!mine.length && !n) return null;
     const attacks = () => mine.reduce((s, u) => s + Math.max(0, bestAttack(g, u)), 0), base = attacks();
     let best = null;
     for (const t of units(foe(g, p))) {
@@ -758,7 +789,8 @@ const SPELLS = {
       t.negated = true; const s = attacks() - base; t.negated = false;
       if (!best || s > best.s) best = { t, s };
     }
-    return best && best.s - 0.8 > 0.5 ? { pri: 1, score: best.s - 0.8, run: () => cast(g, p, c, () => { best.t.negated = true; L(g, `  ${best.t.d.name} is negated until end of turn.`); }) } : null;
+    if (best) best.s += n * 2.2;
+    return best && best.s - 0.8 > 0.5 ? { pri: 1, score: best.s - 0.8, run: () => cast(g, p, c, () => { best.t.negated = true; L(g, `  ${best.t.d.name} is negated until end of turn.`); if (n) draw(g, p, n); }) } : null;
   } },
 };
 
@@ -866,7 +898,9 @@ function bestSubset(g, p, crea, flux, lanes, pact) {
 function fusionOpts(g, p) {
   if (p.fused || !p.fdeck.length) return [];
   const out = [];
-  const pit = spellsOf(p).some(z => z.c.d.name === "Ritual Pit") && !p.once.has("Ritual Pit") && wasteUnholy(p).length > 0;
+  const pitZ = spellsOf(p).find(z => z.c.d.fx && z.c.d.fx.pit);
+  const pit = !!pitZ && !p.once.has("Ritual Pit") && wasteUnholy(p).length > 0;
+  const pitFree = pit && says(pitZ.c.d, /costs no flux|without paying the 2 flux/i);
   const estate = p.hand.find(c => c.d.fx && c.d.fx.estate);
   const altar = !!(p.field && p.field.c.d.fx && p.field.c.d.fx.altar);
   for (const [l1, l2] of [[0, 1], [1, 2]]) {
@@ -881,6 +915,7 @@ function fusionOpts(g, p) {
       if (!recipeFits(fc.d.recipe, [a.d, b.d])) continue;
       const gain = defValue(fc.d) - keepWorth(g, a) - keepWorth(g, b) - (usesPit ? 0.5 : 0) + 1;
       if (p.flux >= R.fuseFlux) out.push({ gain, flux: R.fuseFlux, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "flux", pit: usesPit }) });
+      if (pitFree) out.push({ gain: gain - (usesPit ? 0 : 0.5), flux: 0, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "pit", pit: true }) });
       if (estate) out.push({ gain: gain - 0.8, flux: 0, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "estate", card: estate, pit: usesPit }) });
       if (altar) for (const v of units(p)) if (v !== a && v !== b && hasAttr(v.d, "unholy"))
         out.push({ gain: gain - keepWorth(g, v) + sacrificeBonus(g, p), flux: 0, lanes: 2, run: () => fuse(g, p, a, b, fc, { kind: "altar", victim: v, pit: usesPit }) });
@@ -928,7 +963,7 @@ function permOption(g, p, c) {
 function mainPhase(g, p) {
   for (let guard = 0; guard < 40 && !g.over; guard++) {
     const opts = [], seen = new Set();
-    const add = o => { if (o && o.score > 0.4) opts.push(o); };
+    const add = o => { if (!o) return; o.score += jitter(g, p); if (o.score > 0.4) opts.push(o); };
     for (const c of p.hand) {
       const f = c.d.fx; if (!f || isUnitKind(c.d.kind) || seen.has(c.d.name)) continue;
       seen.add(c.d.name);
@@ -941,6 +976,14 @@ function mainPhase(g, p) {
         const key = u.d.name + ":" + a.id;
         if (p.once.has(key)) continue;
         const o = a.ai(g, u); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
+      }
+    }
+    for (const z of spellsOf(p)) {
+      const f = z.c.d.fx; if (!f || !f.acts) continue;
+      for (const a of f.acts) {
+        const key = z.c.d.name + ":" + a.id;
+        if (p.once.has(key)) continue;
+        const o = a.ai(g, p, z); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
       }
     }
     if (g.phase === 1) add(planOption(g, p));
@@ -957,9 +1000,9 @@ function battle(g, p) {
   for (let guard = 0; guard < 10 && !g.over; guard++) {
     let best = null;
     for (const u of units(p)) {
-      if (u.attacked || expAtk(g, u) <= 0) continue;
-      for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t); if (!best || s > best.s) best = { s, u, t }; } }
-      if (!o.lanes[u.lane]) { const s = scoreFace(g, u); if (!best || s > best.s) best = { s, u, t: null }; }
+      if (u.attacked || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo)) continue;
+      for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t) + jitter(g, p); if (!best || s > best.s) best = { s, u, t }; } }
+      if (!o.lanes[u.lane]) { const s = scoreFace(g, u) + jitter(g, p); if (!best || s > best.s) best = { s, u, t: null }; }
     }
     if (!best || best.s <= 0.2) break;
     if (best.t) fight(g, best.u, best.t); else directAttack(g, best.u);
@@ -993,7 +1036,7 @@ function playTurn(g) {
   for (const u of units(p)) { const f = fxOf(u); if (f && f.startTurn) f.startTurn(g, u); if (g.over) return; }
   for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.startTurn) f.startTurn(g, p, z); }
   for (const amt of p.broker.splice(0)) {
-    if (g.rng() < 0.5) { L(g, `  Goblin Stock Broker: the price rose, +${amt * 2} gold.`); gainGold(g, p, amt * 2); } else L(g, `  Goblin Stock Broker: the price fell.`);
+    if (g.dice() < 0.5) { L(g, `  Goblin Stock Broker: the price rose, +${amt * 2} gold.`); gainGold(g, p, amt * 2); } else L(g, `  Goblin Stock Broker: the price fell.`);
   }
   p.deathMark = g.deaths;
   if (checkEnd(g)) return;
@@ -1065,42 +1108,90 @@ function newPlayer(g, i, deck) {
   deck.main.forEach(n => { const d = g.defs.get(n); if (d) p.deck.push(card(d)); });
   deck.fusion.forEach(n => { const d = g.defs.get(n); if (d) p.fdeck.push(card(d)); });
   shuffle(g.rng, p.deck);
-  p.top = [...new Set(p.deck.slice(-R.early).map(c => c.d.ix))];   // the end of the array is the top
   return p;
 }
-function playGame(defs, A, B, seed, withLog) {
+// opts: { diceSeed, noiseSeed, sigma: [player 1, player 2] }. The same seed always gives the same shuffles and first player.
+function playGame(defs, A, B, seed, withLog, opts) {
+  opts = opts || {};
   const g = { defs, rng: rngFrom(seed), uid: 1, turnNo: 0, deaths: 0, over: false, winner: -1, endReason: "limit",
-    log: withLog ? [] : null, phase: 0, names: [`P1 (${A.label})`, `P2 (${B.label})`] };
+    dice: rngFrom(opts.diceSeed !== undefined ? opts.diceSeed : (seed ^ 0x9e3779b9) >>> 0),
+    noise: rngFrom(opts.noiseSeed !== undefined ? opts.noiseSeed : (seed ^ 0x85ebca6b) >>> 0), sigma: opts.sigma || [0, 0],
+    log: withLog ? [] : null, phase: 0, names: [`P1 (${A.label})`, `P2 (${B.label})`], track: [] };
   g.first = g.rng() < 0.5 ? 0 : 1;
   g.p = [newPlayer(g, 0, A), newPlayer(g, 1, B)];
-  g.p.forEach(p => draw(g, p, R.hand));
+  g.p.forEach(p => {
+    draw(g, p, R.hand);
+    const cre = () => p.hand.filter(c => c.d.kind === "creature").length;
+    p.st.openCre = cre();
+    if (R.redraw && p.st.openCre <= 1) {
+      L(g, `${who(g, p)} redraws an opening hand with ${p.st.openCre} creature${p.st.openCre === 1 ? "" : "s"}.`);
+      p.deck.push(...p.hand.splice(0)); shuffle(g.rng, p.deck); draw(g, p, R.hand);
+    }
+    // the hand plus the next cards of the deck (the end of the array is the top): what this player gets early, by luck
+    p.top = [...new Set(p.hand.concat(p.deck.slice(-Math.max(0, R.early - p.hand.length))).map(c => c.d.ix))];
+  });
   L(g, `${who(g, g.p[g.first])} goes first.`);
   g.active = g.first;
-  while (!g.over && g.turnNo < R.turnLimit * 2) { playTurn(g); if (!g.over) g.active = 1 - g.active; }
+  const board = p => units(p).reduce((s, u) => s + valueOf(g, u), 0);
+  while (!g.over && g.turnNo < R.turnLimit * 2) {
+    playTurn(g);
+    g.track.push([g.p[0].php, g.p[1].php, board(g.p[0]), board(g.p[1])]);   // the position after every turn
+    if (!g.over) g.active = 1 - g.active;
+  }
   if (!g.over) { g.over = true; g.winner = -1; g.endReason = "limit"; L(g, `Turn limit reached: draw.`); }
   else L(g, g.winner < 0 ? "Both players hit 0 PHP: draw." : `${g.names[g.winner]} wins (${g.p[0].php} PHP vs ${g.p[1].php}).`);
   return g;
 }
+// How the game went for its winner, turn by turn. "Lead" = PHP difference + half the difference in board value
+// (a creature's value is roughly ATK + HP/2), so a player with a big board but fewer PHP isn't counted as behind.
+function closeness(g) {
+  const w = g.winner; if (w < 0 || !g.track.length) return null;
+  const l = 1 - w, lead = s => (s[w] - s[l]) + 0.5 * (s[2 + w] - s[2 + l]);
+  let changes = 0, prev = 0, behind = 0, phpBehind = 0, lastNotAhead = -1;
+  g.track.forEach((s, i) => {
+    const d = lead(s), sign = d >= 3 ? 1 : d <= -3 ? -1 : 0;
+    if (sign && prev && sign !== prev) changes++;
+    if (sign) prev = sign;
+    behind = Math.max(behind, -d); phpBehind = Math.max(phpBehind, s[l] - s[w]);
+    if (d < 3) lastNotAhead = i;
+  });
+  const s6 = g.track[5], d6 = s6 ? lead(s6) : 0;   // after 3 turns each
+  return { margin: g.p[w].php, changes, behind: Math.round(behind), phpBehind, decided: (lastNotAhead + 1) / g.track.length,
+    ahead6: !s6 || Math.abs(d6) < 3 ? -1 : d6 > 0 ? w : l };
+}
 function record(g, A, B) {
   const uniq = list => [...new Set(list.map(n => g.defs.get(n).ix))];
-  return { w: g.winner, t: g.turnNo, end: g.endReason, f: g.first, p: [A, B].map((D, i) => {
+  return { w: g.winner, t: g.turnNo, end: g.endReason, f: g.first, c: closeness(g), p: [A, B].map((D, i) => {
     const p = g.p[i];
     return { label: D.label, arch: D.arch, fixed: !!D.fixed, main: uniq(D.main), fus: uniq(D.fusion), elig: D.elig ? uniq(D.elig) : null, top: p.top,
-      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face };
+      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face, fc: p.st.firstCre || 99, oc: p.st.openCre };
   }) };
 }
-// o: { count, start, seed, fixed: [{ label, cards: [[name, copies]] }] }. Saved decks play every other game, against a random deck.
+// o: { count, start, seed, fixed: [{ label, cards: [[name, copies]] }], mode, sigma, replays }. Saved decks play every other game,
+// against a random deck. mode "skill" and "replay" are the luck-vs-skill tests (see the editor's Gameplay section).
 // Game number start + k always gets the same decks and dice, however the games are split between workers.
-function runMany(raw, o, onBatch) {
+function runMany(raw, o, onBatch) { return withRules(o.rules, () => runManyNow(raw, o, onBatch)); }
+function runManyNow(raw, o, onBatch) {
   const defs = prep(raw);
   const fixed = (o.fixed || []).map(d => deckFromList(defs, d.label, d.cards)).filter(d => d.main.length);
   const recs = []; let chunk = [];
   for (let k = 0; k < o.count; k++) {
     const gi = o.start + k, seed = (Math.imul(o.seed >>> 0, 1000003) + Math.imul(gi, 7919)) >>> 0, rng = rngFrom(seed ^ 0x5bd1e995);
     let A = randomDeck(defs, rng); const B = randomDeck(defs, rng);
-    if (fixed.length && gi % 2 === 1) A = fixed[((gi - 1) / 2) % fixed.length];
     if (!A || !B) break;
-    const r = record(playGame(defs, A, B, seed, false), A, B);
+    let r;
+    if (o.mode === "skill") {   // the same deck on both sides: a careful player against one with sloppy judgement (sigma)
+      const careful = gi % 2, sigma = careful ? [o.sigma, 0] : [0, o.sigma];
+      const g = playGame(defs, A, Object.assign({}, A, { label: A.label + " (copy)" }), seed, false, { sigma });
+      r = { w: g.winner, careful, arch: A.arch, t: g.turnNo };
+    } else if (o.mode === "replay") {   // the same shuffled decks again, with fresh dice and slightly different decisions
+      const ws = [];
+      for (let k = 0; k < (o.replays || 4); k++) ws.push(playGame(defs, A, B, seed, false, { diceSeed: (seed + 7 + k * 1013) >>> 0, noiseSeed: (seed + 11 + k * 2029) >>> 0, sigma: [o.sigma, o.sigma] }).winner);
+      r = { ws, arch: [A.arch, B.arch] };
+    } else {
+      if (fixed.length && gi % 2 === 1) A = fixed[((gi - 1) / 2) % fixed.length];
+      r = record(playGame(defs, A, B, seed, false), A, B);
+    }
     recs.push(r); chunk.push(r);
     if (onBatch && chunk.length >= 10) { onBatch(chunk); chunk = []; }
   }
@@ -1124,5 +1215,5 @@ if (typeof importScripts === "function" && typeof window === "undefined") {   //
     catch (err) { self.postMessage({ type: "error", message: String(err && err.stack || err) }); }
   };
 }
-return { R, FX, SPELLS, FX_TEXT, textHash, rngFrom, prep, randomDeck, deckFromList, playGame, record, runMany, coverage };
+return { R, RULEBOOK, withRules, FX, SPELLS, FX_TEXT, textHash, rngFrom, prep, randomDeck, deckFromList, playGame, record, runMany, coverage };
 })();

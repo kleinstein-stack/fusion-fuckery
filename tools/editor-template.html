@@ -2163,7 +2163,10 @@ function renderLanes(body) {
    Whole games between random decks, played by tools/battle-sim.js (inlined by tools/build.ps1 as #battleEngine).
    Big runs go to Web Workers started from that script's text; where the browser won't start workers, they run
    here 10 games at a time so the page stays usable. */
-const battleSim = { n: 1000, saved: true, run: null, res: null, watchA: "", watchB: "", log: null };
+const battleSim = { n: 1000, saved: true, luck: true, rules: {}, run: null, res: null, watchA: "", watchB: "", log: null };
+const ruleText = r => { const R0 = BattleSim.RULEBOOK, parts = [];
+  if (r.php && r.php !== R0.php) parts.push(`${r.php} starting PHP`); if (r.hand && r.hand !== R0.hand) parts.push(`${r.hand}-card opening hand`);
+  if (r.redraw) parts.push("a free redraw for hands with 0–1 creatures"); if (r.sick) parts.push("creatures can't attack the turn they arrive"); return parts.join(", "); };
 function battleDefs() {
   const seen = new Set();
   return cards.filter(c => !isCold(c) && cardKey(c) && !seen.has(cardKey(c)) && seen.add(cardKey(c))).map(c => {
@@ -2176,54 +2179,90 @@ function battleDefs() {
   });
 }
 const savedBattleDecks = () => deckState.decks.filter(d => Object.keys(d.cards).length).map(d => ({ label: d.name, cards: Object.entries(d.cards) }));
-function startBattles() {
-  const defs = battleDefs(), fixed = battleSim.saved ? savedBattleDecks() : [];
-  const run = battleSim.run = { n: battleSim.n, done: 0, recs: [], workers: [], seed: Math.floor(Math.random() * 2 ** 31), t0: performance.now() };
-  battleSim.res = null;
-  run.finish = () => {
-    if (run.over) return;
-    run.over = true;
-    run.workers.forEach(w => w.terminate());
-    if (battleSim.run === run) battleSim.run = null;
-    battleSim.res = run.error ? { error: run.error } : run.recs.length ? battleStats(run.recs, defs, { ms: performance.now() - run.t0, stopped: !!run.stopped, asked: run.n }) : null;
-    refreshBattle();
-  };
-  const local = () => {   // no Web Workers: play them here
-    run.local = true; run.workers.forEach(w => w.terminate()); run.workers = []; run.recs = []; run.done = 0;
-    let start = 0;
-    const step = () => {
-      if (run.over) return;
-      if (run.stopped || start >= run.n) return run.finish();
-      const count = Math.min(10, run.n - start);
-      try { run.recs.push(...BattleSim.runMany(defs, { fixed, seed: run.seed, start, count })); } catch (e) { run.error = e.message; return run.finish(); }
-      start += count; run.done = run.recs.length; battleProgress(); setTimeout(step, 0);
-    };
-    step();
-  };
-  let url = null;
-  try { url = URL.createObjectURL(new Blob([document.getElementById("battleEngine").textContent], { type: "text/javascript" })); } catch {}
-  const parts = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1, Math.ceil(run.n / 100))), per = Math.ceil(run.n / parts);
-  let left = 0;
-  try {
-    if (!url) throw new Error("no workers");
-    for (let k = 0; k < parts; k++) {
-      const start = k * per, count = Math.min(per, run.n - start); if (count <= 0) break;
-      const w = new Worker(url); run.workers.push(w); left++;
-      w.onmessage = e => {
-        const m = e.data; if (run.over || run.local) return;
-        if (m.type === "batch") { run.recs.push(...m.recs); run.done = run.recs.length; battleProgress(); }
-        else if (m.type === "done") { if (--left === 0) run.finish(); }
-        else if (m.type === "error") { run.error = m.message; run.finish(); }
+// One batch of games in Web Workers, or here 10 at a time when the browser won't start workers. Resolves when done or stopped.
+function battleBatch(run, defs, job, onRecs) {
+  return new Promise(resolve => {
+    let over = false, got = 0;
+    const end = () => { if (over) return; over = true; run.workers.forEach(w => w.terminate()); run.workers = []; run.stopBatch = null; resolve(); };
+    run.stopBatch = end;
+    const local = () => {
+      run.local = true; run.workers.forEach(w => w.terminate()); run.workers = [];
+      let start = 0;
+      const step = () => {
+        if (over) return;
+        if (run.stopped || start >= job.count) return end();
+        const count = Math.min(10, job.count - start);
+        try { onRecs(BattleSim.runMany(defs, { ...job, start, count })); } catch (e) { run.error = e.message; return end(); }
+        start += count; setTimeout(step, 0);
       };
-      w.onerror = e => { e.preventDefault(); if (run.over || run.local) return; if (run.recs.length) { run.error = e.message || "A worker stopped."; run.finish(); } else local(); };
-      w.postMessage({ defs, fixed, seed: run.seed, start, count });
-    }
-  } catch { local(); }
+      step();
+    };
+    if (run.local) return local();
+    let url = null;
+    try { url = URL.createObjectURL(new Blob([document.getElementById("battleEngine").textContent], { type: "text/javascript" })); } catch {}
+    const parts = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1, Math.ceil(job.count / 100))), per = Math.ceil(job.count / parts);
+    let left = 0;
+    try {
+      if (!url) throw new Error("no workers");
+      for (let k = 0; k < parts; k++) {
+        const start = k * per, count = Math.min(per, job.count - start); if (count <= 0) break;
+        const w = new Worker(url); run.workers.push(w); left++;
+        w.onmessage = e => {
+          const m = e.data; if (over || run.local) return;
+          if (m.type === "batch") { got += m.recs.length; onRecs(m.recs); }
+          else if (m.type === "done") { if (--left === 0) end(); }
+          else if (m.type === "error") { run.error = m.message; end(); }
+        };
+        w.onerror = e => { e.preventDefault(); if (over || run.local) return; if (got) { run.error = e.message || "A worker stopped."; end(); } else local(); };
+        w.postMessage({ defs, ...job, start, count });
+      }
+    } catch { local(); }
+  });
+}
+// The normal games, then (if ticked) the luck-vs-skill tests: a careful player against a sloppy and a random copy of
+// itself with the same deck, and the same shuffled decks replayed with slightly different decisions and fresh dice.
+async function startBattles() {
+  const defs = battleDefs(), fixed = battleSim.saved ? savedBattleDecks() : [], n = battleSim.n, seed = Math.floor(Math.random() * 2 ** 31), rules = { ...battleSim.rules };
+  const phases = [{ key: "recs", label: "games", job: { mode: "normal", fixed, count: n } }];
+  if (battleSim.luck) phases.push(
+    { key: "sloppy", label: "careful vs sloppy player", job: { mode: "skill", sigma: 2, count: Math.max(300, Math.round(n * 0.2)) } },
+    { key: "weak", label: "careful vs weak player", job: { mode: "skill", sigma: 6, count: Math.max(300, Math.round(n * 0.2)) } },
+    { key: "random", label: "careful vs random player", job: { mode: "skill", sigma: 25, count: Math.max(200, Math.round(n * 0.1)) } },
+    { key: "replay", label: "replays of the same draws", job: { mode: "replay", sigma: 1, replays: 4, count: Math.max(200, Math.round(n * 0.1)) } });
+  const run = battleSim.run = { n: phases.reduce((a, ph) => a + ph.job.count, 0), done: 0, workers: [], t0: performance.now(), recs: [], sloppy: [], weak: [], random: [], replay: [] };
+  battleSim.res = null;
   refreshBattle();
+  for (const [i, ph] of phases.entries()) {
+    if (run.stopped || run.error) break;
+    run.phase = ph.label;
+    await battleBatch(run, defs, { ...ph.job, rules, seed: (seed + i * 7777) >>> 0 }, recs => { run[ph.key].push(...recs); run.done += recs.length; battleProgress(); });
+  }
+  if (battleSim.run === run) battleSim.run = null;
+  battleSim.res = run.error ? { error: run.error } : run.recs.length ? battleStats(run.recs, defs, { ms: performance.now() - run.t0, stopped: !!run.stopped, asked: n }) : null;
+  if (battleSim.res && !battleSim.res.error) { battleSim.res.play = gameplayStats(run); battleSim.res.rules = ruleText(rules); }
+  refreshBattle();
+}
+function gameplayStats(run) {
+  const share = (list, f) => list.length ? list.filter(f).length / list.length : NaN;
+  const avg = (list, f) => list.length ? list.reduce((a, x) => a + f(x), 0) / list.length : NaN;
+  const dec = run.recs.filter(r => r.c), ahead = dec.filter(r => r.c.ahead6 >= 0);
+  const players = run.recs.flatMap(r => r.p.map((pl, i) => ({ pl, win: r.w < 0 ? 0.5 : r.w === i ? 1 : 0 })));
+  const slow = players.filter(x => x.pl.fc > 3), thin = players.filter(x => x.pl.oc <= 1);
+  const careful = list => avg(list, r => r.w < 0 ? 0.5 : r.w === r.careful ? 1 : 0);
+  const rep = run.replay.filter(r => r.ws.every(w => w >= 0));
+  return { decided: dec.length,
+    close5: share(dec, r => r.c.margin <= 5), close10: share(dec, r => r.c.margin <= 10),
+    comeback: share(dec, r => r.c.phpBehind >= 10), winnerPHP: avg(dec, r => r.c.margin), changes: avg(dec, r => r.c.changes), swingy: share(dec, r => r.c.changes >= 2),
+    decidedAt: avg(dec, r => r.c.decided), early: share(dec, r => r.c.decided <= 1 / 3),
+    snowball: share(ahead, r => r.w === r.c.ahead6), aheadN: ahead.length,
+    slowWR: avg(slow, x => x.win), slowShare: players.length ? slow.length / players.length : NaN,
+    thinWR: avg(thin, x => x.win), thinShare: players.length ? thin.length / players.length : NaN,
+    sloppy: careful(run.sloppy), sloppyN: run.sloppy.length, weak: careful(run.weak), random: careful(run.random), randomN: run.random.length,
+    sameWinner: share(rep, r => r.ws.every(w => w === r.ws[0])), replayN: rep.length };
 }
 function refreshBattle() { if (document.getElementById("anaDlg").open && anaTab === "battle") renderBattle(document.getElementById("anaBody")); }
 const battleProgHTML = r => `<div class="bs-prog"><div class="bar ok"><i style="width:${Math.round(r.done / r.n * 100)}%"></i></div>
-  <span>${r.done.toLocaleString()} / ${r.n.toLocaleString()} games${r.local ? " (this browser won't run them in the background, so the page may feel slow)" : ""}</span></div>`;
+  <span>${r.done.toLocaleString()} / ${r.n.toLocaleString()} games · ${esc(r.phase || "")}${r.local ? " (this browser won't run them in the background, so the page may feel slow)" : ""}</span></div>`;
 function battleProgress() { const el = document.getElementById("bsProg"); if (el && battleSim.run) el.innerHTML = battleProgHTML(battleSim.run); }
 
 function battleStats(recs, defs, meta) {
@@ -2302,6 +2341,25 @@ const bsSigned = x => isNaN(x) ? "–" : (x >= 0 ? "+" : "−") + Math.abs(x * 1
 const isUnitKind = k => k === "creature" || k === "fusion";
 const bsLink = n => `<a href="#" class="jump" data-n="${esc(n)}">${esc(n)}</a>`;
 const bsKind = d => d.kind === "fusion" ? "Fusion" : d.kind === "creature" ? `Creature, ${d.flux} flux` : ({ instant: "Instant Spell", continuous: "Continuous Spell", field: "Field Spell" })[d.kind] || "Spell";
+// Close games and skill, each with a plain reading. good / warn thresholds are rules of thumb, not hard limits.
+function gameplayHTML(g) {
+  const P = bsPct, row = (ok, title, text) => `<li><b class="${ok === null ? "" : ok ? "good" : "hi"}">${ok === null ? "·" : ok ? "✓" : "⚠"} ${title}</b> ${text}</li>`;
+  const have = x => !isNaN(x);
+  const items = [
+    row(g.close10 >= 0.4, "Close finishes:", `<b>${P(g.close10)}</b> of games ended with the winner on 10 PHP or less (${P(g.close5)} on 5 or less). Winners had ${Math.round(g.winnerPHP)} PHP left on average.`),
+    row(g.comeback >= 0.15, "Comebacks:", `<b>${P(g.comeback)}</b> of games were won by a player who was 10 or more PHP behind at some point.`),
+    row(g.snowball <= 0.72, "Early leads:", `the player ahead after 3 turns each went on to win <b>${P(g.snowball)}</b> (${g.aheadN.toLocaleString()} games had a clear leader by then). Around 60% means an early lead helps without settling the game.`),
+    row(g.swingy >= 0.3, "Back and forth:", `the lead changed hands ${g.changes.toFixed(1)} times per game on average; <b>${P(g.swingy)}</b> of games had 2 or more lead changes.
+      The winner took the lead for good ${P(g.decidedAt)} of the way through the game on average${g.early > 0 ? ` (in ${P(g.early)} of games within the first third)` : ""}.`),
+    row(g.slowWR >= 0.3, "Bad starts:", `players with no creature on the field in their first 3 turns (${P(g.slowShare)} of players) won <b>${P(g.slowWR)}</b>;
+      an opening hand with 0 or 1 creatures (${P(g.thinShare)} of players) won ${P(g.thinWR)}.`),
+  ];
+  if (have(g.sloppy)) items.push(row(g.weak >= 0.65, "Skill:", `with the same deck on both sides, the normal AI beat a copy of itself that makes small mistakes <b>${P(g.sloppy)}</b> of the time,
+      one that makes big mistakes <b>${P(g.weak)}</b>, and one choosing almost at random ${P(g.random)}. 50% would mean decisions don't matter; the further above, the more good play pays off.`));
+  if (have(g.sameWinner)) items.push(row(g.sameWinner <= 0.6, "The draw:", `replaying the same shuffled decks 4 times with slightly different decisions and fresh dice, the same player won all 4 in
+      <b>${P(g.sameWinner)}</b> of games (${g.replayN.toLocaleString()} tested). Near 100% would mean the shuffle settles the game; 12.5% is what a coin flip each time would give.`));
+  return `<h3>Gameplay: close games and skill</h3><ul class="bs-flags">${items.join("")}</ul>`;
+}
 function battleResultsHTML(s) {
   if (s.error) return `<div class="issues"><li>The simulation stopped with an error: ${esc(s.error)}</li></div>`;
   const G = s.games, vc = v => v === "Weak" ? "lo" : v ? "hi" : "";
@@ -2320,10 +2378,11 @@ function battleResultsHTML(s) {
     <td class="num">${bsPct(r.inWR)}</td><td class="num">${bsPct(r.outWR)}</td><td class="num ${vc(r.verdict)}">${r.enough ? bsSigned(r.impact) : "–"}</td>
     <td class="num">${r.enough ? "±" + Math.round(1.96 * r.se * 100) + "%" : "few games"}</td>${r.fusion ? "" : `<td class="num">${bsPct(r.playRate)}</td>`}<td class="${vc(r.verdict)}">${r.verdict}</td></tr>`;
   const ends = s.ends;
-  return `<p class="ana-lead"><b>${G.toLocaleString()}</b> games${s.meta.stopped ? ` (stopped early, out of ${s.meta.asked.toLocaleString()})` : ""} in ${(s.meta.ms / 1000).toFixed(1)} s ·
+  return `${s.rules ? `<p class="ana-lead hi">These games used rules to try, not the rulebook's: ${esc(s.rules)}.</p>` : ""}<p class="ana-lead"><b>${G.toLocaleString()}</b> games${s.meta.stopped ? ` (stopped early, out of ${s.meta.asked.toLocaleString()})` : ""} in ${(s.meta.ms / 1000).toFixed(1)} s ·
       the player going first won <b>${bsPct(s.firstWR)}</b> · a game lasts <b>${(s.turns / 2).toFixed(1)}</b> turns each ·
       ${bsPct(ends.php / G)} ended in combat or effect damage, ${bsPct(ends.deck / G)} by running out of cards, ${bsPct(ends.limit / G)} were draws at the ${BattleSim.R.turnLimit}-turn limit ·
       a player made at least one fusion in <b>${bsPct(s.fusedRate)}</b> of games · getting a creature early is worth ${bsSigned(s.creatureImpact)} on average, a spell ${bsSigned(s.spellImpact)}.</p>
+    ${s.play ? gameplayHTML(s.play) : ""}
     <h3>Look at these first</h3>
     ${strong.length || weak.length || s.combos.length ? `<ul class="bs-flags">${strong.map(flag).join("")}${s.combos.slice(0, 6).map(combo).join("")}${weak.map(flag).join("")}</ul>`
       : `<p class="good">Nothing stands out after ${G.toLocaleString()} games. More games show smaller differences.</p>`}
@@ -2358,7 +2417,7 @@ function playWatchGame() {
   const raw = battleDefs(), D = BattleSim.prep(raw), seed = Math.floor(Math.random() * 2 ** 31), rng = BattleSim.rngFrom(seed + 1);
   const deckOf = name => { const d = name && deckState.decks.find(x => x.name === name); return d ? BattleSim.deckFromList(D, d.name, Object.entries(d.cards)) : BattleSim.randomDeck(D, rng); };
   const A = deckOf(battleSim.watchA), B = deckOf(battleSim.watchB);
-  const g = BattleSim.playGame(D, A, B, seed, true);
+  const g = BattleSim.withRules(battleSim.rules, () => BattleSim.playGame(D, A, B, seed, true));
   const list = names => { const m = new Map(); names.forEach(n => m.set(n, (m.get(n) || 0) + 1)); return [...m].map(([n, q]) => `${q}× ${esc(n)}`).join(", ") || "none"; };
   battleSim.log = { lines: g.log, decks: [A, B].map((d, i) => `<b>${esc(g.names[i])}</b>: ${list(d.main)}. <i>Fusion Deck:</i> ${list(d.fusion)}.`) };
 }
@@ -2384,6 +2443,10 @@ function battleNotesHTML() {
       <b>±</b> is how sure that is: the real number is very likely within it. Differences under 5% need a few thousand games to show. Card stats only count random decks.</li>
     <li><b>Combos</b> compare the same decks with both cards drawn early, only one, or neither. A combo wins more with both than the two cards' separate effects add up to.
       Pairs of cards from different factions only meet in mixed decks, so they need more games.</li>
+    <li><b>Gameplay</b> follows each game's lead after every turn: PHP difference plus half the difference in board value (a creature's value is about ATK + HP/2).
+      The skill test gives one player the normal AI and the other the same AI with its judgement of every choice off by a random amount (small mistakes: about 2 points of value,
+      big: about 6, random: so much that it mostly picks at random among sensible-looking moves). The normal AI is only a rule-of-thumb player, so a stronger player could get more out of
+      good decisions than this shows.</li>
     <li>Rules the sim follows on top of the rulebook: once-per-turn effects count per card name (15.7); a game nobody has won after ${BattleSim.R.turnLimit} turns each is a draw (half a win).</li>
     <li>Calls the sim makes where cards are open to reading: Goblin Stock Broker is a coin flip. Microwave takes creatures, not fusions.
       Space Squid's creature moves to an empty lane on your side until the end of the turn. Unfuse sends the fusion back to its Fusion Deck and puts its splices
@@ -2401,7 +2464,14 @@ function renderBattle(body) {
     <div class="bs-ctl">
       <label>Games <select id="bsN" ${r ? "disabled" : ""}>${[100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000].map(v => `<option value="${v}" ${v === battleSim.n ? "selected" : ""}>${v.toLocaleString()}</option>`).join("")}</select></label>
       <label class="inline"><input type="checkbox" id="bsSaved" ${battleSim.saved ? "checked" : ""} ${r ? "disabled" : ""}> Also play my saved decks against random decks</label>
+      <label class="inline"><input type="checkbox" id="bsLuck" ${battleSim.luck ? "checked" : ""} ${r ? "disabled" : ""}> Test luck vs skill too (almost twice as many games)</label>
       ${r ? `<button class="btn" id="bsStop">■ Stop</button>` : `<button class="btn primary" id="bsRun">▶ Run</button>`}
+    </div>
+    <div class="bs-ctl"><span>Rules to try:</span>
+      <label>Starting PHP <select id="bsPHP" ${r ? "disabled" : ""}>${[20, 25, 30, 35, 40, 50].map(v => `<option value="${v}" ${v === (battleSim.rules.php || BattleSim.RULEBOOK.php) ? "selected" : ""}>${v}${v === BattleSim.RULEBOOK.php ? " (rulebook)" : ""}</option>`).join("")}</select></label>
+      <label>Opening hand <select id="bsHand" ${r ? "disabled" : ""}>${[4, 5, 6, 7].map(v => `<option value="${v}" ${v === (battleSim.rules.hand || BattleSim.RULEBOOK.hand) ? "selected" : ""}>${v}${v === BattleSim.RULEBOOK.hand ? " (rulebook)" : ""}</option>`).join("")}</select></label>
+      <label class="inline"><input type="checkbox" id="bsRedraw" ${battleSim.rules.redraw ? "checked" : ""} ${r ? "disabled" : ""}> Free redraw for an opening hand with 0–1 creatures</label>
+      <label class="inline"><input type="checkbox" id="bsSick" ${battleSim.rules.sick ? "checked" : ""} ${r ? "disabled" : ""}> Creatures can't attack the turn they arrive</label>
     </div>
     <div id="bsProg">${r ? battleProgHTML(r) : ""}</div>
     <div id="bsOut">${res ? battleResultsHTML(res) : r ? "" : `<p class="dp-empty">Pick how many games and press Run.</p>`}</div>
@@ -2409,8 +2479,13 @@ function renderBattle(body) {
   const $ = s => body.querySelector(s);
   $("#bsN").onchange = e => { battleSim.n = +e.target.value; };
   $("#bsSaved").onchange = e => { battleSim.saved = e.target.checked; };
+  $("#bsLuck").onchange = e => { battleSim.luck = e.target.checked; };
+  $("#bsPHP").onchange = e => { battleSim.rules.php = +e.target.value; };
+  $("#bsHand").onchange = e => { battleSim.rules.hand = +e.target.value; };
+  $("#bsRedraw").onchange = e => { battleSim.rules.redraw = e.target.checked; };
+  $("#bsSick").onchange = e => { battleSim.rules.sick = e.target.checked; };
   if ($("#bsRun")) $("#bsRun").onclick = startBattles;
-  if ($("#bsStop")) $("#bsStop").onclick = () => { const run = battleSim.run; if (!run) return; run.stopped = true; if (!run.local) run.finish(); };
+  if ($("#bsStop")) $("#bsStop").onclick = () => { const run = battleSim.run; if (!run) return; run.stopped = true; if (run.stopBatch) run.stopBatch(); };
   $("#bwA").onchange = e => { battleSim.watchA = e.target.value; };
   $("#bwB").onchange = e => { battleSim.watchB = e.target.value; };
   $("#bwGo").onclick = () => {
