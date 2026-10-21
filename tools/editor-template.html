@@ -2176,9 +2176,17 @@ const ruleText = r => { const R0 = BattleSim.RULEBOOK, parts = [];
   if (r.php && r.php !== R0.php) parts.push(`${r.php} starting PHP`); if (r.hand && r.hand !== R0.hand) parts.push(`${r.hand}-card opening hand`);
   if (r.redraw !== undefined && r.redraw !== R0.redraw) parts.push(r.redraw ? "a free redraw for hands with 0–1 creatures" : "no free redraw");
   if (r.sick !== undefined && r.sick !== R0.sick) parts.push(r.sick ? "creatures can't attack the turn they arrive" : "creatures can attack the turn they arrive");
+  for (const x of EXTRA_RULES) if (r[x.key] !== undefined && r[x.key] !== R0[x.key]) parts.push((r[x.key] ? "" : "no ") + x.short);
   return parts.join(", "); };
 const ruleOn = k => battleSim.rules[k] ?? BattleSim.RULEBOOK[k];
 const V42_RULES = { php: 30, redraw: false, sick: false };   // the rules before v4.3, to compare against
+// rules to try that aren't in the rulebook (see R in tools/battle-sim.js)
+const EXTRA_RULES = [
+  { key: "winded", short: "Winded", label: "Winded: a creature that attacked can't hit back until your next turn" },
+  { key: "intercept", short: "Intercept", label: "Intercept: block a direct attack with a creature next to the attacker" },
+  { key: "overclock", short: "Overclock", label: "Overclock: once per turn, put a card under your Reactor for +1 flux" },
+  { key: "bloodDraw", short: "Blood for cards", label: "Blood for cards: once per turn, pay 3 PHP to draw a card" },
+];
 function battleDefs() {
   const seen = new Set();
   return cards.filter(c => !isCold(c) && cardKey(c) && !seen.has(cardKey(c)) && seen.add(cardKey(c))).map(c => {
@@ -2493,6 +2501,7 @@ function renderBattle(body) {
       <label>Opening hand <select id="bsHand" ${r ? "disabled" : ""}>${[4, 5, 6, 7].map(v => `<option value="${v}" ${v === (battleSim.rules.hand || BattleSim.RULEBOOK.hand) ? "selected" : ""}>${v}${v === BattleSim.RULEBOOK.hand ? " (rulebook)" : ""}</option>`).join("")}</select></label>
       <label class="inline"><input type="checkbox" id="bsRedraw" ${ruleOn("redraw") ? "checked" : ""} ${r ? "disabled" : ""}> Free redraw for an opening hand with 0–1 creatures${BattleSim.RULEBOOK.redraw ? " (rulebook)" : ""}</label>
       <label class="inline"><input type="checkbox" id="bsSick" ${ruleOn("sick") ? "checked" : ""} ${r ? "disabled" : ""}> Creatures can't attack the turn they arrive${BattleSim.RULEBOOK.sick ? " (rulebook)" : ""}</label>
+      ${EXTRA_RULES.map(x => `<label class="inline"><input type="checkbox" data-rule="${x.key}" ${ruleOn(x.key) ? "checked" : ""} ${r ? "disabled" : ""}> ${esc(x.label)}${BattleSim.RULEBOOK[x.key] ? " (rulebook)" : ""}</label>`).join("")}
       <button class="btn" id="bsV42" ${r ? "disabled" : ""} title="30 PHP, no free redraw, creatures attack the turn they arrive">Use the v4.2 rules</button>
       <button class="btn" id="bsBook" ${r ? "disabled" : ""}>Use the rulebook</button>
     </div>
@@ -2507,6 +2516,7 @@ function renderBattle(body) {
   $("#bsHand").onchange = e => { battleSim.rules.hand = +e.target.value; };
   $("#bsRedraw").onchange = e => { battleSim.rules.redraw = e.target.checked; };
   $("#bsSick").onchange = e => { battleSim.rules.sick = e.target.checked; };
+  body.querySelectorAll("[data-rule]").forEach(el => el.onchange = () => { battleSim.rules[el.dataset.rule] = el.checked; });
   $("#bsV42").onclick = () => { battleSim.rules = { ...V42_RULES }; renderBattle(body); };
   $("#bsBook").onclick = () => { battleSim.rules = {}; renderBattle(body); };
   if ($("#bsRun")) $("#bsRun").onclick = startBattles;

@@ -12,7 +12,12 @@ const R = { php: 40, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3
   handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
   early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
   redraw: true,   // v4.3: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
-  sick: true };   // v4.3: creatures and fusions can't attack the turn they arrive (taking control of one isn't arriving)
+  sick: true,   // v4.3: creatures and fusions can't attack the turn they arrive (taking control of one isn't arriving)
+  // Rules to try, aimed at giving players more decisions that matter (ideas from Magic, Lorcana, Pokemon and Yu-Gi-Oh!):
+  winded: false,      // a creature that attacked can't hit back until its controller's next turn (Magic's tapping, Lorcana's exert)
+  intercept: false,   // a creature next to a direct attacker may step in front of it and fight it instead (Magic's blocking)
+  overclock: false,   // once per turn: put a card from your hand under your Reactor for +1 flux this turn (Lorcana's inkwell)
+  bloodDraw: false }; // once per turn: pay 3 PHP to draw a card (a consistency engine, like Pokemon's draw Supporters)
 const RULEBOOK = Object.assign({}, R);
 // Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
 function withRules(rules, fn) {
@@ -376,9 +381,20 @@ function strike(g, src, tgt, ctx) {
 }
 function expHit(g, src, tgt) { return Math.max(0, expAtk(g, src) - guardOf(g, tgt)); }
 function survives(u, hp) { const f = fxOf(u); return hp > 0 || !!(f && f.survive && !u.chapel); }
+const canHitBack = u => !(R.winded && u.winded);
+// Winded: after attacking, u can't hit back on the other player's next turn, so the creatures that can reach it hit it for free
+function exposure(g, u, hpAfter) {
+  if (!R.winded || hpAfter <= 0) return 0;
+  const o = foe(g, g.p[u.ctrl]); let dmg = 0;
+  for (const e of units(o)) if (Math.abs(e.lane - u.lane) <= 1) dmg += expHit(g, e, u);
+  const ka = keepWorth(g, u);
+  return dmg >= hpAfter ? ka * 0.5 : (dmg / Math.max(1, u.maxHp)) * ka * 0.25;
+}
 function previewFight(g, att, def) {   // expected outcome, dice at their average
   let aHp = att.hp, dHp = def.hp;
-  if (speedOf(att) + 1 >= speedOf(def)) { dHp -= expHit(g, att, def); if (survives(def, dHp)) aHp -= expHit(g, def, att); }
+  const back = canHitBack(def);
+  if (!back) dHp -= expHit(g, att, def);
+  else if (speedOf(att) + 1 >= speedOf(def)) { dHp -= expHit(g, att, def); if (survives(def, dHp)) aHp -= expHit(g, def, att); }
   else { aHp -= expHit(g, def, att); if (survives(att, aHp)) dHp -= expHit(g, att, def); }
   if (aHp <= 0 && survives(att, aHp)) aHp = 1;
   if (dHp <= 0 && survives(def, dHp)) dHp = 1;
@@ -388,11 +404,32 @@ function scoreFight(g, att, def) {
   const p = g.p[att.ctrl], r = previewFight(g, att, def), ka = keepWorth(g, att);
   let s = r.dDies ? killWorth(g, p, def) + 0.5 : (r.dLoss / Math.max(1, def.maxHp)) * valueOf(g, def) * 0.6;
   s -= r.aDies ? ka : (r.aLoss / Math.max(1, att.maxHp)) * ka * 0.5;
+  if (!r.aDies) s -= exposure(g, att, att.hp - r.aLoss);
   return s;
+}
+// Intercept: the defender's best creature to step in front of a direct attack, or null when letting it through is better
+function interceptChoice(g, att, noisy) {
+  if (!R.intercept) return null;
+  const o = foe(g, g.p[att.ctrl]), face = expAtk(g, att);
+  let backDmg = 0; for (const l of NB[att.lane]) { const e = o.lanes[l]; if (e && canHitBack(e)) backDmg += expHit(g, e, att); }
+  const hurt = backDmg >= att.hp ? killWorth(g, o, att) : (backDmg / Math.max(1, att.maxHp)) * valueOf(g, att) * 0.6;
+  const through = hurt - face * phpW(g, o) * (face >= o.php ? 100 : 1);
+  let best = null;
+  for (const l of NB[att.lane]) {
+    const e = o.lanes[l]; if (!e || !canHitBack(e)) continue;
+    const r = previewFight(g, att, e);
+    let s = (r.aDies ? killWorth(g, o, att) : (r.aLoss / Math.max(1, att.maxHp)) * valueOf(g, att) * 0.6)
+      - (r.dDies ? keepWorth(g, e) : (r.dLoss / Math.max(1, e.maxHp)) * keepWorth(g, e) * 0.5);
+    if (noisy) s += jitter(g, o);
+    if (!best || s > best.s) best = { e, s };
+  }
+  return best && best.s > through ? best.e : null;
 }
 function scoreFace(g, att) {
   const p = g.p[att.ctrl], o = foe(g, p), aS = speedOf(att) + 1;
-  const backs = NB[att.lane].map(l => o.lanes[l]).filter(Boolean);
+  const blocker = interceptChoice(g, att, false);
+  if (blocker) return scoreFight(g, att, blocker);   // expect the block
+  const backs = NB[att.lane].map(l => o.lanes[l]).filter(e => e && canHitBack(e));
   let hp = att.hp, face = 0;
   for (const e of backs) if (speedOf(e) > aS) hp -= expHit(g, e, att);
   if (survives(att, hp)) {
@@ -401,7 +438,7 @@ function scoreFace(g, att) {
   }
   const ka = keepWorth(g, att), dies = !survives(att, hp);
   const w = face >= o.php ? 100 : 0.55 + 6 / Math.max(1, o.php - face);
-  return face * w - (dies ? ka : ((att.hp - Math.max(0, hp)) / Math.max(1, att.maxHp)) * ka * 0.5);
+  return face * w - (dies ? ka : ((att.hp - Math.max(0, hp)) / Math.max(1, att.maxHp)) * ka * 0.5) - (dies ? 0 : exposure(g, att, hp));
 }
 function bestAttack(g, u) {   // AI: the best score u can get from one attack this turn
   const o = foe(g, g.p[u.ctrl]); let best = -Infinity;
@@ -416,24 +453,31 @@ function shelterResponse(g, o, att, def, ctx) {
   const r = previewFight(g, att, def), v = valueOf(g, def);
   if ((r.dDies && v >= 5) || (r.dLoss >= def.hp * 0.6 && v >= 9)) cast(g, o, c, () => { ctx.shelter = def; });
 }
-function fight(g, att, def) {
+function fight(g, att, def, intercepted) {
   const o = g.p[def.ctrl];
-  att.attacked = true;
-  L(g, `${att.d.name} attacks ${def.d.name}.`);
-  const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, def);
-  if (g.over || !onField(g, att) || !onField(g, def)) return;
+  att.attacked = true; if (R.winded) att.winded = true;
+  if (!intercepted) {
+    L(g, `${att.d.name} attacks ${def.d.name}.`);
+    const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, def);
+    if (g.over || !onField(g, att) || !onField(g, def)) return;
+  }
   const ctx = { shelter: null };
   shelterResponse(g, o, att, def, ctx);
-  const attFirst = speedOf(att) + 1 >= speedOf(def), a = attFirst ? att : def, b = attFirst ? def : att;
+  const back = canHitBack(def);
+  if (!back) L(g, `  ${def.d.name} is winded and can't hit back.`);
+  const attFirst = !back || speedOf(att) + 1 >= speedOf(def), a = attFirst ? att : def, b = attFirst ? def : att;
   strike(g, a, b, { shelter: ctx.shelter, attack: a === att });
-  if (onField(g, a) && onField(g, b)) strike(g, b, a, { shelter: ctx.shelter, attack: b === att });
+  if (onField(g, a) && onField(g, b) && (b === att || back)) strike(g, b, a, { shelter: ctx.shelter, attack: b === att });
 }
 function directAttack(g, att) {
   const p = g.p[att.ctrl], o = foe(g, p), aS = speedOf(att) + 1;
-  att.attacked = true;
+  att.attacked = true; if (R.winded) att.winded = true;
   L(g, `${att.d.name} attacks ${who(g, o)} directly.`);
   const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, null);
-  const backs = NB[att.lane].map(l => o.lanes[l]).filter(Boolean);
+  if (g.over || !onField(g, att)) return;
+  const blocker = interceptChoice(g, att, true);
+  if (blocker) { L(g, `  ${blocker.d.name} steps in front of it.`); return fight(g, att, blocker, true); }
+  const backs = NB[att.lane].map(l => o.lanes[l]).filter(e => e && canHitBack(e));
   for (const e of backs) if (speedOf(e) > aS) strike(g, e, att, {});
   if (onField(g, att) && !g.over) {
     let n = atkOf(g, att), nat = 0;
@@ -867,8 +911,9 @@ function handCreatureOpts(g, p) {   // hand creatures with every way to pay for 
     const d = c.d; if (d.kind !== "creature" || d.flux == null) continue;
     const opts = [];
     for (let k = 0; k <= (d.bp || 0); k++) {
-      let php = 3 * k, waste = 0;
-      if (d.fx && d.fx.bpWaste) { const w = Math.min(k, spare); waste = 2 * w; php = 3 * (k - w); }
+      const per = num(d, /pay (\d+) PHP(?: per flux)?: reduce this creature's flux cost/i, 3);   // Blood Price, from the card text
+      let php = per * k, waste = 0;
+      if (d.fx && d.fx.bpWaste) { const w = Math.min(k, spare); waste = 2 * w; php = per * (k - w); }
       opts.push({ flux: d.flux - k, php, waste, cost: php * W + waste * 0.15 });
     }
     out.push({ c, d, value: defValue(d), opts, unholy: hasAttr(d, "unholy") });
@@ -962,6 +1007,23 @@ function permOption(g, p, c) {
   }
   return { pri: 0, score: f.score ? f.score(g, p) : 2, run: () => putInPlay(g, p, c) };
 }
+// Overclock: the least useful card goes under the Reactor when the extra flux makes this turn's plan better by more than the card is worth
+function overclockOption(g, p) {
+  // what a card is worth keeping for later: a creature its stats (it will be castable eventually), a spell about 2
+  const worth = c => isUnitKind(c.d.kind) ? defValue(c.d) * 0.4 : 2;
+  const c = p.hand.slice().sort((a, b) => worth(a) - worth(b))[0], i = p.hand.indexOf(c);
+  const before = bestPlan(g, p).score;
+  p.hand.splice(i, 1); p.flux += 1; const after = bestPlan(g, p).score; p.flux -= 1; p.hand.splice(i, 0, c);
+  return { key: "rule:overclock", pri: 1, score: after - before - worth(c), run: () => {
+    const j = p.hand.indexOf(c); if (j < 0) return;
+    p.hand.splice(j, 1); p.reactor.push(c); p.flux += 1;
+    L(g, `${who(g, p)} overclocks: ${c.d.name} goes under the Reactor for +1 flux.`);
+  } };
+}
+function bloodDrawOption(g, p) {   // Blood for cards: a card is worth more the emptier the hand
+  const worth = p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0;
+  return { key: "rule:blood", pri: 0, score: worth - 3 * phpW(g, p), run: () => { L(g, `${who(g, p)} pays 3 PHP to draw a card.`); payPHP(g, p, 3); if (!g.over) draw(g, p, 1); } };
+}
 function mainPhase(g, p) {
   for (let guard = 0; guard < 40 && !g.over; guard++) {
     const opts = [], seen = new Set();
@@ -988,6 +1050,8 @@ function mainPhase(g, p) {
         const o = a.ai(g, p, z); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
       }
     }
+    if (R.overclock && g.phase === 1 && !p.once.has("rule:overclock") && p.hand.length) add(overclockOption(g, p));
+    if (R.bloodDraw && !p.once.has("rule:blood") && p.deck.length && canPay(p, 3)) add(bloodDrawOption(g, p));
     if (g.phase === 1) add(planOption(g, p));
     if (!opts.length) break;
     opts.sort((a, b) => (a.pri - b.pri) || (b.score - a.score));
@@ -1032,7 +1096,7 @@ function playTurn(g) {
   p.flux = p.maxFlux + (first && g.first !== p.i ? R.secondFlux : 0);
   L(g, `— Turn ${g.turnNo}: ${who(g, p)} · ${p.php} PHP vs ${o.php} · ${p.flux} flux${p.gold ? ` · ${p.gold} gold` : ""} —`);
   if (g.log) L(g, `  Hand: ${p.hand.map(c => c.d.name).join(", ") || "empty"}.`);
-  for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; }
+  for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; u.winded = false; }
   for (const q of g.p) for (const z of spellsOf(q).slice()) if (z.bomb && z.bomb.by === p.i) removeSpell(g, q, z, "Pipebomb");
   for (const c of p.lazarus.splice(0)) { const i = p.waste.indexOf(c); if (i >= 0 && emptyLanes(p).length) { p.waste.splice(i, 1); materialize(g, p, c, chooseLane(g, p, c.d), "lazarus"); } }
   for (const u of units(p)) { const f = fxOf(u); if (f && f.startTurn) f.startTurn(g, u); if (g.over) return; }
@@ -1104,7 +1168,7 @@ function randomDeck(defs, rng) {
 }
 function newPlayer(g, i, deck) {
   const p = { i, php: R.php, gold: 0, flux: 0, maxFlux: R.fluxStart, deck: [], hand: [], waste: [], oblivion: [], fdeck: [],
-    lanes: [null, null, null], zones: [], field: null, turns: 0, once: new Set(), fused: false, pact: 0,
+    lanes: [null, null, null], zones: [], field: null, reactor: [], turns: 0, once: new Set(), fused: false, pact: 0,
     broker: [], lazarus: [], deathMark: 0, bullTurn: -1, st: { drawn: new Set(), played: new Set(), fused: new Set(), face: 0 } };
   const card = d => ({ d, owner: i, uid: g.uid++, lazarusUsed: false });
   deck.main.forEach(n => { const d = g.defs.get(n); if (d) p.deck.push(card(d)); });
