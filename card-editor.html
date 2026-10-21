@@ -460,9 +460,10 @@ const R = { php: 40, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3
   // Reactor flux, a structural change (Lorcana's inkwell): no automatic +1 a turn. Once per turn you may put a card from your
   // hand face down under your Reactor; your max flux is inkBase + the cards under it (up to fluxMax), and the new flux is usable at once.
   ink: false, inkBase: 2,
-  // Reactor choice, a structural change: in your Reactor Phase (not your first turn) choose one: Charge (+1 max flux, as now),
-  // Vent (draw a card instead) or Overload (+2 flux this turn only, lose overloadPHP PHP).
-  reactor: false, overloadPHP: 2 };
+  // Reactor Phase choices: normally +1 max flux (up to 10) and refill. You may also Feed the reactor: send 1 card from your
+  // hand to Oblivion for +1 flux this turn (not max flux). Or Skip: no +1 max flux this turn, still refill, draw 1 extra card.
+  // Feed and Skip don't combine; the normal draw always happens. holdAtCap: whether you may Skip once max flux is already 10.
+  reactor: false, holdAtCap: true };
 const RULEBOOK = Object.assign({}, R);
 // Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
 function withRules(rules, fn) {
@@ -1269,7 +1270,7 @@ const SPELLS = {
     }
     return best && best.s > 1 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => unfuse(g, p, best.t)) } : null;
   } },
-  "Overclock": { play(g, p, c) {   // a card under the Reactor for N flux this turn (with Reactor flux it also raises max flux for good)
+  "Overclock": { play(g, p, c) {   // a card from hand to Oblivion for N flux this turn (under the Reactor with Reactor flux, which also raises max flux)
     if (g.phase !== 1 || p.hand.length < 2) return null;
     const n = num(c.d, /gain (\d+) flux/i, 2);
     const burn = p.hand.filter(x => x !== c).sort((a, b) => holdWorth(a) - holdWorth(b))[0];
@@ -1279,9 +1280,9 @@ const SPELLS = {
     const s = after - before - holdWorth(burn) - 0.5 + (R.ink && p.maxFlux < R.fluxMax ? 2.5 : 0);
     return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => {
       const j = p.hand.indexOf(burn); if (j < 0) return;
-      p.hand.splice(j, 1); p.reactor.push(burn); p.flux += n;
-      if (R.ink) p.maxFlux = Math.min(R.fluxMax, R.inkBase + p.reactor.length);
-      L(g, `  ${burn.d.name} goes under the Reactor: +${n} flux.`);
+      p.hand.splice(j, 1); p.flux += n;
+      if (R.ink) { p.reactor.push(burn); p.maxFlux = Math.min(R.fluxMax, R.inkBase + p.reactor.length); } else g.p[burn.owner].oblivion.push(burn);
+      L(g, `  ${burn.d.name} feeds the reactor: +${n} flux.`);
     }) } : null;
   } },
   "Blood Ledger": { perm: true, score: () => 2.5, acts: [{ id: "draw", pri: 0, ai(g, p, z) {   // pay PHP to draw, once per turn
@@ -1486,18 +1487,29 @@ function overclockOption(g, p) {
     L(g, `${who(g, p)} overclocks: ${c.d.name} goes under the Reactor for +1 flux.`);
   } };
 }
-// Reactor choice: Charge, Vent or Overload, whichever helps most now (with the sloppy player's misjudgement, like every choice)
-function reactorChoice(g, p) {
+// Reactor Phase: the normal +1 max flux, Feed (also a card to Oblivion for +1 flux this turn) or Skip (no +1, draw a card),
+// whichever helps most now, with the sloppy player's misjudgement like every choice. Called after the refill.
+function reactorChoice(g, p, first) {
   const plan = extra => { p.flux += extra; const s = bestPlan(g, p).score; p.flux -= extra; return s; }, base = plan(0);
-  const charge = (p.maxFlux < R.fluxMax ? 2.2 + (plan(1) - base) : 0) + jitter(g, p);
-  const vent = (p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0) + (p.deck.length ? 0 : -99) + jitter(g, p);
-  const overload = (canPay(p, R.overloadPHP) ? plan(2) - base - R.overloadPHP * phpW(g, p) : -99) + jitter(g, p);
-  if (charge >= vent && charge >= overload) { p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1); p.flux += 1; L(g, `  Reactor: Charge (max flux ${p.maxFlux}).`); p.st.reactor[0]++; }
-  else if (vent >= overload) { L(g, `  Reactor: Vent, draws a card.`); draw(g, p, 1); p.st.reactor[1]++; }
-  else { L(g, `  Reactor: Overload, +2 flux this turn for ${R.overloadPHP} PHP.`); p.flux += 2; losePHP(g, p, R.overloadPHP, { paid: true }); p.st.reactor[2]++; }
+  const up = !first && p.maxFlux < R.fluxMax;   // the normal +1 max flux does something
+  const normal = (up ? 2.2 + (plan(1) - base) : 0) + jitter(g, p);
+  const skipOk = !first && p.deck.length && (R.holdAtCap || p.maxFlux < R.fluxMax);
+  const skip = skipOk ? (p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0) + jitter(g, p) : -99;
+  let feed = -99, c = null;
+  if (p.hand.length) {
+    c = p.hand.slice().sort((a, b) => holdWorth(a) - holdWorth(b))[0];
+    const i = p.hand.indexOf(c); p.hand.splice(i, 1); const fed = plan((up ? 1 : 0) + 1); p.hand.splice(i, 0, c);
+    feed = (up ? 2.2 : 0) + (fed - base) - holdWorth(c) + jitter(g, p);
+  }
+  if (skip > normal && skip > feed) { L(g, `  Reactor: Skip, no extra max flux, draws a card.`); draw(g, p, 1); p.st.reactor[2]++; return; }
+  if (up) { p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1); p.flux += 1; }
+  if (feed > normal && c) {
+    p.hand.splice(p.hand.indexOf(c), 1); g.p[c.owner].oblivion.push(c); p.flux += 1; p.st.reactor[1]++;
+    L(g, `  Reactor: feeds it ${c.d.name}: ${p.flux}/${p.maxFlux} flux.`);
+  } else p.st.reactor[0]++;
 }
 // what a card in hand is worth keeping, for choosing what goes under the Reactor: a creature its stats, a spell about 2
-const holdWorth = c => isUnitKind(c.d.kind) ? defValue(c.d) * 0.4 : 2;
+const holdWorth = c => isUnitKind(c.d.kind) ? defValue(c.d) * 0.4 : 2 + (says(c.d, /\bdraw\b/i) ? 1.5 : 0);
 function inkOption(g, p) {   // Reactor flux: the card needed least goes under the Reactor for +1 max flux, usable right away
   const c = p.hand.slice().sort((a, b) => holdWorth(a) - holdWorth(b))[0], i = p.hand.indexOf(c);
   let now = 0;
@@ -1583,11 +1595,11 @@ function playTurn(g) {
   const first = p.turns === 1;
   if (!(first && g.first === p.i)) { draw(g, p, 1); if (g.over) return; }
   if (R.ink) p.maxFlux = Math.min(R.fluxMax, R.inkBase + p.reactor.length);
-  else if (!first && !R.reactor) p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1);
+  else if (!first && !R.reactor) p.maxFlux = Math.min(R.fluxMax, p.maxFlux + 1);   // with R.reactor, reactorChoice does it
   p.flux = p.maxFlux + (first && g.first !== p.i ? R.secondFlux : 0);
-  if (R.reactor && !first) { reactorChoice(g, p); if (g.over) return; }
   L(g, `— Turn ${g.turnNo}: ${who(g, p)} · ${p.php} PHP vs ${o.php} · ${p.flux} flux${p.gold ? ` · ${p.gold} gold` : ""} —`);
   if (g.log) L(g, `  Hand: ${p.hand.map(c => c.d.name).join(", ") || "empty"}.`);
+  if (R.reactor) { reactorChoice(g, p, first); if (g.over) return; }
   for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; u.winded = false; }
   for (const q of g.p) for (const z of spellsOf(q).slice()) if (z.bomb && z.bomb.by === p.i) removeSpell(g, q, z, "Pipebomb");
   for (const c of p.lazarus.splice(0)) { const i = p.waste.indexOf(c); if (i >= 0 && emptyLanes(p).length) { p.waste.splice(i, 1); materialize(g, p, c, chooseLane(g, p, c.d), "lazarus"); } }
@@ -3522,7 +3534,7 @@ const V42_RULES = { php: 30, redraw: false, sick: false };   // the rules before
 const EXTRA_RULES = [
   { key: "winded", short: "Winded", label: "Winded: a creature that attacked can't hit back until your next turn" },
   { key: "intercept", short: "Intercept", label: "Intercept: block a direct attack with a creature next to the attacker" },
-  { key: "reactor", short: "Reactor choice", label: "Reactor choice: each Reactor Phase choose Charge (+1 max flux), Vent (draw a card instead) or Overload (+2 flux this turn, lose 2 PHP)" },
+  { key: "reactor", short: "Reactor choices", label: "Reactor choices: Feed (a card from hand to Oblivion for +1 flux this turn) or Skip (no +1 max flux, draw a card)" },
   { key: "ink", short: "Reactor flux", label: "Reactor flux: no automatic +1 flux; once per turn put a card face down under your Reactor, max flux = 2 + cards under it" },
 ];
 function battleDefs() {
