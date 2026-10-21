@@ -227,7 +227,7 @@ Radiance (when this creature is restored past its max HP, it gains your choice o
 
 Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
 Market research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for a 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
-Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: send a card from your hand to Oblivion. Gain 3 flux this turn.
+Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: send a card from your field to Oblivion. Gain 2 flux this turn.
 
 The warning lights are mostly decorative.",,,
 Blood Ledger,Field Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP to draw 1 card.",Blood Demon,,
