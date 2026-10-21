@@ -1,4 +1,4 @@
-/* Fusion Fuckery battle simulator (Rulebook v4.2, gameplay v2).
+/* Fusion Fuckery battle simulator (Rulebook v4.3, gameplay v2).
    Plays whole games between two decks with a rule-of-thumb AI, so the editor's Battle sim tab can play thousands
    of them and show which cards and combinations win too often. No DOM in here: tools/build.ps1 inlines this file
    into the editor, which runs it on the page (to watch one game) and in Web Workers (for big runs).
@@ -8,11 +8,11 @@
 var BattleSim = (function () {
 "use strict";
 
-const R = { php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
+const R = { php: 40, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
   handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
   early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
-  redraw: false,   // a rule to try: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
-  sick: false };   // a rule to try: creatures and fusions can't attack the turn they arrive
+  redraw: true,   // v4.3: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
+  sick: true };   // v4.3: creatures and fusions can't attack the turn they arrive (taking control of one isn't arriving)
 const RULEBOOK = Object.assign({}, R);
 // Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
 function withRules(rules, fn) {
@@ -288,6 +288,7 @@ function fuse(g, p, a, b, fc, pay) {
   const u = makeUnit(g, p, fc, lane, false);
   u.splices = [a.c, b.c];
   p.lanes[lane] = u; p.fused = true; p.st.fused.add(fc.d.ix);
+  if (!p.st.firstFuse) p.st.firstFuse = g.turnNo;
   L(g, `${who(g, p)} fuses ${a.d.name} + ${b.d.name} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's free fuse-estate)" : pay.kind === "altar" ? " (Crimson Altar instead of flux)" : ""}${pay.pit ? " (Ritual Pit)" : ""}.`);
   const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
 }
@@ -404,6 +405,7 @@ function scoreFace(g, att) {
 }
 function bestAttack(g, u) {   // AI: the best score u can get from one attack this turn
   const o = foe(g, g.p[u.ctrl]); let best = -Infinity;
+  if (R.sick && u.arrived === g.turnNo) return best;   // it can't attack yet
   for (const l of [u.lane].concat(NB[u.lane])) if (o.lanes[l]) best = Math.max(best, scoreFight(g, u, o.lanes[l]));
   if (!o.lanes[u.lane]) best = Math.max(best, scoreFace(g, u));
   return best;
@@ -1164,7 +1166,7 @@ function record(g, A, B) {
   return { w: g.winner, t: g.turnNo, end: g.endReason, f: g.first, c: closeness(g), p: [A, B].map((D, i) => {
     const p = g.p[i];
     return { label: D.label, arch: D.arch, fixed: !!D.fixed, main: uniq(D.main), fus: uniq(D.fusion), elig: D.elig ? uniq(D.elig) : null, top: p.top,
-      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face, fc: p.st.firstCre || 99, oc: p.st.openCre };
+      drawn: [...p.st.drawn], played: [...p.st.played], fused: [...p.st.fused], php: p.php, face: p.st.face, fc: p.st.firstCre || 99, oc: p.st.openCre, ff: p.st.firstFuse || 0 };
   }) };
 }
 // o: { count, start, seed, fixed: [{ label, cards: [[name, copies]] }], mode, sigma, replays }. Saved decks play every other game,

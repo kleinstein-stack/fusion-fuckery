@@ -1,10 +1,15 @@
-# Fusion Fuckery: Rulebook v4.2 (gameplay v2)
+# Fusion Fuckery: Rulebook v4.3 (gameplay v2)
 
 Decided on 2026-10-19. This replaces the Rulebook v2.1 (*The Blocking Update*) wherever the two disagree; everything
 v2.1 says that isn't covered here still applies. The Dino, Mutant, Parasite, Bleed and Equipment rules are only in
 v2.1, because those cards are in cold storage. The player-facing version with diagrams is
-`Fusion Fuckery Rulebook v4.2.pdf`. The card editor's checks and simulators use these numbers
-(`PLAY` in `tools/editor-template.html`).
+`Fusion Fuckery Rulebook v4.3.pdf`. The card editor's checks and simulators use these numbers
+(`PLAY` in `tools/editor-template.html`, `R` in `tools/battle-sim.js`).
+
+**v4.3 (2026-10-21):** 40 starting PHP (was 30), a free redraw for an opening hand with 0 or 1 creatures, and creatures
+can't attack the turn they arrive (they could before). In the battle sim these made games longer with more lead
+changes, made an early lead matter less and got fusions made in far more games. The v4.2 cards, decks and rulebook are
+saved under the git tag `save-before-v4.3-rules` and in `saves/versions/` ("SAVE before v4.3 rules").
 
 ## 1. The Golden Rules
 
@@ -14,7 +19,7 @@ v2.1, because those cards are in cold storage. The player-facing version with di
 
 ## 2. How to win
 
-- Each player starts with **30 PHP** (Player Health Points). Get your opponent to **0 PHP** and you win.
+- Each player starts with **40 PHP** (Player Health Points). Get your opponent to **0 PHP** and you win.
 - PHP drops from direct attacks, from card effects that deal damage or make you lose PHP, and from paying PHP for
   your own cards. You can pay yourself to 0, and then you lose.
 - **Running out of cards doesn't knock you out.** Each time you'd draw from an empty deck, you lose 5 PHP instead.
@@ -29,11 +34,13 @@ v2.1, because those cards are in cold storage. The player-facing version with di
 ## 4. Setting up
 
 1. Shuffle your Main Deck and offer it to your opponent to cut. Put your Fusion Deck face up next to your field.
-2. Both players start at **30 PHP** and **0 Gold**.
+2. Both players start at **40 PHP** and **0 Gold**.
 3. Flip a coin. The winner decides who goes first.
 4. Each player draws **5 cards**.
-5. **Mulligan:** only if **both players agree**. Then both shuffle their hands back and draw 5 new cards, once.
-6. The first player skips their first draw and can't attack on their first turn.
+5. **Free redraw:** if your opening hand has **0 or 1 creatures**, you may show it, shuffle it back into your deck and
+   draw 5 new cards. Once per game, and you keep the new hand.
+6. **Mulligan:** only if **both players agree**. Then both shuffle their hands back and draw 5 new cards, once.
+7. The first player skips their first draw and can't attack on their first turn.
    The second player gets **+1 flux on their first turn** (4 instead of 3).
 
 ## 5. The play area
@@ -82,7 +89,7 @@ v2.1, because those cards are in cold storage. The player-facing version with di
 | 2 | Reactor | Max flux +1 (not on your first turn), then refill. |
 | 3 | Start | Radiance bonuses from your last turn end → start-of-turn effects. |
 | 4 | Main 1 | In any order: materialize creatures, play spells, activate effects. **One fusion** (13). |
-| 5 | Battle | Attack (12). Nobody attacks on the first turn of the game. |
+| 5 | Battle | Attack (12). Nobody attacks on the first turn of the game, and creatures that arrived this turn can't attack. |
 | 6 | Main 2 | Spells and effects. No natural materializing and no fusing. |
 | 7 | End | End-of-turn effects → discard down to 8 cards. |
 
@@ -93,7 +100,9 @@ v2.1, because those cards are in cold storage. The player-facing version with di
 - **By effect** (Carrion Duchess, Lord Lazarus…): happens whenever the effect says, without paying flux. It
   still needs an empty lane.
 - "When materialized" effects trigger both ways.
-- **Creatures can attack the turn they arrive.** No summoning sickness.
+- **Creatures can't attack the turn they arrive.** A creature or fusion that was materialized, fused or brought back
+  this turn waits until your next turn to attack. It still hits back when it's attacked. Taking control of a creature
+  (Space Squid) isn't arriving, so that creature can attack.
 
 ## 10. Spells
 
@@ -113,12 +122,12 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 
 ## 11. Health, damage & destruction
 
-**Player health (PHP).** You start at 30. Restoring can't take you above 30; gaining can.
+**Player health (PHP).** You start at 40. Restoring can't take you above 40; gaining can.
 
 | Card says | What happens |
 |---|---|
-| Restore PHP | Heals you, but never above 30 (your starting PHP). |
-| Gain PHP | Adds PHP. Can take you above 30. |
+| Restore PHP | Heals you, but never above 40 (your starting PHP). |
+| Gain PHP | Adds PHP. Can take you above 40. |
 | Pay PHP | A cost. Always payable, even if it drops you to 0 (and then you lose). |
 | Lose PHP | Any drop: damage, paying, or "lose X PHP". Pain Drinker and Skinless Titan care about this. |
 
@@ -144,7 +153,8 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 
 ## 12. Combat
 
-1. In your Battle Phase, each of your creatures can **attack once per turn**, one attack at a time.
+1. In your Battle Phase, each of your creatures can **attack once per turn**, one attack at a time, except on the turn it
+   arrived (9).
 2. **Choose a target.** An attacker can hit the enemy creature **in front of it** or in **a lane next to it** (the
    middle lane reaches all three enemy lanes).
 3. **Direct attacks:** if nothing is in front of it, it may attack the **player** instead. Enemy creatures in the
@@ -166,7 +176,8 @@ Fusions are the end goal: each one is stronger than an Ultra.
   your Fusion Deck.
 - Put the two creatures **under** the fusion card. They're now its **fusion splices**, not creatures. Put the fusion
   in either of their lanes; the other lane is free again.
-- The fusion arrives at its own printed stats and full HP, and **can attack this turn**.
+- The fusion arrives at its own printed stats and full HP. It has just arrived, so it **can't attack until your next
+  turn** (9).
 - **Ways around the 2 flux:** **It's free fuse-estate** (spell) lets you fuse without paying it. **Crimson Altar**
   (field spell) lets you sacrifice another Unholy creature instead.
 - **A cheaper fusion splice:** **Ritual Pit** (continuous spell) is the one exception to the 5+ flux rule. Banish an
@@ -222,9 +233,10 @@ are a little weak at their printed cost (see the stat budget); paying PHP is wha
 
 | | |
 |---|---|
-| Starting PHP | 30. Restoring can't take you above 30; gaining can |
+| Starting PHP | 40. Restoring can't take you above 40; gaining can |
 | Main Deck / Fusion Deck | 30 / up to 10, max 3 copies |
-| Opening hand | 5 (mulligan only if both agree) |
+| Opening hand | 5. One free redraw if it has 0–1 creatures; mulligan only if both agree |
+| Arriving | Creatures and fusions can't attack the turn they arrive |
 | Draw per turn | 1 (first player skips their first) |
 | Flux | starts 3, +1 a turn, max 10. Second player +1 on their first turn |
 | Lanes / spell zones / field spells | 3 / 3 / 1 per player |

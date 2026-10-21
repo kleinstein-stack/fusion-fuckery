@@ -1334,7 +1334,8 @@ const RULES = { main: 30, fusion: 10, copies: 3 };
    creatures costing 5+ flux in adjacent lanes. Cost tiers, aimed at a 2 : 3 : 2 : 1 spread per faction;
    Ultras aim for about 20 stat points, fusions for 28 (the end goal). */
 const PLAY = { fluxStart: 3, fluxMax: 10, lanes: 3, fuseMinFlux: 5, fuseParts: 2, speedMin: 1, speedMax: 4, speedNormal: 2,
-  startPHP: 30, openingHand: 5, drawPerTurn: 1, secondPlayerFlux: 1,   // first player skips their first draw; spells are free
+  startPHP: 40, openingHand: 5, drawPerTurn: 1, secondPlayerFlux: 1,   // first player skips their first draw; spells are free
+  freeRedraw: true, attackOnArrival: false,   // v4.3: redraw a hand with 0-1 creatures once; nothing attacks the turn it arrives
   fuseFlux: 2, fusionBudget: 28, ultraBudget: 20 };   // fusing: once per turn for 2 flux (It's free fuse-estate = free, Crimson Altar = sacrifice)
 const TIERS = [
   { key: "low",    label: "Low",    range: "1–3",  min: 1, max: 3,  target: 2 },
@@ -1835,12 +1836,19 @@ function simulateDeck(games = 5000, turns = 7) {
   for (const seat of ["first", "second"]) {
     const played = Array(turns).fill(0), spent = Array(turns).fill(0), avail = Array(turns).fill(0);
     const fusionReady = fusions.map(() => Array(turns).fill(0));
-    let noCreatureOpening = 0, openCreatures = 0;
+    let noCreatureOpening = 0, openCreatures = 0, redrawn = 0;
     for (let g = 0; g < games; g++) {
       const lib = [...deckCards];
       for (let i = lib.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [lib[i], lib[j]] = [lib[j], lib[i]]; }
-      const hand = lib.splice(0, PLAY.openingHand), seen = [...hand]; let field = 0;
-      const oc = hand.filter(c => category(c) === "Creature").length; openCreatures += oc; if (!oc) noCreatureOpening++;
+      let hand = lib.splice(0, PLAY.openingHand); let field = 0;
+      let oc = hand.filter(c => category(c) === "Creature").length;
+      if (PLAY.freeRedraw && oc <= 1) {   // shuffle it back and draw a new hand, once
+        redrawn++; lib.push(...hand);
+        for (let i = lib.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [lib[i], lib[j]] = [lib[j], lib[i]]; }
+        hand = lib.splice(0, PLAY.openingHand); oc = hand.filter(c => category(c) === "Creature").length;
+      }
+      const seen = [...hand];
+      openCreatures += oc; if (!oc) noCreatureOpening++;
       for (let t = 1; t <= turns; t++) {
         if (!(seat === "first" && t === 1)) { const d = lib.splice(0, PLAY.drawPerTurn); hand.push(...d); seen.push(...d); }
         const bonus = seat === "second" && t === 1 ? PLAY.secondPlayerFlux : 0;   // going second: +1 flux on your first turn
@@ -1854,7 +1862,7 @@ function simulateDeck(games = 5000, turns = 7) {
         fusions.forEach((f, k) => { if (recipeMet(f.r, seen)) fusionReady[k][t - 1]++; });
       }
     }
-    res[seat] = { played, spent, avail, fusionReady, noCreatureOpening, openCreatures };
+    res[seat] = { played, spent, avail, fusionReady, noCreatureOpening, openCreatures, redrawn };
   }
   return { res, games, turns, fusions, deckSize: deckCards.length };
 }
@@ -2037,9 +2045,9 @@ function renderSim(body) {
   body.innerHTML = `<p class="ana-lead">Played out <b>${G.toLocaleString()}</b> random games of <b>${esc(deck().name)}</b> (${sim.deckSize} cards${sim.deckSize !== RULES.main ? `, not ${RULES.main} yet` : ""}).
       Rules used: opening hand of ${PLAY.openingHand}, draw ${PLAY.drawPerTurn} a turn (the first player skips their first draw), flux starts at ${PLAY.fluxStart} and goes up 1 a turn to ${PLAY.fluxMax}
       (the second player gets +${PLAY.secondPlayerFlux} on their first turn), only creatures cost flux.
-      Each turn plays creatures to use as much flux as possible. Spells, effects, combat, the ${PLAY.lanes}-creature field limit and mulligans are ignored.
+      Each turn plays creatures to use as much flux as possible. Spells, effects, combat, the ${PLAY.lanes}-creature field limit and mulligans are ignored${PLAY.freeRedraw ? ", but a hand with 0 or 1 creatures uses the free redraw" : ""}.
       A drop in later turns means the deck runs out of creatures to play.</p>
-    <p class="ana-lead">Opening hand: <b>${(f.openCreatures / G).toFixed(1)}</b> creatures on average · <b class="${f.noCreatureOpening / G > .1 ? "lo" : ""}">${pct(f.noCreatureOpening, G)}</b> of hands have no creature at all.</p>
+    <p class="ana-lead">Opening hand: <b>${(f.openCreatures / G).toFixed(1)}</b> creatures on average · <b class="${f.noCreatureOpening / G > .1 ? "lo" : ""}">${pct(f.noCreatureOpening, G)}</b> of hands have no creature at all${PLAY.freeRedraw ? ` (after the free redraw, which ${pct(f.redrawn, G)} of hands use)` : ""}.</p>
     ${seatTable(f, "Going first")}${seatTable(sc, "Going second")}
     <p class="ana-lead"><small>"Ingredients drawn" means the cards for that fusion have been drawn by that turn. They still have to be on your field to fuse.</small></p>
     <button class="btn" id="simAgain">Run again</button>`;
@@ -2166,7 +2174,11 @@ function renderLanes(body) {
 const battleSim = { n: 1000, saved: true, luck: true, rules: {}, run: null, res: null, watchA: "", watchB: "", log: null };
 const ruleText = r => { const R0 = BattleSim.RULEBOOK, parts = [];
   if (r.php && r.php !== R0.php) parts.push(`${r.php} starting PHP`); if (r.hand && r.hand !== R0.hand) parts.push(`${r.hand}-card opening hand`);
-  if (r.redraw) parts.push("a free redraw for hands with 0–1 creatures"); if (r.sick) parts.push("creatures can't attack the turn they arrive"); return parts.join(", "); };
+  if (r.redraw !== undefined && r.redraw !== R0.redraw) parts.push(r.redraw ? "a free redraw for hands with 0–1 creatures" : "no free redraw");
+  if (r.sick !== undefined && r.sick !== R0.sick) parts.push(r.sick ? "creatures can't attack the turn they arrive" : "creatures can attack the turn they arrive");
+  return parts.join(", "); };
+const ruleOn = k => battleSim.rules[k] ?? BattleSim.RULEBOOK[k];
+const V42_RULES = { php: 30, redraw: false, sick: false };   // the rules before v4.3, to compare against
 function battleDefs() {
   const seen = new Set();
   return cards.filter(c => !isCold(c) && cardKey(c) && !seen.has(cardKey(c)) && seen.add(cardKey(c))).map(c => {
@@ -2239,10 +2251,11 @@ async function startBattles() {
   }
   if (battleSim.run === run) battleSim.run = null;
   battleSim.res = run.error ? { error: run.error } : run.recs.length ? battleStats(run.recs, defs, { ms: performance.now() - run.t0, stopped: !!run.stopped, asked: n }) : null;
-  if (battleSim.res && !battleSim.res.error) { battleSim.res.play = gameplayStats(run); battleSim.res.rules = ruleText(rules); }
+  if (battleSim.res && !battleSim.res.error) { battleSim.res.play = gameplayStats(run, rules.php || BattleSim.RULEBOOK.php); battleSim.res.rules = ruleText(rules); }
   refreshBattle();
 }
-function gameplayStats(run) {
+function gameplayStats(run, php) {   // php: starting PHP; "close" and "comeback" are a third of it (10 of 30, 13 of 40)
+  const third = Math.round(php / 3), sixth = Math.round(php / 6);
   const share = (list, f) => list.length ? list.filter(f).length / list.length : NaN;
   const avg = (list, f) => list.length ? list.reduce((a, x) => a + f(x), 0) / list.length : NaN;
   const dec = run.recs.filter(r => r.c), ahead = dec.filter(r => r.c.ahead6 >= 0);
@@ -2251,14 +2264,20 @@ function gameplayStats(run) {
   const careful = list => avg(list, r => r.w < 0 ? 0.5 : r.w === r.careful ? 1 : 0);
   const rep = run.replay.filter(r => r.ws.every(w => w >= 0));
   return { decided: dec.length,
-    close5: share(dec, r => r.c.margin <= 5), close10: share(dec, r => r.c.margin <= 10),
-    comeback: share(dec, r => r.c.phpBehind >= 10), winnerPHP: avg(dec, r => r.c.margin), changes: avg(dec, r => r.c.changes), swingy: share(dec, r => r.c.changes >= 2),
+    third, sixth, close5: share(dec, r => r.c.margin <= sixth), close10: share(dec, r => r.c.margin <= third),
+    comeback: share(dec, r => r.c.phpBehind >= third), winnerPHP: avg(dec, r => r.c.margin), changes: avg(dec, r => r.c.changes), swingy: share(dec, r => r.c.changes >= 2),
     decidedAt: avg(dec, r => r.c.decided), early: share(dec, r => r.c.decided <= 1 / 3),
     snowball: share(ahead, r => r.w === r.c.ahead6), aheadN: ahead.length,
     slowWR: avg(slow, x => x.win), slowShare: players.length ? slow.length / players.length : NaN,
     thinWR: avg(thin, x => x.win), thinShare: players.length ? thin.length / players.length : NaN,
     sloppy: careful(run.sloppy), sloppyN: run.sloppy.length, weak: careful(run.weak), random: careful(run.random), randomN: run.random.length,
-    sameWinner: share(rep, r => r.ws.every(w => w === r.ws[0])), replayN: rep.length };
+    sameWinner: share(rep, r => r.ws.every(w => w === r.ws[0])), replayN: rep.length,
+    // fusions: how often one gets made, and how often the player who fused first wins
+    fusedGame: share(run.recs, r => r.p.some(pl => pl.ff)),
+    firstFuseWR: avg(run.recs.filter(r => r.p.some(pl => pl.ff)), r => {
+      const [a, b] = r.p.map(pl => pl.ff || Infinity), first = a < b ? 0 : 1;
+      return r.w < 0 ? 0.5 : r.w === first ? 1 : 0; }),
+    onlyFuseWR: avg(run.recs.filter(r => !!r.p[0].ff !== !!r.p[1].ff), r => { const f = r.p[0].ff ? 0 : 1; return r.w < 0 ? 0.5 : r.w === f ? 1 : 0; }) };
 }
 function refreshBattle() { if (document.getElementById("anaDlg").open && anaTab === "battle") renderBattle(document.getElementById("anaBody")); }
 const battleProgHTML = r => `<div class="bs-prog"><div class="bar ok"><i style="width:${Math.round(r.done / r.n * 100)}%"></i></div>
@@ -2334,7 +2353,7 @@ function battleStats(recs, defs, meta) {
   let fusedGames = 0, players = 0; for (const r of recs) for (const pl of r.p) if (!pl.fixed) { players++; if (pl.fused.length) fusedGames++; }
   const avgImpact = list => { const l = list.filter(r => r.enough), w = l.reduce((a, r) => a + r.deckN, 0); return w ? l.reduce((a, r) => a + r.impact * r.deckN, 0) / w : NaN; };
   return { games: recs.length, meta, firstWR: decided ? firstW / decided : NaN, turns: turns / recs.length, ends, rows, combos: combos.slice(0, 15), nearCombos, pairsTested: pairList.length, arch, archNames, archTot, fixed,
-    fusedRate: players ? fusedGames / players : NaN, creatureImpact: avgImpact(rows.filter(r => r.d.kind === "creature")), spellImpact: avgImpact(rows.filter(r => !isUnitKind(r.d.kind))) };
+    fusedRate: players ? fusedGames / players : NaN, fusionImpact: avgImpact(rows.filter(r => r.fusion)), creatureImpact: avgImpact(rows.filter(r => r.d.kind === "creature")), spellImpact: avgImpact(rows.filter(r => !isUnitKind(r.d.kind))) };
 }
 const bsPct = x => isNaN(x) ? "–" : Math.round(x * 100) + "%";
 const bsSigned = x => isNaN(x) ? "–" : (x >= 0 ? "+" : "−") + Math.abs(x * 100).toFixed(1) + "%";
@@ -2342,18 +2361,20 @@ const isUnitKind = k => k === "creature" || k === "fusion";
 const bsLink = n => `<a href="#" class="jump" data-n="${esc(n)}">${esc(n)}</a>`;
 const bsKind = d => d.kind === "fusion" ? "Fusion" : d.kind === "creature" ? `Creature, ${d.flux} flux` : ({ instant: "Instant Spell", continuous: "Continuous Spell", field: "Field Spell" })[d.kind] || "Spell";
 // Close games and skill, each with a plain reading. good / warn thresholds are rules of thumb, not hard limits.
-function gameplayHTML(g) {
+function gameplayHTML(g, s) {
   const P = bsPct, row = (ok, title, text) => `<li><b class="${ok === null ? "" : ok ? "good" : "hi"}">${ok === null ? "·" : ok ? "✓" : "⚠"} ${title}</b> ${text}</li>`;
   const have = x => !isNaN(x);
   const items = [
-    row(g.close10 >= 0.4, "Close finishes:", `<b>${P(g.close10)}</b> of games ended with the winner on 10 PHP or less (${P(g.close5)} on 5 or less). Winners had ${Math.round(g.winnerPHP)} PHP left on average.`),
-    row(g.comeback >= 0.15, "Comebacks:", `<b>${P(g.comeback)}</b> of games were won by a player who was 10 or more PHP behind at some point.`),
+    row(g.close10 >= 0.4, "Close finishes:", `<b>${P(g.close10)}</b> of games ended with the winner on ${g.third} PHP or less, a third of the starting PHP (${P(g.close5)} on ${g.sixth} or less). Winners had ${Math.round(g.winnerPHP)} PHP left on average.`),
+    row(g.comeback >= 0.15, "Comebacks:", `<b>${P(g.comeback)}</b> of games were won by a player who was ${g.third} or more PHP behind at some point.`),
     row(g.snowball <= 0.72, "Early leads:", `the player ahead after 3 turns each went on to win <b>${P(g.snowball)}</b> (${g.aheadN.toLocaleString()} games had a clear leader by then). Around 60% means an early lead helps without settling the game.`),
     row(g.swingy >= 0.3, "Back and forth:", `the lead changed hands ${g.changes.toFixed(1)} times per game on average; <b>${P(g.swingy)}</b> of games had 2 or more lead changes.
       The winner took the lead for good ${P(g.decidedAt)} of the way through the game on average${g.early > 0 ? ` (in ${P(g.early)} of games within the first third)` : ""}.`),
     row(g.slowWR >= 0.3, "Bad starts:", `players with no creature on the field in their first 3 turns (${P(g.slowShare)} of players) won <b>${P(g.slowWR)}</b>;
       an opening hand with 0 or 1 creatures (${P(g.thinShare)} of players) won ${P(g.thinWR)}.`),
   ];
+  items.push(row(null, "Fusions:", `a player made at least one fusion in <b>${P(g.fusedGame)}</b> of games. The player who fused first won ${P(g.firstFuseWR)};
+      when only one player fused, they won ${P(g.onlyFuseWR)}${have(s.fusionImpact) ? `. Having a fusion in the Fusion Deck was worth ${bsSigned(s.fusionImpact)} on average (decks that could make it, with it vs without)` : ""}.`));
   if (have(g.sloppy)) items.push(row(g.weak >= 0.65, "Skill:", `with the same deck on both sides, the normal AI beat a copy of itself that makes small mistakes <b>${P(g.sloppy)}</b> of the time,
       one that makes big mistakes <b>${P(g.weak)}</b>, and one choosing almost at random ${P(g.random)}. 50% would mean decisions don't matter; the further above, the more good play pays off.`));
   if (have(g.sameWinner)) items.push(row(g.sameWinner <= 0.6, "The draw:", `replaying the same shuffled decks 4 times with slightly different decisions and fresh dice, the same player won all 4 in
@@ -2382,7 +2403,7 @@ function battleResultsHTML(s) {
       the player going first won <b>${bsPct(s.firstWR)}</b> · a game lasts <b>${(s.turns / 2).toFixed(1)}</b> turns each ·
       ${bsPct(ends.php / G)} ended in combat or effect damage, ${bsPct(ends.deck / G)} by running out of cards, ${bsPct(ends.limit / G)} were draws at the ${BattleSim.R.turnLimit}-turn limit ·
       a player made at least one fusion in <b>${bsPct(s.fusedRate)}</b> of games · getting a creature early is worth ${bsSigned(s.creatureImpact)} on average, a spell ${bsSigned(s.spellImpact)}.</p>
-    ${s.play ? gameplayHTML(s.play) : ""}
+    ${s.play ? gameplayHTML(s.play, s) : ""}
     <h3>Look at these first</h3>
     ${strong.length || weak.length || s.combos.length ? `<ul class="bs-flags">${strong.map(flag).join("")}${s.combos.slice(0, 6).map(combo).join("")}${weak.map(flag).join("")}</ul>`
       : `<p class="good">Nothing stands out after ${G.toLocaleString()} games. More games show smaller differences.</p>`}
@@ -2458,7 +2479,7 @@ function battleNotesHTML() {
 }
 function renderBattle(body) {
   const r = battleSim.run, res = battleSim.res;
-  body.innerHTML = `<p class="ana-lead">Plays whole games by the Rulebook v4.2 rules between <b>random decks</b> made from the cards outside cold storage, with the same simple AI on both sides.
+  body.innerHTML = `<p class="ana-lead">Plays whole games by the Rulebook v4.3 rules between <b>random decks</b> made from the cards outside cold storage, with the same simple AI on both sides.
       Each random deck picks 1 faction (sometimes 2), a normal flux curve, spells that fit it, and fusions its own creatures can make.
       Cards and pairs that win clearly more often than average show up under <b>Look at these first</b>.</p>
     <div class="bs-ctl">
@@ -2470,8 +2491,10 @@ function renderBattle(body) {
     <div class="bs-ctl"><span>Rules to try:</span>
       <label>Starting PHP <select id="bsPHP" ${r ? "disabled" : ""}>${[20, 25, 30, 35, 40, 50].map(v => `<option value="${v}" ${v === (battleSim.rules.php || BattleSim.RULEBOOK.php) ? "selected" : ""}>${v}${v === BattleSim.RULEBOOK.php ? " (rulebook)" : ""}</option>`).join("")}</select></label>
       <label>Opening hand <select id="bsHand" ${r ? "disabled" : ""}>${[4, 5, 6, 7].map(v => `<option value="${v}" ${v === (battleSim.rules.hand || BattleSim.RULEBOOK.hand) ? "selected" : ""}>${v}${v === BattleSim.RULEBOOK.hand ? " (rulebook)" : ""}</option>`).join("")}</select></label>
-      <label class="inline"><input type="checkbox" id="bsRedraw" ${battleSim.rules.redraw ? "checked" : ""} ${r ? "disabled" : ""}> Free redraw for an opening hand with 0–1 creatures</label>
-      <label class="inline"><input type="checkbox" id="bsSick" ${battleSim.rules.sick ? "checked" : ""} ${r ? "disabled" : ""}> Creatures can't attack the turn they arrive</label>
+      <label class="inline"><input type="checkbox" id="bsRedraw" ${ruleOn("redraw") ? "checked" : ""} ${r ? "disabled" : ""}> Free redraw for an opening hand with 0–1 creatures${BattleSim.RULEBOOK.redraw ? " (rulebook)" : ""}</label>
+      <label class="inline"><input type="checkbox" id="bsSick" ${ruleOn("sick") ? "checked" : ""} ${r ? "disabled" : ""}> Creatures can't attack the turn they arrive${BattleSim.RULEBOOK.sick ? " (rulebook)" : ""}</label>
+      <button class="btn" id="bsV42" ${r ? "disabled" : ""} title="30 PHP, no free redraw, creatures attack the turn they arrive">Use the v4.2 rules</button>
+      <button class="btn" id="bsBook" ${r ? "disabled" : ""}>Use the rulebook</button>
     </div>
     <div id="bsProg">${r ? battleProgHTML(r) : ""}</div>
     <div id="bsOut">${res ? battleResultsHTML(res) : r ? "" : `<p class="dp-empty">Pick how many games and press Run.</p>`}</div>
@@ -2484,6 +2507,8 @@ function renderBattle(body) {
   $("#bsHand").onchange = e => { battleSim.rules.hand = +e.target.value; };
   $("#bsRedraw").onchange = e => { battleSim.rules.redraw = e.target.checked; };
   $("#bsSick").onchange = e => { battleSim.rules.sick = e.target.checked; };
+  $("#bsV42").onclick = () => { battleSim.rules = { ...V42_RULES }; renderBattle(body); };
+  $("#bsBook").onclick = () => { battleSim.rules = {}; renderBattle(body); };
   if ($("#bsRun")) $("#bsRun").onclick = startBattles;
   if ($("#bsStop")) $("#bsStop").onclick = () => { const run = battleSim.run; if (!run) return; run.stopped = true; if (run.stopBatch) run.stopBatch(); };
   $("#bwA").onchange = e => { battleSim.watchA = e.target.value; };
