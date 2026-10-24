@@ -195,7 +195,7 @@ Fusions are the end goal: each one is stronger than an Ultra.
   in either of their lanes; the other lane is free again.
 - The fusion arrives at its own printed stats and full HP. It has just arrived, so it **can't attack until your next
   turn** (9).
-- **Ways around the 2 flux:** **It's free fuse-estate** (spell) lets you fuse without paying it. **Crimson Altar**
+- **Ways around the 2 flux:** **It's Free Fuse-Estate** (spell) lets you fuse without paying it. **Crimson Altar**
   (field spell) lets you sacrifice another Unholy creature instead.
 - **A cheaper fusion splice:** **Ritual Pit** (continuous spell) is the one exception to the 5+ flux rule. Banish an
   Unholy creature from your Waste Repository: your next fusion this turn may use a 3–4 flux Unholy creature as a

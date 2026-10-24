@@ -301,7 +301,7 @@ function fuse(g, p, a, b, fc, pay) {
   u.splices = [a.c, b.c];
   p.lanes[lane] = u; p.fused = true; p.st.fused.add(fc.d.ix);
   if (!p.st.firstFuse) p.st.firstFuse = g.turnNo;
-  L(g, `${who(g, p)} fuses ${a.d.name} + ${b.d.name} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's free fuse-estate)" : pay.kind === "altar" ? " (Crimson Altar instead of flux)" : ""}${pay.pit ? " (Ritual Pit)" : ""}.`);
+  L(g, `${who(g, p)} fuses ${a.d.name} + ${b.d.name} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's Free Fuse-Estate)" : pay.kind === "altar" ? " (Crimson Altar instead of flux)" : ""}${pay.pit ? " (Ritual Pit)" : ""}.`);
   const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
 }
 function unfuse(g, by, u) {
@@ -713,14 +713,14 @@ const SPELLS = {
     } }] },
   "Divine Shelter": { shelter: true },
   "Loaded Dice": { loaded: true, needs: x => x.dice >= 4 },
-  "It's free fuse-estate": { estate: true, needs: x => x.fusions > 0 },
+  "It's Free Fuse-Estate": { estate: true, needs: x => x.fusions > 0 },
   "Jar of Materialism": { play(g, p, c) {
     const cost = num(c.d, /pay (\d+) PHP/i, 0), n = num(c.d, /draw (\d+) cards/i, 2);
     if (p.deck.length < n || (cost && !canPay(p, cost))) return null;
     const s = 2.5 * n - cost * phpW(g, p);
     return s > 0.4 ? { pri: 0, score: s, run: () => cast(g, p, c, () => { if (cost) payPHP(g, p, cost); if (!g.over) draw(g, p, n); }) } : null;
   } },
-  "Energy drink": { play(g, p, c) {
+  "Energy Drink": { play(g, p, c) {
     const t = bestHeal(g, p, u => Math.floor(u.maxHp / 2));
     return t && t.s > 1.2 ? { pri: 3, score: t.s - 0.8, run: () => cast(g, p, c, () => restoreHP(g, p, t.u, t.n)) } : null;
   } },
@@ -786,7 +786,7 @@ const SPELLS = {
     if (p.gold < cost || p.gold - cost < goldReserve(g, p, c)) return null;
     return { pri: n ? 0 : 3, score: 0.6 + n * 2.5, run: () => cast(g, p, c, () => { p.gold -= cost; p.broker.push(cost); if (n) draw(g, p, n); }) };
   } },
-  "Market research": { goldCost: 4, goldSink: true, play(g, p, c) {
+  "Market Research": { goldCost: 4, goldSink: true, play(g, p, c) {
     if (g.phase !== 1 || p.gold < 4) return null;
     const pool = p.deck.filter(x => x.d.kind === "creature" && hasAttr(x.d, "greedy"));
     if (!pool.length) return null;
@@ -836,20 +836,24 @@ const SPELLS = {
     }
     return best && best.s > 1 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => unfuse(g, p, best.t)) } : null;
   } },
-  "Overclock": { play(g, p, c) {   // a card from hand to Oblivion for N flux this turn (under the Reactor with Reactor flux, which also raises max flux)
-    if (g.phase !== 1 || p.hand.length < 2) return null;
-    const n = num(c.d, /gain (\d+) flux/i, 2);
-    const burn = p.hand.filter(x => x !== c).sort((a, b) => holdWorth(a) - holdWorth(b))[0];
-    const before = bestPlan(g, p).score, ci = p.hand.indexOf(c), bi = p.hand.indexOf(burn);
-    const keep = p.hand.slice(); p.hand = p.hand.filter(x => x !== c && x !== burn); p.flux += n;
-    const after = bestPlan(g, p).score; p.flux -= n; p.hand = keep;
-    const s = after - before - holdWorth(burn) - 0.5 + (R.ink && p.maxFlux < R.fluxMax ? 2.5 : 0);
-    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => {
-      const j = p.hand.indexOf(burn); if (j < 0) return;
-      p.hand.splice(j, 1); p.flux += n;
-      if (R.ink) { p.reactor.push(burn); p.maxFlux = Math.min(R.fluxMax, R.inkBase + p.reactor.length); } else g.p[burn.owner].oblivion.push(burn);
-      L(g, `  ${burn.d.name} feeds the reactor: +${n} flux.`);
-    }) } : null;
+  "Overclock": { play(g, p, c) {   // feed the reactor: the least useful card on your field (older wording: in your hand) to Oblivion for N flux this turn
+    if (g.phase !== 1) return null;
+    const n = num(c.d, /gain (\d+) flux/i, 2), keep = p.hand.slice();
+    const gain = take => {   // how much better this turn's plan gets with the card gone and N more flux
+      p.hand = keep.filter(x => x !== c); const before = bestPlan(g, p).score, undo = take(); p.flux += n;
+      const after = bestPlan(g, p).score; p.flux -= n; undo(); p.hand = keep; return after - before;
+    };
+    let best = null;
+    const consider = (worth, take, feed) => { const s = gain(take) - worth - 0.5; if (!best || s > best.s) best = { s, feed }; };
+    if (says(c.d, /from your field/i)) {
+      for (const u of units(p)) consider(keepWorth(g, u), () => { p.lanes[u.lane] = null; return () => { p.lanes[u.lane] = u; }; }, () => banishUnit(g, u));
+      for (const z of spellsOf(p)) consider(z.c.d.fx && z.c.d.fx.score ? z.c.d.fx.score(g, p) : 2,
+        () => { const f = p.field === z, i = p.zones.indexOf(z); if (f) p.field = null; else p.zones.splice(i, 1); return () => { if (f) p.field = z; else p.zones.splice(i, 0, z); }; },
+        () => { if (p.field === z) p.field = null; else p.zones.splice(p.zones.indexOf(z), 1); g.p[z.c.owner].oblivion.push(z.c); L(g, `  ${z.c.d.name} is banished.`); });
+    } else for (const x of keep) if (x !== c) consider(holdWorth(x),
+      () => { const i = keep.indexOf(x); keep.splice(i, 1); return () => keep.splice(i, 0, x); },
+      () => { const j = p.hand.indexOf(x); if (j >= 0) { p.hand.splice(j, 1); g.p[x.owner].oblivion.push(x); } });
+    return best && best.s > 0.5 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => { best.feed(); p.flux += n; L(g, `  Overclock feeds the reactor: +${n} flux.`); }) } : null;
   } },
   "Blood Ledger": { perm: true, score: () => 2.5, acts: [{ id: "draw", pri: 0, ai(g, p, z) {   // pay PHP to draw, once per turn
     const cost = num(z.c.d, /pay (\d+) PHP to draw/i, 3), n = num(z.c.d, /to draw (\d+) card/i, 1);
@@ -876,7 +880,7 @@ const SPELLS = {
 // The card text each effect above was written for (textHash). The editor compares it with the current text.
 const FX_TEXT = {
   "Ritual Pit": "1y1hlbr",
-  "Bull Run": "1tu3f7v",
+  "Bull Run": "wo0nar",
   "Goblin Bank": "2h6mga",
   "Cherub": "1i4xkro",
   "Holy Acolyte": "1gn0xd8",
@@ -893,7 +897,7 @@ const FX_TEXT = {
   "Blood Imp": "1shj6kh",
   "Vein Ripper": "8rzk2y",
   "Flesh Collector": "1q5hw2w",
-  "Hemogoblin": "kt81l8",
+  "Hemogoblin": "199bhf2",
   "Goblin": "15jv2o1",
   "Penny Stock Goblin": "xjpujb",
   "Sanctuary Bells": "1x70bw",
@@ -901,7 +905,7 @@ const FX_TEXT = {
   "Fallen Angel": "q4xo63",
   "Lord Lazarus": "zapp81",
   "Arch Cleric": "jyr4g9",
-  "Skinless Titan": "18zgfwi",
+  "Skinless Titan": "1fhqarz",
   "The Meat Cathedral": "1om48",
   "Ergof The Dark Emperor": "faf0qc",
   "Hop Goblin": "pm1wvk",
@@ -910,17 +914,17 @@ const FX_TEXT = {
   "Open Vein": "1h3uaxc",
   "Sacrificial Lamb": "14qq9lo",
   "Market Crash": "7o36jn",
-  "Loaded Dice": "zx6hut",
+  "Loaded Dice": "kide18",
   "Blood Frenzy": "j4iw80",
   "Blood Pact Summoning Circle": "1jpgxtw",
   "Goblin Shuffle": "1au5pap",
-  "Goblin Stock Broker": "6wyjhe",
-  "Energy drink": "idjnd2",
-  "Jar of Materialism": "emr87t",
-  "Microwave": "1ks3k2m",
-  "Pipebomb": "1p8ppap",
-  "Space Squid": "15lzgsl",
-  "Unfuse": "1i5una4",
+  "Goblin Stock Broker": "1qrqb09",
+  "Energy Drink": "1jkpyof",
+  "Jar of Materialism": "1frc2vt",
+  "Microwave": "1xmfz69",
+  "Pipebomb": "v0icxo",
+  "Space Squid": "o208j4",
+  "Unfuse": "2rr8zr",
   "Goblin General": "v3esdv",
   "Gob-omber": "t7o3k6",
   "Goblin Miner": "d8v9",
@@ -928,14 +932,14 @@ const FX_TEXT = {
   "Archangel": "23e116",
   "Goblin Pit Boss": "1l9geuw",
   "Orc": "1y9qf3n",
-  "It's free fuse-estate": "15ldyzt",
+  "It's Free Fuse-Estate": "15ldyzt",
   "Crimson Altar": "1svaf0d",
   "Seraph of Judgment": "1io6xgj",
   "Goblin King": "1p28xfm",
   "Goblin Bombardier": "70thxd",
   "Indulgence Seller": "ogn18i",
-  "Market research": "79bnsq",
-  "Overclock": "xlgey8",
+  "Market Research": "79bnsq",
+  "Overclock": "omv5k",
   "Blood Ledger": "1vrh362",
 };
 
