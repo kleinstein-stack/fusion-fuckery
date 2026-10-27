@@ -1,9 +1,10 @@
-# Fusion Fuckery: Rulebook v4.4 (gameplay v2)
+# Fusion Fuckery: Rulebook v4.5 (gameplay v2)
 
 Decided on 2026-10-19. This replaces the Rulebook v2.1 (*The Blocking Update*) wherever the two disagree; everything
 v2.1 says that isn't covered here still applies. The Dino, Mutant, Parasite, Bleed and Equipment rules are only in
 v2.1, because those cards are in cold storage. The player-facing version with diagrams is
-`Fusion Fuckery Rulebook v4.4.pdf`. The card editor's checks and simulators use these numbers
+`Fusion Fuckery Rulebook v4.5 (editable).docx` (opens in Google Docs; `Fusion Fuckery Rulebook v4.4.pdf` is the last
+PDF). The card editor's checks and simulators use these numbers
 (`PLAY` in `tools/editor-template.html`, `R` in `tools/battle-sim.js`).
 
 **v4.3 (2026-10-21):** 40 starting PHP (was 30), a free redraw for an opening hand with 0 or 1 creatures, and creatures
@@ -17,6 +18,19 @@ play count for much more (a careful player beats a sloppy copy of itself with th
 from 52%), made close finishes three times as common and brought the factions' head-to-heads to about 50%. The v4.3
 cards, decks and rulebook are saved under the git tag `save-before-v4.4` and in `saves/versions/` ("SAVE before v4.4
 rules").
+
+**v4.5 (2026-10-27): fusion splices.** New rules (13): a fusion keeps the damage its fusion splices had and arrives
+winded; two fusions can be fused, and every card in the stack counts as a fusion splice; Unfuse splits the fusion's
+damage between the splices it returns (never below 1 HP) and keeps them winded; on a direct attack, winded creatures
+next to the attacker still hit back, last (12). Every fusion now uses its fusion splices, by banishing one for an effect
+or by counting them. Blood Ledger is a Continuous Spell (was a Field Spell). New cards: Boss's Orders, Melting Pot,
+Twisted Dimensions and Shotgun Wedding. Creatures that cost 5+ flux, the ones that can fuse, get a gold flux badge.
+**New faction: Plushies** (14 cards, a starter deck; see 14.4).
+In the battle sim (4,000 games a run) the new rules on their own barely moved game length, comebacks, close finishes
+or how much skill matters (a careful player still beats a sloppy copy of itself about 65% of the time); the fusion
+rewrites needed three fixes (Arch Cleric, The Meat Cathedral, Seraph of Judgment) to keep any fusion from being
+"too strong". The v4.4 cards, decks and rulebook are saved under the git tag `save-before-v4.5` and in
+`saves/versions/` ("SAVE before v4.5 rules").
 
 ## 1. The Golden Rules
 
@@ -110,12 +124,13 @@ rules").
 
 - **Natural materialize:** in Main Phase 1, from your hand. Pay its flux cost (some creatures let you pay part of it
   in PHP with **Blood Price**, 14.2), then put it in any empty lane. No limit beyond flux and lanes.
-- **By effect** (Carrion Duchess, Lord Lazarus…): happens whenever the effect says, without paying flux. It
+- **By effect** (Carrion The Dark Duchess, Lord Lazarus…): happens whenever the effect says, without paying flux. It
   still needs an empty lane.
 - "When materialized" effects trigger both ways.
 - **Creatures can't attack the turn they arrive.** A creature or fusion that was materialized, fused or brought back
-  this turn waits until your next turn to attack. It still hits back when it's attacked. Taking control of a creature
-  (Space Squid) isn't arriving, so that creature can attack.
+  this turn waits until your next turn to attack. It still hits back when it's attacked, except a fusion, which arrives
+  winded (13). Taking control of a creature (Space Squid) isn't arriving, so that creature can attack. Neither is being
+  moved to another lane (Boss's Orders).
 
 ## 10. Spells
 
@@ -142,7 +157,7 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 | Restore PHP | Heals you, but never above 30 (your starting PHP). |
 | Gain PHP | Adds PHP. Can take you above 30. |
 | Pay PHP | A cost. Always payable, even if it drops you to 0 (and then you lose). |
-| Lose PHP | Any drop: damage, paying, or "lose X PHP". Pain Drinker and Skinless Titan care about this. |
+| Lose PHP | Any drop: damage, paying, or "lose X PHP". Beelzechud and Beelzechad care about this. |
 
 **Creature HP.** Damage stays on a creature until something restores its HP. Nothing heals by itself.
 
@@ -178,11 +193,16 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    (attacker's advantage). The faster creature deals its damage first; if they're still tied, the attacker goes
    first. If the first hit destroys the other creature, it doesn't hit back. On a direct attack, enemies faster
    than the attacker (counting its +1) hit it before it reaches the player; slower ones hit it after.
+   **Twisted Dimensions** (field spell, both players) reverses speed: the slower creature strikes first, the attacker
+   gets −1 Speed instead of +1, and ties still go to the attacker.
 6. Damage dealt in combat stays (11).
-7. **Winded:** a creature that attacks is **winded** until the start of your next turn. A winded creature **can't hit
-   back**: not when it's attacked, and not when an enemy attacks you directly from a lane next to it. It still stands
-   in its lane, so an enemy in front of it still can't attack you directly, and its effects still work. Attacking is
-   a choice: the creature that hits now can't defend itself on your opponent's turn.
+7. **Winded:** a creature that attacks is **winded** until the start of your next turn, and so is a fusion the turn
+   it's made (13). A winded creature **can't hit back when it's attacked**. It still stands in its lane, so an enemy
+   in front of it still can't attack you directly, and its effects still work. Attacking is a choice: the creature
+   that hits now can't defend itself on your opponent's turn.
+   **Direct attacks (v4.5):** a winded creature in a lane next to an attacker that hits you directly **still hits it
+   back**, but always **last**, after the attacker has hit you and after the other creatures hitting back, whatever
+   its speed.
 
 ## 13. Fusion
 
@@ -190,21 +210,39 @@ Fusions are the end goal: each one is stronger than an Ultra.
 
 - **Once per turn, in Main Phase 1, pay 2 flux to fuse.** Choose **2 creatures you control in lanes next to each
   other**, both with a printed cost of **5 or more flux**, that meet the recipe in {curly brackets} on a fusion in
-  your Fusion Deck.
+  your Fusion Deck. **Fusions count as 5+ flux**, so two fusions can be fused too (v4.5).
 - Put the two creatures **under** the fusion card. They're now its **fusion splices**, not creatures. Put the fusion
   in either of their lanes; the other lane is free again.
-- The fusion arrives at its own printed stats and full HP. It has just arrived, so it **can't attack until your next
-  turn** (9).
+- **Damage carries over (v4.5).** The fusion arrives at its own printed stats, minus the damage its fusion splices
+  had: a 4/5 and a 5/10 creature carry 1 + 5 = 6 damage, so a 26 HP fusion arrives at 20/26. If the damage is its HP
+  or more, it's destroyed straight away.
+- **A new fusion is winded (v4.5).** It can't attack until your next turn (9), and it can't hit back until then
+  either (12).
+- **Fusion splices under a fusion.** Every card in the stack counts: fuse two fusions that each have 2 splices and the
+  new one has 6 (the two fusions and their 4 splices). Fusion effects that say "for each fusion splice under this
+  creature" count them all. **Banishing a fusion splice** sends one card from the stack to its owner's Oblivion; you
+  can only banish a card that has nothing under it.
 - **Ways around the 2 flux:** **It's Free Fuse-Estate** (spell) lets you fuse without paying it. **Crimson Altar**
   (field spell) lets you sacrifice another Unholy creature instead.
-- **A cheaper fusion splice:** **Ritual Pit** (continuous spell) is the one exception to the 5+ flux rule. Banish an
-  Unholy creature from your Waste Repository: your next fusion this turn may use a 3–4 flux Unholy creature as a
-  fusion splice. You still pay the 2 flux.
+- **Cheaper fusion splices:** **Ritual Pit** (continuous spell): banish an Unholy creature from your Waste
+  Repository, and your next fusion this turn may use a 3–4 flux Unholy creature as a fusion splice. **Melting Pot**
+  (field spell, both players): any creature that meets a recipe can be a fusion splice, whatever it costs.
+- **From your hand:** **Shotgun Wedding** (spell) fuses a creature you control with a creature card from your hand.
+  The usual recipe, 5+ flux and 2 flux rules apply, and it's your fusion for the turn.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
-- **Nothing carries over:** a fusion only has the effect printed on its own card. Its fusion splices' effects, stats,
-  damage and stat changes don't carry over. (This replaces v2.1 and the V5 rule where splice effects carried over.)
-- **When a fusion is destroyed**, the fusion card and its fusion splices go to your Waste Repository. Only the
-  fusion's own death effects trigger; the splices' don't.
+  Fusions have attributes too, so they can fill attribute parts.
+- **Nothing else carries over:** a fusion only has the effect printed on its own card. Its fusion splices' effects
+  and stat changes don't carry over (only their damage does).
+- **When a fusion is destroyed**, the fusion card and every card under it go to their owners' Waste Repositories.
+  Only the fusion's own death effects trigger.
+- **Unfuse (v4.5):** the fusion goes back to its owner's Fusion Deck and the cards directly under it come back onto
+  the field at full HP (a fusion splice that is itself a fusion comes back with its own splices under it). Then the
+  fusion's damage is **split evenly** between them, half each for the usual two (the bigger one takes an odd point),
+  but it never takes one below 1 HP: a 2/30 fusion made of a 10 HP and a 7 HP creature comes back as 1/10 and 1/7.
+  If the fusion was winded, they're winded. They've arrived, so they can't attack this turn.
+- **Space Squid and fusing:** a creature you've taken control of can be one of your fusion splices. It stays under your
+  fusion until that fusion leaves the field, and then it goes to its owner's Waste Repository (or its owner's side of
+  the field, if the fusion is unfused).
 
 ## 14. Keywords
 
@@ -230,6 +268,19 @@ you play them early.
 - **Gold:** everyone starts with **0 Gold**; there's **no cap**. Only cards that mention Gold can make, spend or move
   it. Invested Gold is locked into that card and lost if the card leaves the field.
 - The v2.1 **Market Cycle** is no longer a rule.
+
+### 14.4 Fluffy & the Claw Machine (Plushies)
+- **Fluffy** creatures (plushies) can only be materialized, by any means, while you control a **Claw Machine** (Field
+  Spell). If you stop controlling one (it's destroyed, replaced, or the plushy changes sides), your Fluffy creatures
+  are **destroyed** at once. Card text: "Fluffy (you can only materialize this creature while you control a Claw
+  Machine, and it's destroyed if you stop controlling one)."
+- **Claw Machine:** your Fluffy creatures cost 1 less flux; they can attack your opponent directly even when an enemy
+  creature is in front of them, unless your opponent controls a Fluffy creature (the one in front doesn't hit back;
+  the ones in the lanes next to it do, as on any direct attack); once per turn, when one of your Fluffy creatures is
+  destroyed, draw a card.
+- Plush cards are plush versions of existing creatures: they keep the original's attributes (so they fit its
+  faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy; they search for the Claw
+  Machine. Plush Catalogue searches for any card with "Plush" in its name, including more Plush Catalogues.
 
 ## 15. Advanced rules
 
@@ -259,8 +310,9 @@ you play them early.
 | Reactor Phase | +1 max flux and refill; or also Feed (a card to Oblivion: +1 flux this turn); or Skip (no +1, draw 1) |
 | Lanes / spell zones / field spells | 3 / 3 / 1 per player |
 | Speed | 1–4, 2 is normal. The attacker gets +1, faster strikes first, the attacker wins ties |
-| Winded | A creature that attacked can't hit back until your next turn |
-| Fusing | once per turn, 2 flux, two 5+ flux creatures in lanes next to each other |
+| Winded | A creature that attacked, or a fusion just made, can't hit back when attacked until your next turn. On a direct attack it still hits back, last |
+| Fusing | once per turn, 2 flux, two 5+ flux creatures (or fusions) in lanes next to each other. The fusion keeps their damage and is winded |
+| Unfuse | the splices come back at full HP and split the fusion's damage, never below 1 HP |
 | Empty deck | lose 5 PHP for each draw you can't make |
 | Hand limit | 8 |
 
@@ -268,7 +320,16 @@ you play them early.
 
 **Factions are internal.** Angel, Blood Demon and Goblin are names for designing the game and for the starter deck
 boxes; players never need them. Card text never names a faction: it names the attribute instead (**Holy** for
-Angels, **Unholy** for Blood Demons, **Greedy** for Goblins). Rules terms: a fusion is made of **fusion splices**.
+Angels, **Unholy** for Blood Demons, **Greedy** for Goblins, **Fluffy** for Plushies). Rules terms: a fusion is made
+of **fusion splices**.
+
+**Plushies (v4.5)** are modelled on Yu-Gi-Oh!'s Toons: one Field Spell holds the whole deck up (the risk), searching
+makes it consistent (Arcade Kid, Plush Collector, Plush Catalogue), and evasive direct attacks make it annoying to
+play against. Pipebomb and Space Squid are the natural counters. Plush versions use their originals' stats; the
+Claw Machine discount and evasion pay for the dependency. Patchwork Plush scales with the Fluffy creatures in your
+Waste Repository, so losing plushies feeds it. In the battle sim (4,000-game runs) Plushy decks won 46–50% and the
+Plushy starter deck 49–52% against random decks. First drafts were much weaker (22%): the plushies had lower stats than
+the originals and the creature in front hit them back when they slipped past.
 
 **Stat budget.** points = ATK + HP ÷ 2 + (Speed − 2) + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
 **28 for fusions**. Two 5-flux creatures are worth 22, so a fusion pays them back plus the fuse.
@@ -280,6 +341,12 @@ Angels, **Unholy** for Blood Demons, **Greedy** for Goblins). Rules terms: a fus
 - Effects: small ≈ 1, repeatable 2–3, removal or an engine 4+.
 - Cards costing 1–3 may be up to 1 point over.
 - Cost tiers per faction: 8 creatures in a 2 : 3 : 2 : 1 spread (Low 1–3, Medium 4–5, High 6–8, Ultra 9–10).
+
+**Fusion splices (v4.5).** Every fusion does something with the cards under it, one of two ways: **banish a fusion
+splice** for a burst (heal, destroy, survive, dodge a drawback), or **count the fusion splices** for a scaling effect
+(dice, damage, gold, healing). A normal fusion has 2, so write the effect so that 2 is its fair power; fusing fusions
+(6 or more) is the payoff for building a stack. Banishing trades away scaling and what Unfuse gives back, so the burst
+should be worth about a card. A fusion that can fuse into another copy of itself (Scrooger) grows its stack that way too.
 
 **Checking balance.** The card editor's **Battle sim** tab (`tools/battle-sim.js`) plays thousands of games between random
 decks and the saved decks, shows which cards and fusions win too much, and tests luck vs skill. Its "Rules to try" can

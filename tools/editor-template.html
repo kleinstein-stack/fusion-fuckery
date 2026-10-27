@@ -86,6 +86,10 @@
   .sym { position: absolute; left: 662px; top: 20px; width: 62px; height: 62px; }
   .card .f-flux { position: absolute; left: 626px; top: 26px; width: 42px; height: 44px; line-height: 44px; font-size: 33px; font-weight: 500; text-align: right; }
   .card div.f-flux { white-space: nowrap; }
+  /* gold flux badge = this creature costs enough to fuse (PLAY.fuseMinFlux+). Multiply keeps the badge outline and DNA icon. */
+  .card .flux-gold { position: absolute; left: 627px; top: 27px; width: 87px; height: 41px; border-radius: 21px; display: none; pointer-events: none;
+    background: linear-gradient(135deg, #ffe680 0%, #f5bf2a 45%, #d08f0c 100%); mix-blend-mode: multiply; }
+  .card.can-fuse .flux-gold { display: block; }
 
   .art {
     position: absolute; left: 40px; top: 80px; width: 665px; height: 460px; border-radius: 34px 34px 0 0;
@@ -634,8 +638,15 @@ function cardEl(c) {
   c._setSym = () => { card.querySelectorAll(".sym").forEach(s => s.remove()); if (category(c) === "Spell") card.insertAdjacentHTML("beforeend", spellSymbol(c)); };
   c._setSym();
   if (cat === "Creature") {   // flux cost sits in the DNA badge on the v4 creature frame
-    const fx = bind(mk("input", "f-flux", { spellcheck: false, title: "Flux cost (1–10)", placeholder: "–" }), COLS.flux, () => { c._updBal && c._updBal(); c._setTier && c._setTier(); });
+    const fx = bind(mk("input", "f-flux", { spellcheck: false, title: "Flux cost (1–10)", placeholder: "–" }), COLS.flux, () => { c._updBal && c._updBal(); c._setTier && c._setTier(); c._setFuse(); });
+    c._setFuse = () => {   // gold badge when the printed cost is high enough to fuse
+      const f = fluxOf(c), ok = f !== null && f >= PLAY.fuseMinFlux;
+      card.classList.toggle("can-fuse", ok);
+      fx.title = ok ? `Flux cost. ${PLAY.fuseMinFlux}+ flux, so this creature can be used to fuse` : `Flux cost (1–10). Creatures need ${PLAY.fuseMinFlux}+ flux to fuse`;
+    };
+    card.appendChild(mk("div", "flux-gold"));
     card.appendChild(fx);
+    c._setFuse();
   }
 
   // art: click "Change art" or drop an image. Saved to the art folder when the helper is running.
@@ -1363,7 +1374,7 @@ function budgetOf(c) {
   return { pts, target, room: target - pts, slack: !fusion && f <= 3 ? 1 : 0 };
 }
 const FACTION_COLORS = { Angel: "#f2cf5b", "Blood Demon": "#d23a3a", Dino: "#3fae5a", Goblin: "#9ccc3c", Mundane: "#9aa3ad",
-  Mutant: "#b05ae0", Parasite: "#e8873a", Thiefling: "#3d8fe0", Galorpian: "#2cc3d6" };
+  Mutant: "#b05ae0", Parasite: "#e8873a", Thiefling: "#3d8fe0", Galorpian: "#2cc3d6", Plushy: "#f48fc4" };
 const DECK_KEY = "fusion-fuckery-decks";
 let deckState = { decks: [{ name: "My deck", cards: {} }], current: 0 };
 try { const s = JSON.parse(localStorage.getItem(DECK_KEY)); if (s && s.decks && s.decks.length) deckState = s; } catch {}
@@ -1544,7 +1555,11 @@ function staticCard(c) {
   const div = (cls, text) => { const d = document.createElement("div"); d.className = cls; d.textContent = text; card.appendChild(d); return d; };
   div("f-name", c.data[COLS.name]);
   if (cat === "Spell") card.insertAdjacentHTML("beforeend", spellSymbol(c));
-  if (cat === "Creature") div("f-flux", c.data[COLS.flux]);
+  if (cat === "Creature") {   // gold flux badge on creatures that can be used to fuse (v4.5)
+    const f = fluxOf(c);
+    if (f !== null && f >= PLAY.fuseMinFlux) { card.classList.add("can-fuse"); div("flux-gold", ""); }
+    div("f-flux", c.data[COLS.flux]);
+  }
   const art = div("art", "");
   const src = artSrc(c);
   if (src) art.innerHTML = `<img src="${encodeURI(src)}" alt="">`;
@@ -2184,6 +2199,12 @@ const V43_RULES = { php: 40, redraw: true, sick: true, winded: false, reactor: f
 // rules to try that aren't in the rulebook (see R in tools/battle-sim.js)
 const EXTRA_RULES = [
   { key: "winded", short: "Winded", label: "Winded: a creature that attacked can't hit back until your next turn" },
+  // v4.5 fusion rules
+  { key: "fuseWinded", short: "Fused = winded", label: "A new fusion is winded (can't hit back until your next turn)" },
+  { key: "carryDamage", short: "Fusions keep damage", label: "A fusion keeps the damage its fusion splices had, and dies if that's its HP or more" },
+  { key: "fuseFusions", short: "Fuse fusions", label: "Two fusions in lanes next to each other can be fused" },
+  { key: "unfuseSplit", short: "Unfuse splits damage", label: "Unfuse splits the fusion's damage between its fusion splices (never below 1 HP); winded stays winded" },
+  { key: "windedBackLast", short: "Winded hit back last", label: "On a direct attack, winded creatures next to the attacker still hit back, last" },
   { key: "intercept", short: "Intercept", label: "Intercept: block a direct attack with a creature next to the attacker" },
   { key: "reactor", short: "Reactor choices", label: "Reactor choices: Feed (a card from hand to Oblivion for +1 flux this turn) or Skip (no +1 max flux, draw a card)" },
   { key: "ink", short: "Reactor flux", label: "Reactor flux: no automatic +1 flux; once per turn put a card face down under your Reactor, max flux = 2 + cards under it" },
@@ -2480,7 +2501,7 @@ function battleNotesHTML() {
     <li>Rules the sim follows on top of the rulebook: once-per-turn effects count per card name (15.7); a game nobody has won after ${BattleSim.R.turnLimit} turns each is a draw (half a win).</li>
     <li>Calls the sim makes where cards are open to reading: Goblin Stock Broker is a coin flip. Microwave takes creatures, not fusions.
       Space Squid's creature moves to an empty lane on your side until the end of the turn. Unfuse sends the fusion back to its Fusion Deck and puts its splices
-      back on the field at full HP. Skinless Titan's 2 damage only triggers on combat kills. Goblin Pit Boss only rerolls on its own turn. Loaded Dice rerolls dice ATK.
+      back on the field at full HP. Beelzechad's 2 damage only triggers on combat kills. Goblin Pit Boss only rerolls on its own turn. Loaded Dice rerolls dice ATK.
       Hemogoblin's Speed ability and Goblin Miner's extra flux are used rarely.</li>
     ${cov.missing.length ? `<li class="hi">Played with stats only, because the sim has no code for their effect yet: ${cov.missing.map(bsLink).join(", ")}. Spells among them are left out of random decks.</li>` : ""}
     ${cov.changed.length ? `<li class="hi">Card text changed since the sim's version of the effect was written, so it may still play them the old way: ${cov.changed.map(bsLink).join(", ")}.</li>` : ""}

@@ -46,6 +46,9 @@ Without signing in, the website is view-only: browsing, deck building, PDF expor
 |---|---|
 | `index.html` / `card-editor.html` | The editor (built — don't edit by hand) |
 | `saves/Base set - Fusion Fuckery - v6.csv` | **The card list.** Opens fine in Excel / Google Sheets |
+| `RULES.md` | The rulebook, designer's version (v4.5), with the change log and designer notes |
+| `Fusion Fuckery Rulebook v4.5 (editable).docx` | The player rulebook with diagrams. Upload to Google Drive and open with Google Docs to edit |
+| `LORE.md` / `Fusion Fuckery World and Characters (editable).docx` | Backstories and looks of every creature, for artists, flavor text and world-building |
 | `saves/versions/` | Earlier saves made on a PC |
 | `saves/art-overrides.json` | Which custom art each card uses |
 | `saves/decks.json` | Saved decks |

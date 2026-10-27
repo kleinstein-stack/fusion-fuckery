@@ -1,4 +1,4 @@
-/* Fusion Fuckery battle simulator (Rulebook v4.4, gameplay v2).
+/* Fusion Fuckery battle simulator (Rulebook v4.5, gameplay v2).
    Plays whole games between two decks with a rule-of-thumb AI, so the editor's Battle sim tab can play thousands
    of them and show which cards and combinations win too often. No DOM in here: tools/build.ps1 inlines this file
    into the editor, which runs it on the page (to watch one game) and in Web Workers (for big runs).
@@ -24,7 +24,11 @@ const R = { php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3
   // Reactor Phase choices: normally +1 max flux (up to 10) and refill. You may also Feed the reactor: send 1 card from your
   // hand to Oblivion for +1 flux this turn (not max flux). Or Skip: no +1 max flux this turn, still refill, draw 1 extra card.
   // Feed and Skip don't combine; the normal draw always happens. holdAtCap: whether you may Skip once max flux is already 10.
-  reactor: true, holdAtCap: true };   // v4.4
+  reactor: true, holdAtCap: true,   // v4.4
+  // v4.5 fusion rules: a new fusion is winded; it keeps the damage its fusion splices had (and dies if that's its HP or
+  // more); two fusions can be fused; Unfuse splits the fusion's damage between the splices it returns (never below
+  // 1 HP) and they stay winded if it was; on a direct attack, winded creatures next to the attacker still hit back, last.
+  fuseWinded: true, carryDamage: true, fuseFusions: true, unfuseSplit: true, windedBackLast: true };
 const RULEBOOK = Object.assign({}, R);
 // Try other rules for one run (the Battle sim tab's rule boxes): { php, hand, redraw, ... }; anything left out is the rulebook's.
 function withRules(rules, fn) {
@@ -68,7 +72,13 @@ const num = (d, re, dflt) => { const m = String(d.text || "").match(re); return 
 const says = (d, re) => re.test(String(d.text || ""));
 const goldCostOf = d => d.fx && d.fx.goldCost ? num(d, /pay (\d+) gold/i, d.fx.goldCost) : 0;
 // average of a die, or of the higher of two dice ("roll twice and keep the higher result")
-const dieAvg = (n, adv) => { if (!n) return 0; if (!adv) return (n + 1) / 2; let s = 0; for (let k = 1; k <= n; k++) s += k * (2 * k - 1); return s / (n * n); };
+// rolls: how many dice are rolled to keep the highest (true = 2, as in "roll twice"); E[max] = sum over j of 1 - ((j-1)/n)^rolls
+const dieAvg = (n, rolls) => {
+  if (!n) return 0;
+  const k = rolls === true ? 2 : Math.max(1, rolls || 1);
+  if (k === 1) return (n + 1) / 2;
+  let s = 0; for (let j = 1; j <= n; j++) s += 1 - Math.pow((j - 1) / n, k); return s;
+};
 
 /* ---------------- stats the AI and the rules read ---------------- */
 function advantage(g, u) {
@@ -77,6 +87,11 @@ function advantage(g, u) {
   if (!hasAttr(u.d, "greedy")) return false;
   return units(g.p[u.ctrl]).some(k => { const kf = fxOf(k); return kf && (kf.greedyAdvantage === "all" || (kf.greedyAdvantage === "others" && k !== u)); });
 }
+// how many times u rolls its die and keeps the highest: 2 with advantage; Hop Goblin rolls once per fusion splice (v4.5)
+function rollCount(g, u) {
+  const f = fxOf(u);
+  return Math.max(advantage(g, u) ? 2 : 1, f && f.rollPerSplice ? spliceCount(u) : 1);
+}
 function atkOf(g, u) {   // ATK without the die
   let a = u.atk + u.pAtk + u.tAtk + u.radAtk;
   const p = g.p[u.ctrl];
@@ -84,8 +99,34 @@ function atkOf(g, u) {   // ATK without the die
   for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.aura) a += f.aura(g, p, u); }
   return Math.max(0, a);
 }
-const expAtk = (g, u) => atkOf(g, u) + dieAvg(u.die, advantage(g, u));
+const expAtk = (g, u) => atkOf(g, u) + dieAvg(u.die, rollCount(g, u));
 const speedOf = u => u.spd + u.tSpd;
+const fieldFx = (g, key) => g.p.some(q => q.field && q.field.c.d.fx && q.field.c.d.fx[key]);   // Field Spells affect both sides
+// Plushies: Fluffy creatures need their controller's Claw Machine (Field Spell). Without one they can't be
+// materialized, and the ones on the field are destroyed.
+const fluffy = x => hasAttr(x.d, "fluffy");
+const isClaw = c => !!(c.d.fx && c.d.fx.claw);
+const hasClaw = p => !!(p.field && isClaw(p.field.c));
+function clawCheck(g) {
+  for (const p of g.p) if (!hasClaw(p)) for (const u of units(p)) if (fluffy(u) && onField(g, u)) {
+    L(g, `  ${who(g, p)} has no Claw Machine, so ${u.d.name} is destroyed.`); destroy(g, u, {}); if (g.over) return;
+  }
+}
+// Claw Machine: a Fluffy creature may attack the player directly past the creature in front of it (which hits back),
+// unless the opponent controls a Fluffy creature
+const bypass = (g, u) => fluffy(u) && hasClaw(g.p[u.ctrl]) && !units(foe(g, g.p[u.ctrl])).some(fluffy);
+const canFace = (g, u) => !foe(g, g.p[u.ctrl]).lanes[u.lane] || bypass(g, u);
+function tutor(g, p, pick) {   // search the deck: pick(card) -> a score, or null if it can't be taken. Shuffles after.
+  let best = null;
+  for (const c of p.deck) { const s = pick(c); if (s != null && (!best || s > best.s)) best = { c, s }; }
+  if (!best) return null;
+  p.deck.splice(p.deck.indexOf(best.c), 1); p.hand.push(best.c); shuffle(g.rng, p.deck);
+  L(g, `  ${who(g, p)} searches the deck for ${best.c.d.name}.`);
+  return best.c;
+}
+// Does the attacker strike before e? The attacker gets +1 Speed and wins ties. Twisted Dimensions reverses speed:
+// the slower creature strikes first and the attacker gets -1 Speed instead (it still wins ties).
+const attFirst = (g, att, e) => fieldFx(g, "trick") ? speedOf(att) - 1 <= speedOf(e) : speedOf(att) + 1 >= speedOf(e);
 function valueOf(g, u) { const f = fxOf(u); return expAtk(g, u) + Math.max(0, u.hp) / 2 + (speedOf(u) - 2) + (f && f.value || 0); }
 const defValue = d => d.atk + dieAvg(d.die) + d.hp / 2 + (d.spd - 2) + (d.fx && d.fx.value || 0);
 // how much the AI cares about 1 PHP / 1 gold right now
@@ -109,7 +150,7 @@ function killWorth(g, p, u) {   // what destroying u is worth to p
   let v = valueOf(g, u) + 1;
   const f = fxOf(u);
   if (f && f.survive && !u.chapel) v *= 0.25;
-  if (f && f.returns && !u.c.lazarusUsed) v *= 0.5;
+  if (f && f.returns && spliceCount(u) > 0) v *= 0.5;
   if (f && f.deathPenalty) v -= f.deathPenalty;
   return v;
 }
@@ -200,28 +241,58 @@ function damage(g, u, n, info) {
 function kill(g, u, info) {   // "destroyed": Chapel Guard survives the first time
   const f = fxOf(u);
   if (f && f.survive && !u.chapel) { u.chapel = true; u.hp = 1; L(g, `  ${u.d.name} survives with 1 HP.`); return false; }
+  // Seraphim Wall: banish one of its fusion splices so a creature you control survives with 1 HP instead
+  for (const k of units(g.p[u.ctrl])) {
+    const kf = fxOf(k);
+    if (!kf || !kf.savior || !spliceCount(k) || keepWorth(g, u) < (k === u ? 0 : 3) + spliceCost(k)) continue;
+    banishSplice(g, k); u.hp = 1; L(g, `  ${u.d.name} survives with 1 HP (${k.d.name}).`); return false;
+  }
   destroy(g, u, info);
   return true;
 }
 const toWaste = (g, c) => g.p[c.owner].waste.push(c);
+// Fusion splices (v4.5): a fusion used as a fusion splice keeps its own splices under it (card.under), so stacks nest.
+// "Fusion splices under this creature" counts every card in the stack.
+const under = list => list.flatMap(c => [c].concat(c.under ? under(c.under) : []));
+const spliceCount = u => under(u.splices).length;
+const wasteAll = (g, list) => under(list).forEach(c => { c.under = null; toWaste(g, c); });
+const spliceCost = u => { const f = fxOf(u); return 1 + (f && f.perSplice || 0); };   // what keeping one splice is worth
+// Banish the least useful fusion splice that has nothing under it. Returns the card, or null if there's none.
+function banishSplice(g, u) {
+  let best = null;
+  const walk = list => list.forEach((c, i) => {
+    if (c.under && c.under.length) walk(c.under);
+    else { const v = defValue(c.d); if (!best || v < best.v) best = { list, i, c, v }; }
+  });
+  walk(u.splices);
+  if (!best) return null;
+  best.list.splice(best.i, 1); best.c.under = null; g.p[best.c.owner].oblivion.push(best.c);
+  L(g, `  ${u.d.name}: banishes its fusion splice ${best.c.d.name}.`);
+  return best.c;
+}
 function destroy(g, u, info) {
   const p = g.p[u.ctrl];
   if (p.lanes[u.lane] !== u) return;
   p.lanes[u.lane] = null;
   const f = fxOf(u);
-  toWaste(g, u.c); u.splices.forEach(c => toWaste(g, c));
   g.deaths++;
   L(g, `  ${u.d.name} is destroyed${info.sacrifice ? " (sacrificed)" : ""}.`);
-  if (f && f.returns && !u.c.lazarusUsed) { u.c.lazarusUsed = true; g.p[u.c.owner].lazarus.push(u.c); }
+  if (f && f.returns && spliceCount(u) > 0) {   // Lord Lazarus: banish a splice, come back next turn with the rest
+    banishSplice(g, u); u.c.under = u.splices; toWaste(g, u.c); g.p[u.c.owner].lazarus.push(u.c);
+  } else wasteAll(g, [u.c].concat(u.splices));
   if (info.src && info.combat) { const kf = fxOf(info.src); if (kf && kf.onKill && onField(g, info.src)) kf.onKill(g, info.src, u); }
   if (f && f.onDeath) f.onDeath(g, u, info);
+  // Claw Machine: once per turn, when one of your Fluffy creatures is destroyed, draw a card
+  if (fluffy(u) && hasClaw(p) && says(p.field.c.d, /fluffy' creatures? you control is destroyed: draw/i) && !p.once.has("Claw Machine:draw")) {
+    p.once.add("Claw Machine:draw"); L(g, `  Claw Machine: ${who(g, p)} draws a card.`); draw(g, p, 1);
+  }
   for (const k of allUnits(g)) { const kf = fxOf(k); if (kf && kf.onAnyDeath) kf.onAnyDeath(g, k, u); }
 }
 function banishUnit(g, u) {
   const p = g.p[u.ctrl];
   if (p.lanes[u.lane] !== u) return;
   p.lanes[u.lane] = null;
-  g.p[u.c.owner].oblivion.push(u.c); u.splices.forEach(c => toWaste(g, c));
+  u.c.under = null; g.p[u.c.owner].oblivion.push(u.c); wasteAll(g, u.splices);
   L(g, `  ${u.d.name} is banished.`);
 }
 function banishFromWaste(g, p, list) { for (const c of list) { const i = p.waste.indexOf(c); if (i >= 0) { p.waste.splice(i, 1); p.oblivion.push(c); } } }
@@ -238,8 +309,9 @@ function makeUnit(g, p, c, lane, halved) {
     attacked: false, negated: false, chapel: false, splices: [], stolen: null, frenzy: false, minerFlux: false, arrived: g.turnNo };
 }
 function materialize(g, p, c, lane, how) {
-  if (lane == null || p.lanes[lane]) return null;
+  if (lane == null || p.lanes[lane] || (fluffy(c) && !hasClaw(p))) return null;
   const u = makeUnit(g, p, c, lane, how === "lazarus");
+  if (c.under) { u.splices = c.under; c.under = null; }   // Lord Lazarus comes back with its other splices
   p.lanes[lane] = u;
   if (c.owner === p.i && how !== "lazarus") p.st.played.add(c.d.ix);
   if (!p.st.firstCre) p.st.firstCre = p.turns;
@@ -261,11 +333,17 @@ function putInPlay(g, p, c) {   // Continuous or Field Spell
   if (c.owner === p.i) p.st.played.add(c.d.ix);
   L(g, `${who(g, p)} puts ${c.d.name} into play.`);
   if (c.d.kind === "field") { if (p.field) toWaste(g, p.field.c); p.field = { c }; } else p.zones.push({ c });
+  clawCheck(g);   // replacing a Claw Machine destroys your plushies
 }
 function removeSpell(g, q, z, why) {
+  if (q.field === z && isClaw(z.c)) {   // Mega Plush: banish a fusion splice instead, and the Claw Machine stays
+    const k = units(q).find(u => { const f = fxOf(u); return f && f.clawGuard && spliceCount(u) > 0; });
+    if (k) { banishSplice(g, k); L(g, `  ${k.d.name} keeps the Claw Machine in play.`); return; }
+  }
   if (q.field === z) q.field = null; else { const i = q.zones.indexOf(z); if (i < 0) return; q.zones.splice(i, 1); }
   toWaste(g, z.c);
   L(g, `  ${z.c.d.name} is destroyed${why ? " by " + why : ""}.`);
+  clawCheck(g);
 }
 function fitsPart(d, part) {
   if (part.kind === "card") return d.name === part.value;
@@ -288,33 +366,61 @@ function recipeFits(rec, defs) {
   return go(0);
 }
 const pitOk = d => d.kind === "creature" && hasAttr(d, "unholy") && d.flux >= 3 && d.flux <= 4;
+const fuseDamage = u => Math.max(0, u.maxHp - Math.min(u.hp, u.maxHp));   // the damage a creature carries into a fusion
+// b: the unit in the lane next to a, or { card, d } for Shotgun Wedding (a creature card from the hand)
 function fuse(g, p, a, b, fc, pay) {
-  if (!onField(g, a) || !onField(g, b) || p.fused || p.fdeck.indexOf(fc) < 0) return;
+  const fromHand = !!b.card;
+  if (!onField(g, a) || (!fromHand && !onField(g, b)) || p.fused || p.fdeck.indexOf(fc) < 0) return;
+  if (fromHand && p.hand.indexOf(b.card) < 0) return;
+  if (pay.wedding) { const i = p.hand.indexOf(pay.wedding); if (i < 0) return; p.hand.splice(i, 1); if (pay.wedding.owner === p.i) p.st.played.add(pay.wedding.d.ix); L(g, `${who(g, p)} casts ${pay.wedding.d.name}.`); toWaste(g, pay.wedding); }
   if (pay.kind === "flux") p.flux -= R.fuseFlux;
   else if (pay.kind === "estate") { const i = p.hand.indexOf(pay.card); if (i < 0) return; p.hand.splice(i, 1); if (pay.card.owner === p.i) p.st.played.add(pay.card.d.ix); L(g, `${who(g, p)} casts ${pay.card.d.name}.`); toWaste(g, pay.card); }
-  else if (pay.kind === "altar") { sacrifice(g, p, pay.victim); if (g.over || !onField(g, a) || !onField(g, b)) return; }
+  else if (pay.kind === "altar") { sacrifice(g, p, pay.victim); if (g.over || !onField(g, a) || (!fromHand && !onField(g, b))) return; }
   if (pay.pit) { const c = wasteUnholy(p)[0]; if (c) banishFromWaste(g, p, [c]); p.once.add("Ritual Pit"); }
-  const lane = a.lane === 1 || b.lane === 1 ? 1 : a.lane;
-  p.lanes[a.lane] = null; p.lanes[b.lane] = null;
+  const parts = fromHand ? [a] : [a, b];
+  const lane = fromHand ? a.lane : a.lane === 1 || b.lane === 1 ? 1 : a.lane;
+  const carried = R.carryDamage ? parts.reduce((s, x) => s + fuseDamage(x), 0) : 0;
+  parts.forEach(x => { p.lanes[x.lane] = null; });
+  if (fromHand) { p.hand.splice(p.hand.indexOf(b.card), 1); if (b.card.owner === p.i) p.st.played.add(b.card.d.ix); }
   p.fdeck.splice(p.fdeck.indexOf(fc), 1);
   const u = makeUnit(g, p, fc, lane, false);
-  u.splices = [a.c, b.c];
+  // a fusion used as a splice keeps its own stack under it
+  u.splices = parts.map(x => { x.c.under = x.splices.length ? x.splices : null; return x.c; }).concat(fromHand ? [b.card] : []);
+  if (R.fuseWinded) u.winded = true;
   p.lanes[lane] = u; p.fused = true; p.st.fused.add(fc.d.ix);
   if (!p.st.firstFuse) p.st.firstFuse = g.turnNo;
-  L(g, `${who(g, p)} fuses ${a.d.name} + ${b.d.name} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's Free Fuse-Estate)" : pay.kind === "altar" ? " (Crimson Altar instead of flux)" : ""}${pay.pit ? " (Ritual Pit)" : ""}.`);
+  L(g, `${who(g, p)} fuses ${a.d.name} + ${b.d.name}${fromHand ? " (from the hand, Shotgun Wedding)" : ""} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's Free Fuse-Estate)" : pay.kind === "altar" ? " (Crimson Altar instead of flux)" : ""}${pay.pit ? " (Ritual Pit)" : ""}${parts.some(x => x.d.kind === "fusion") ? ` (${spliceCount(u)} fusion splices)` : ""}.`);
+  if (carried) {
+    u.hp -= carried;
+    L(g, `  ${fc.d.name} keeps the ${carried} damage its fusion splices had (${Math.max(0, u.hp)}/${u.maxHp}).`);
+    if (u.hp <= 0) { kill(g, u, {}); return; }
+  }
   const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
 }
+// Unfuse: the fusion goes back to its owner's Fusion Deck and its fusion splices come back at full HP, sharing the
+// fusion's damage evenly (the bigger one takes the odd point), never below 1 HP. Winded stays winded.
 function unfuse(g, by, u) {
   const p = g.p[u.ctrl];
   if (!onField(g, u)) return;
   p.lanes[u.lane] = null;
   g.p[u.c.owner].fdeck.push(u.c);
-  L(g, `  ${u.d.name} breaks back into ${u.splices.map(c => c.d.name).join(" + ")}.`);
+  // shares: half each for the usual 2 splices (a banished splice's share is simply gone)
+  const dmg = R.unfuseSplit ? fuseDamage(u) : 0, back = [], parts = Math.max(2, u.splices.length);
+  L(g, `  ${u.d.name} breaks back into ${u.splices.map(c => c.d.name).join(" + ") || "nothing"}.`);
   u.splices.forEach((c, k) => {
     const q = g.p[c.owner], lane = k === 0 && q === p ? u.lane : emptyLanes(q)[0];
-    if (lane === undefined) { toWaste(g, c); return; }
-    q.lanes[lane] = makeUnit(g, q, c, lane, false);
+    if (lane === undefined) { wasteAll(g, [c]); return; }
+    const x = makeUnit(g, q, c, lane, false);
+    if (c.under) { x.splices = c.under; c.under = null; }
+    if (R.unfuseSplit && u.winded) x.winded = true;
+    q.lanes[lane] = x; back.push(x);
   });
+  if (dmg && back.length) {
+    back.sort((x, y) => y.maxHp - x.maxHp).forEach((x, k) => {
+      const share = Math.floor(dmg / parts) + (k < dmg % parts ? 1 : 0), n = Math.min(share, x.hp - 1);
+      if (n > 0) { x.hp -= n; L(g, `  ${x.d.name} comes back with ${n} of the damage (${x.hp}/${x.maxHp}).`); }
+    });
+  }
 }
 function steal(g, p, u) {   // Space Squid: until the end of this turn
   const o = g.p[u.ctrl], free = emptyLanes(p);
@@ -330,7 +436,7 @@ function giveBack(g, u) {
   p.lanes[u.lane] = null;
   const lane = !o.lanes[u.stolen.home] ? u.stolen.home : emptyLanes(o)[0];
   u.stolen = null;
-  if (lane === undefined) { toWaste(g, u.c); u.splices.forEach(c => toWaste(g, c)); L(g, `  ${u.d.name} has no lane to go back to and goes to the Waste Repository.`); return; }
+  if (lane === undefined) { wasteAll(g, [u.c].concat(u.splices)); L(g, `  ${u.d.name} has no lane to go back to and goes to the Waste Repository.`); return; }
   u.ctrl = o.i; u.lane = lane; o.lanes[lane] = u;
 }
 
@@ -354,8 +460,8 @@ function pitBossReroll(g, q) {   // an activated effect, so only on its controll
   return true;
 }
 function rollDie(g, u, noReroll) {
-  const p = g.p[u.ctrl], o = foe(g, p), adv = advantage(g, u), greedy = hasAttr(u.d, "greedy");
-  const once = () => { let r = 1 + Math.floor(g.dice() * u.die); if (adv) r = Math.max(r, 1 + Math.floor(g.dice() * u.die)); return r; };
+  const p = g.p[u.ctrl], o = foe(g, p), rolls = rollCount(g, u), greedy = hasAttr(u.d, "greedy");
+  const once = () => { let r = 1 + Math.floor(g.dice() * u.die); for (let k = 1; k < rolls; k++) r = Math.max(r, 1 + Math.floor(g.dice() * u.die)); return r; };
   let r = once();
   const f = fxOf(u);
   if (noReroll) { /* the hit is prevented anyway */ }
@@ -401,7 +507,7 @@ function previewFight(g, att, def) {   // expected outcome, dice at their averag
   let aHp = att.hp, dHp = def.hp;
   const back = canHitBack(def);
   if (!back) dHp -= expHit(g, att, def);
-  else if (speedOf(att) + 1 >= speedOf(def)) { dHp -= expHit(g, att, def); if (survives(def, dHp)) aHp -= expHit(g, def, att); }
+  else if (attFirst(g, att, def)) { dHp -= expHit(g, att, def); if (survives(def, dHp)) aHp -= expHit(g, def, att); }
   else { aHp -= expHit(g, def, att); if (survives(att, aHp)) dHp -= expHit(g, att, def); }
   if (aHp <= 0 && survives(att, aHp)) aHp = 1;
   if (dHp <= 0 && survives(def, dHp)) dHp = 1;
@@ -432,16 +538,24 @@ function interceptChoice(g, att, noisy) {
   }
   return best && best.s > through ? best.e : null;
 }
+// The enemies next to a direct attacker that hit it back: by speed (backs), and winded ones that hit last (v4.5)
+function hitBacks(g, att) {
+  const o = foe(g, g.p[att.ctrl]), near = NB[att.lane].map(l => o.lanes[l]).filter(Boolean);
+  // Claw Machine: attacking past the creature in front, it hits back too (older wording; now it's slipped past)
+  if (o.lanes[att.lane] && says(g.p[att.ctrl].field ? g.p[att.ctrl].field.c.d : {}, /in front of them hits back/i)) near.push(o.lanes[att.lane]);
+  return { backs: near.filter(canHitBack), late: R.windedBackLast ? near.filter(e => !canHitBack(e)) : [] };
+}
 function scoreFace(g, att) {
-  const p = g.p[att.ctrl], o = foe(g, p), aS = speedOf(att) + 1;
+  const p = g.p[att.ctrl], o = foe(g, p);
   const blocker = interceptChoice(g, att, false);
   if (blocker) return scoreFight(g, att, blocker);   // expect the block
-  const backs = NB[att.lane].map(l => o.lanes[l]).filter(e => e && canHitBack(e));
+  const { backs, late } = hitBacks(g, att);
   let hp = att.hp, face = 0;
-  for (const e of backs) if (speedOf(e) > aS) hp -= expHit(g, e, att);
+  for (const e of backs) if (!attFirst(g, att, e)) hp -= expHit(g, e, att);
   if (survives(att, hp)) {
     face = expAtk(g, att); if (hp <= 0) hp = 1;
-    for (const e of backs) if (speedOf(e) <= aS) hp -= expHit(g, e, att);
+    for (const e of backs) if (attFirst(g, att, e)) hp -= expHit(g, e, att);
+    for (const e of late) hp -= expHit(g, e, att);
   }
   const ka = keepWorth(g, att), dies = !survives(att, hp);
   const w = face >= o.php ? 100 : 0.55 + 6 / Math.max(1, o.php - face);
@@ -451,7 +565,7 @@ function bestAttack(g, u) {   // AI: the best score u can get from one attack th
   const o = foe(g, g.p[u.ctrl]); let best = -Infinity;
   if (R.sick && u.arrived === g.turnNo) return best;   // it can't attack yet
   for (const l of [u.lane].concat(NB[u.lane])) if (o.lanes[l]) best = Math.max(best, scoreFight(g, u, o.lanes[l]));
-  if (!o.lanes[u.lane]) best = Math.max(best, scoreFace(g, u));
+  if (canFace(g, u)) best = Math.max(best, scoreFace(g, u));
   return best;
 }
 function shelterResponse(g, o, att, def, ctx) {
@@ -472,20 +586,20 @@ function fight(g, att, def, intercepted) {
   shelterResponse(g, o, att, def, ctx);
   const back = canHitBack(def);
   if (!back) L(g, `  ${def.d.name} is winded and can't hit back.`);
-  const attFirst = !back || speedOf(att) + 1 >= speedOf(def), a = attFirst ? att : def, b = attFirst ? def : att;
+  const first = !back || attFirst(g, att, def), a = first ? att : def, b = first ? def : att;
   strike(g, a, b, { shelter: ctx.shelter, attack: a === att });
   if (onField(g, a) && onField(g, b) && (b === att || back)) strike(g, b, a, { shelter: ctx.shelter, attack: b === att });
 }
 function directAttack(g, att) {
-  const p = g.p[att.ctrl], o = foe(g, p), aS = speedOf(att) + 1;
+  const p = g.p[att.ctrl], o = foe(g, p);
   att.attacked = true; if (R.winded) att.winded = true;
   L(g, `${att.d.name} attacks ${who(g, o)} directly.`);
   const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, null);
   if (g.over || !onField(g, att)) return;
   const blocker = interceptChoice(g, att, true);
   if (blocker) { L(g, `  ${blocker.d.name} steps in front of it.`); return fight(g, att, blocker, true); }
-  const backs = NB[att.lane].map(l => o.lanes[l]).filter(e => e && canHitBack(e));
-  for (const e of backs) if (speedOf(e) > aS) strike(g, e, att, {});
+  const { backs, late } = hitBacks(g, att);
+  for (const e of backs) if (!attFirst(g, att, e)) strike(g, e, att, {});
   if (onField(g, att) && !g.over) {
     let n = atkOf(g, att), nat = 0;
     if (att.die) { nat = rollDie(g, att); n += nat; }
@@ -497,7 +611,8 @@ function directAttack(g, att) {
       if (af && af.onCombatDamage) af.onCombatDamage(g, att, n);
     }
   }
-  for (const e of backs) if (speedOf(e) <= aS && onField(g, att) && onField(g, e)) strike(g, e, att, {});
+  for (const e of backs) if (attFirst(g, att, e) && onField(g, att) && onField(g, e)) strike(g, e, att, {});
+  for (const e of late) if (onField(g, att) && onField(g, e)) { L(g, `  ${e.d.name} is winded, so it hits back last.`); strike(g, e, att, {}); }
 }
 
 /* ---------------- card effects ---------------- */
@@ -543,16 +658,17 @@ function angelZap(g, u) {   // Fallen Angel
   const p = g.p[u.ctrl], key = "Fallen Angel:zap";
   if (p.once.has(key) || !onField(g, u)) return;
   const t = foe(g, p).lanes[u.lane]; if (!t) return;
-  p.once.add(key); L(g, `  Fallen Angel deals 2 damage to ${t.d.name}.`); damage(g, t, 2, {});
+  const n = spliceCount(u); if (!n) return;   // 1 damage for each fusion splice under it
+  p.once.add(key); L(g, `  Fallen Angel deals ${n} damage to ${t.d.name}.`); damage(g, t, n, {});
 }
 function chooseLane(g, p, d) {
   const free = emptyLanes(p); if (free.length <= 1) return free[0];
   let best = free[0], bs = -Infinity;
   for (const l of free) {
     let s = 0;
-    if (d.flux >= R.fuseMin || pitOk(d)) for (const nl of NB[l]) {
+    if (d.flux >= R.fuseMin || pitOk(d) || fieldFx(g, "pot")) for (const nl of NB[l]) {
       const nu = p.lanes[nl];
-      if (nu && nu.d.kind === "creature" && p.fdeck.some(fc => recipeFits(fc.d.recipe, [d, nu.d]))) s += 4;
+      if (nu && (nu.d.kind === "creature" || R.fuseFusions) && p.fdeck.some(fc => recipeFits(fc.d.recipe, [d, nu.d]))) s += 4;
     }
     if (l === 1) s += (d.atk + dieAvg(d.die)) * 0.15;
     const e = foe(g, p).lanes[l];
@@ -566,7 +682,7 @@ function chooseLane(g, p, d) {
 
 const FX = {
   "Cherub": { value: 1, onPlay(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 2, u); if (t && t.s > 0) restoreHP(g, p, t.u, 2); } },
-  "Holy Acolyte": { value: 2, acts: [healAct(2, false)] },
+  "Acolyte Adam": { value: 2, acts: [healAct(2, false)] },
   "Sanctified Knight": { value: 2, guardNeighbors: 1 },
   "Judicator Angel": { value: 2, onAttack(g, u) { const p = g.p[u.ctrl]; NB[u.lane].forEach(l => { if (p.lanes[l]) restoreHP(g, p, p.lanes[l], 2); }); } },
   "Chapel Guard": { value: 3, survive: true },
@@ -584,15 +700,15 @@ const FX = {
     const p = g.p[u.ctrl], n = g.p.some(q => q.field && q.field.c.d.fx && q.field.c.d.fx.bells) ? 2 : 1;
     units(p).forEach(t => restoreHP(g, p, t, n));
   } },
-  "Archangel": { value: 2, acts: [healAct(2, true)] },
-  "Pain Drinker": { value: 1, onLosePHP(g, u) { u.tAtk += 1; } },
-  "Carrion Duchess": { value: 3, endTurn(g, u) {
+  "Gabe": { value: 2, acts: [healAct(2, true)] },
+  "Beelzechud": { value: 1, onLosePHP(g, u) { u.tAtk += 1; } },
+  "Carrion The Dark Duchess": { value: 3, endTurn(g, u) {
     const p = g.p[u.ctrl], cost = num(u.d, /pay (\d+) PHP to return/i, 2), maxHp = num(u.d, /with (\d+) or less max HP/i, 5);
     if (!emptyLanes(p).length || !canPay(p, cost)) return;
     let best = null;
     for (const c of p.waste) if (c.d.kind === "creature" && hasAttr(c.d, "unholy") && c.d.hp <= maxHp) { const v = defValue(c.d); if (!best || v > best.v) best = { c, v }; }
     if (!best || best.v - cost * phpW(g, p) <= 0.5) return;
-    L(g, `${who(g, p)} pays ${cost} PHP (Carrion Duchess).`);
+    L(g, `${who(g, p)} pays ${cost} PHP (Carrion The Dark Duchess).`);
     payPHP(g, p, cost); if (g.over) return;
     p.waste.splice(p.waste.indexOf(best.c), 1);
     materialize(g, p, best.c, chooseLane(g, p, best.c.d), "effect");
@@ -607,7 +723,7 @@ const FX = {
     L(g, `  Blood Imp deals 2 damage to ${best.t.d.name}.`); damage(g, best.t, 2, {});
   } },
   "Vein Ripper": {},
-  "Flesh Collector": { value: 3, bpWaste: true, acts: [{ id: "eat", pri: 3, ai(g, u) {
+  "Salem": { value: 3, bpWaste: true, acts: [{ id: "eat", pri: 3, ai(g, u) {
     const p = g.p[u.ctrl]; let best = null;
     for (const t of units(p)) { if (t === u) continue; const s = 3.5 + sacrificeBonus(g, p) - keepWorth(g, t) + (fxOf(t) && fxOf(t).deathPenalty ? 1.5 : 0); if (!best || s > best.s) best = { t, s }; }
     return best && best.s > 0.5 ? { score: best.s, run: () => {
@@ -642,53 +758,119 @@ const FX = {
       return s > 0.4 ? { score: s, run: () => { p.gold -= 2; u.minerFlux = true; } } : null;
     } }] },
   "Goblin Pit Boss": { value: 3, rerolls: true, onMaxRoll(g, k) { L(g, `  Goblin Pit Boss: highest roll, +2 gold.`); gainGold(g, g.p[k.ctrl], 2); } },
-  "Orc": { value: 1, orc: true },
-  "Seraphim Wall": { value: 2, guardNeighbors: 1 },
-  "Fallen Angel": { value: 3, onYouRestore(g, u) { angelZap(g, u); }, onLosePHP(g, u, n, info) { if (info.paid) angelZap(g, u); } },
-  "Lord Lazarus": { value: 4, returns: true },
-  "Arch Cleric": { value: 3, startTurn(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 3); if (t && t.s > 0) restoreHP(g, p, t.u, 3); } },
-  "Skinless Titan": { value: 2, endTurn(g, u) { L(g, `  Skinless Titan: ${who(g, g.p[u.ctrl])} loses 2 PHP.`); losePHP(g, g.p[u.ctrl], 2, {}); },
+  "Mountain Orc": { value: 1, orc: true },
+  // v4.5 fusions: each one uses its fusion splices, either per splice under it or by banishing one (banishSplice).
+  // perSplice: what one extra splice is worth to the AI when it fuses fusions together.
+  "Seraphim Wall": { value: 3, guardNeighbors: 1, savior: true, perSplice: 1 },
+  "Fallen Angel": { value: 3, perSplice: 1, onYouRestore(g, u) { angelZap(g, u); }, onLosePHP(g, u, n, info) { if (info.paid) angelZap(g, u); } },
+  "Lord Lazarus": { value: 4, returns: true, perSplice: 2 },
+  "Arch Cleric": { value: 3, perSplice: 0.8, startTurn(g, u) { const p = g.p[u.ctrl], n = num(u.d, /start of your turn: restore (\d+) HP/i, 3), t = bestHeal(g, p, n); if (t && t.s > 0) restoreHP(g, p, t.u, n); },
+    acts: [{ id: "mend", pri: 3, ai(g, u) {
+      const p = g.p[u.ctrl]; if (!spliceCount(u) || u.stolen) return null;
+      const n = num(u.d, /to restore (\d+) HP to a creature you control/i, 6), t = bestHeal(g, p, n); if (!t) return null;
+      const s = t.s - spliceCost(u);
+      return s > 0.5 ? { score: s, run: () => { if (banishSplice(g, u)) restoreHP(g, p, t.u, n); } } : null;
+    } }] },
+  "Beelzechad": { value: 2, perSplice: 0.8,
+    endTurn(g, u) {
+      const p = g.p[u.ctrl];
+      if (spliceCount(u) && 2 * phpW(g, p) > spliceCost(u) * 0.7) { banishSplice(g, u); return; }   // instead of losing 2 PHP
+      L(g, `  Beelzechad: ${who(g, p)} loses 2 PHP.`); losePHP(g, p, 2, {});
+    },
     onLosePHP(g, u) { u.tAtk += 1; },
-    onKill(g, u) { L(g, `  Skinless Titan deals 2 damage to each enemy creature.`); units(foe(g, g.p[u.ctrl])).forEach(t => damage(g, t, 2, {})); } },
-  "The Meat Cathedral": { value: 4, sacValue: () => 2, onSacrifice(g, u) { u.pAtk += 2; }, acts: [{ id: "feast", pri: 3, ai(g, u) {
-    const p = g.p[u.ctrl], spare = wasteSpare(p); if (spare.length < 2) return null;
-    const t = bestHeal(g, p, 5), hs = t ? t.s : 0, ps = 5 * phpW(g, p), s = Math.max(hs, ps) - 0.6;
-    return s > 0.3 ? { score: s, run: () => { banishFromWaste(g, p, spare.slice(0, 2)); if (hs >= ps) restoreHP(g, p, t.u, 5); else { L(g, `  The Meat Cathedral: +5 PHP.`); gainPHP(g, p, 5); } } } : null;
+    onKill(g, u) { L(g, `  Beelzechad deals 2 damage to each enemy creature.`); units(foe(g, g.p[u.ctrl])).forEach(t => damage(g, t, 2, {})); } },
+  "The Meat Cathedral": { value: 4, perSplice: 0.6, sacValue: () => 2, onSacrifice(g, u) { u.pAtk += 2; }, acts: [{ id: "feast", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl], spare = wasteSpare(p), useWaste = spare.length >= 2;
+    if (!useWaste && (!spliceCount(u) || u.stolen)) return null;
+    const k = num(u.d, /restore (\d+) HP to a creature or gain/i, 5), t = bestHeal(g, p, k), hs = t ? t.s : 0, ps = k * phpW(g, p), s = Math.max(hs, ps) - (useWaste ? 0.6 : spliceCost(u));
+    return s > 0.3 ? { score: s, run: () => {
+      if (useWaste) banishFromWaste(g, p, spare.slice(0, 2)); else if (!banishSplice(g, u)) return;
+      if (hs >= ps) restoreHP(g, p, t.u, k); else { L(g, `  The Meat Cathedral: +${k} PHP.`); gainPHP(g, p, k); }
+    } } : null;
   } }] },
-  "Ergof The Dark Emperor": { value: 5, acts: [destroyAct(6, 3)] },
-  "Hop Goblin": { value: 3, selfAdvantage: true, goldSink: true, acts: [investAct(2)] },
-  "Soul Sucker": { value: 3,
-    startTurn(g, u) { const n = g.deaths - g.p[u.ctrl].deathMark; if (n > 0) { u.pAtk += n; L(g, `  Soul Sucker gains +${n} ATK.`); } },
-    onAnyDeath(g, u) { const p = g.p[u.ctrl]; if (goldW(g, p) > phpW(g, p)) gainGold(g, p, 1); else gainPHP(g, p, 1); } },
-  "Seraph of Judgment": { value: 2, onAttack(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 2); if (t) restoreHP(g, p, t.u, 2); } },
-  "Goblin King": { value: 4, greedyAdvantage: "all", wantsGold5: true, startTurn(g, u) { gainGold(g, g.p[u.ctrl], 1); },
+  "Ergof The Dark Emperor": { value: 5, perSplice: 1.5, acts: [{ id: "destroy", pri: 1, ai(g, u) {
+    const p = g.p[u.ctrl], splice = spliceCount(u) > 0 && !u.stolen; let best = null;
+    for (const t of units(foe(g, p))) {
+      if (t.hp <= 6 && canPay(p, 3)) { const s = killWorth(g, p, t) - 3 * phpW(g, p); if (!best || s > best.s) best = { t, s, how: "php" }; }
+      if (t.hp <= 10 && splice) { const s = killWorth(g, p, t) - spliceCost(u); if (!best || s > best.s) best = { t, s, how: "splice" }; }
+    }
+    return best && best.s > 0.5 ? { score: best.s, run: () => {
+      if (best.how === "php") { L(g, `${u.d.name} pays 3 PHP to destroy ${best.t.d.name}.`); payPHP(g, p, 3); }
+      else { if (!banishSplice(g, u)) return; L(g, `${u.d.name} destroys ${best.t.d.name}.`); }
+      if (!g.over && onField(g, best.t)) kill(g, best.t, {});
+    } } : null;
+  } }] },
+  "Hop Goblin": { value: 3, rollPerSplice: true, perSplice: 1.2, goldSink: true, acts: [investAct(2)] },
+  "Scrooger": { value: 3, perSplice: 1,
+    aura(g, k, u) { return k === u ? spliceCount(u) : 0; },   // +1 ATK for each fusion splice under it
+    onAnyDeath(g, u, dead) {
+      const p = g.p[u.ctrl], q = g.p[dead.c.owner], i = q.waste.indexOf(dead.c);
+      if (dead.ctrl === u.ctrl && dead.d.kind === "creature" && i >= 0 && !q.lazarus.includes(dead.c)) {
+        q.waste.splice(i, 1); u.splices.push(dead.c); L(g, `  Scrooger takes ${dead.d.name} as a fusion splice (${spliceCount(u)}).`); return;
+      }
+      if (goldW(g, p) > phpW(g, p)) gainGold(g, p, 1); else gainPHP(g, p, 1);
+    } },
+  "Seraph of Judgment": { value: 2, perSplice: 1, onAttack(g, u) {
+    const p = g.p[u.ctrl], n = spliceCount(u) * num(u.d, /restore (\d+) HP to each creature you control for each/i, 1);
+    if (n) units(p).forEach(k => restoreHP(g, p, k, n));
+  } },
+  "Goblin King": { value: 4, perSplice: 1, greedyAdvantage: "all", wantsGold5: true, startTurn(g, u) { gainGold(g, g.p[u.ctrl], spliceCount(u)); },
     aura(g, k, u) { return hasAttr(u.d, "greedy") ? Math.floor(g.p[k.ctrl].gold / 5) : 0; } },
-  "Goblin Bombardier": { value: 4, goldSink: true, acts: [{ id: "bomb", pri: 1, ai(g, u) {
+  "Goblin Bombardier": { value: 4, perSplice: 0.8, goldSink: true, acts: [{ id: "bomb", pri: 1, ai(g, u) {
     const p = g.p[u.ctrl], o = foe(g, p); let best = null;
-    for (const t of units(o)) for (let x = 1; x <= p.gold; x++) {
-      let s = damageWorth(g, p, t, x) - x * goldW(g, p) * 0.6;
-      for (const l of NB[t.lane]) if (o.lanes[l]) s += damageWorth(g, p, o.lanes[l], Math.floor(x / 2));
-      if (!best || s > best.s) best = { t, x, s };
+    const worth = (t, x) => { let s = damageWorth(g, p, t, x); for (const l of NB[t.lane]) if (o.lanes[l]) s += damageWorth(g, p, o.lanes[l], Math.floor(x / 2)); return s; };
+    for (const t of units(o)) {
+      for (let x = 1; x <= p.gold; x++) { const s = worth(t, x) - x * goldW(g, p) * 0.6; if (!best || s > best.s) best = { t, x, s, splice: false }; }
+      if (spliceCount(u) && !u.stolen) { const s = worth(t, 4) - spliceCost(u); if (!best || s > best.s) best = { t, x: 4, s, splice: true }; }
     }
     return best && best.s > 1 ? { score: best.s, run: () => {
       const side = NB[best.t.lane].map(l => o.lanes[l]).filter(Boolean);
-      p.gold -= best.x; L(g, `${who(g, p)} pays ${best.x} gold (Goblin Bombardier).`);
+      if (best.splice) { if (!banishSplice(g, u)) return; } else { p.gold -= best.x; L(g, `${who(g, p)} pays ${best.x} gold (Goblin Bombardier).`); }
       damage(g, best.t, best.x, {}); side.forEach(t => damage(g, t, Math.floor(best.x / 2), {}));
     } } : null;
   } }] },
-  "Indulgence Seller": { value: 3, goldSink: true, acts: [{ id: "sell", pri: 3, ai(g, u) {
-    const p = g.p[u.ctrl], avail = p.gold - goldReserve(g, p); if (avail <= 0) return null;
+  "Indulgence Seller": { value: 3, perSplice: 0.8, goldSink: true, acts: [{ id: "sell", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl], gold = Math.max(0, p.gold - goldReserve(g, p)), spl = u.stolen ? 0 : spliceCount(u);
     let best = null;
     for (const t of units(p)) {
       if (t.stolen) continue;
-      const x = radiant(t) && wantsAtk(g, t) ? avail : Math.min(avail, Math.ceil(Math.max(0, t.maxHp - t.hp) / 2));
-      if (!x) continue;
-      const s = healWorth(g, t, 2 * x) - x * goldW(g, p) * 0.5;
-      if (!best || s > best.s) best = { t, x, s };
+      const want = radiant(t) && wantsAtk(g, t) ? gold + 3 * spl : Math.ceil(Math.max(0, t.maxHp - t.hp) / 2);
+      for (let k = 0; k <= spl; k++) {   // k splices banished, each counts as 3 gold
+        const x = Math.min(want, gold + 3 * k), g2 = Math.max(0, x - 3 * k); if (!x) continue;
+        const s = healWorth(g, t, 2 * x) - g2 * goldW(g, p) * 0.5 - k * spliceCost(u);
+        if (!best || s > best.s) best = { t, x, g2, k, s };
+      }
     }
-    return best && best.s > 0.3 ? { score: best.s, run: () => { p.gold -= best.x; restoreHP(g, p, best.t, 2 * best.x); } } : null;
+    return best && best.s > 0.3 ? { score: best.s, run: () => {
+      for (let k = 0; k < best.k; k++) banishSplice(g, u);
+      p.gold -= best.g2; restoreHP(g, p, best.t, 2 * best.x);
+    } } : null;
   } }] },
 };
+
+// ---- Plushy faction: plush versions reuse their originals' effects ----
+const clawPick = c => isClaw(c) ? 1 : null;
+const fluffyWaste = p => p.waste.filter(c => fluffy(c) && isUnitKind(c.d.kind) && !p.lazarus.includes(c));
+const hasPatchwork = p => p.hand.concat(units(p).map(u => u.c)).some(c => c.d.fx && c.d.fx.patchwork);
+Object.assign(FX, {
+  "Arcade Kid": { value: 1.5, onPlay(g, u) { const p = g.p[u.ctrl]; if (!p.hand.some(isClaw)) tutor(g, p, clawPick); } },
+  "Plush Collector": { value: 3, acts: [{ id: "search", pri: 0, ai(g, u) {
+    const p = g.p[u.ctrl]; if (u.stolen || !p.deck.some(isClaw)) return null;
+    const inHand = p.hand.some(isClaw), s = !hasClaw(p) && !inHand ? 3 : inHand ? 0.2 : 0.9;   // a spare one against Pipebomb
+    return { score: s, run: () => tutor(g, p, clawPick) };
+  } }] },
+  "Plush Cherub": FX["Cherub"], "Plush Blood Imp": FX["Blood Imp"], "Plush Sanctified Knight": FX["Sanctified Knight"],
+  "Plush Judicator Angel": FX["Judicator Angel"], "Plush Vein Ripper": {},
+  "Plush Goblin": { value: 1, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); } },
+  "Plush Dark Duchess": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
+    const p = g.p[u.ctrl], list = fluffyWaste(p).filter(c => c.d.kind === "creature");
+    if (!list.length || (hasPatchwork(p) && list.length < 3)) return;   // Patchwork Plush wants them in the Waste Repository
+    const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0];
+    p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  Plush Dark Duchess returns ${c.d.name} to the hand.`);
+  } },
+  "Patchwork Plush": { value: 2, patchwork: true, aura(g, k, u) { return k === u ? g.p[u.ctrl].waste.filter(fluffy).length : 0; } },
+  "Mega Plush": { value: 4, perSplice: 1, clawGuard: true, aura(g, k, u) { return k !== u && fluffy(u) ? spliceCount(k) : 0; } },
+});
 
 // one-shot spells: play(g, p, card) returns { pri, score, run } or null. pri: 0 setup, 1 removal, 2 creatures (the plan), 3 after
 const SPELLS = {
@@ -875,6 +1057,56 @@ const SPELLS = {
     if (best) best.s += n * 2.2;
     return best && best.s - 0.8 > 0.5 ? { pri: 1, score: best.s - 0.8, run: () => cast(g, p, c, () => { best.t.negated = true; L(g, `  ${best.t.d.name} is negated until end of turn.`); if (n) draw(g, p, n); }) } : null;
   } },
+  // ---- v4.5 ----
+  "Boss's Orders": { play(g, p, c) {   // move a creature (either side) to an empty lane on its controller's side
+    if (g.phase !== 1) return null;
+    const mine = () => units(p).reduce((s, u) => s + Math.max(0, bestAttack(g, u)), 0) + Math.max(0, (bestPlan(g, p) || { score: 0 }).score);
+    const base = mine(); let best = null;
+    for (const u of allUnits(g)) {
+      const q = g.p[u.ctrl], from = u.lane;
+      for (const l of emptyLanes(q)) {
+        q.lanes[from] = null; q.lanes[l] = u; u.lane = l;
+        const s = mine() - base;
+        q.lanes[l] = null; q.lanes[from] = u; u.lane = from;
+        if (!best || s > best.s) best = { u, l, s };
+      }
+    }
+    return best && best.s - 1 > 0.5 ? { pri: 1, score: best.s - 1, run: () => cast(g, p, c, () => {
+      const u = best.u, q = g.p[u.ctrl]; if (!onField(g, u) || q.lanes[best.l]) return;
+      L(g, `  ${u.d.name} moves from the ${LANE[u.lane]} lane to the ${LANE[best.l]} lane.`);
+      q.lanes[u.lane] = null; q.lanes[best.l] = u; u.lane = best.l;
+    }) } : null;
+  } },
+  "Melting Pot": { perm: true, pot: true, needs: x => x.fusions > 0, score: (g, p) => fieldFx(g, "pot") ? 0 : p.fdeck.length ? 2.3 : 0.4 },
+  "Twisted Dimensions": { perm: true, trick: true, score: (g, p) => {   // worth it when your creatures are slower than theirs
+    if (fieldFx(g, "trick")) return 0;
+    const avg = q => { const us = units(q); return us.length ? us.reduce((s, u) => s + speedOf(u), 0) / us.length : 2; };
+    return 1 + (avg(foe(g, p)) - avg(p)) * 1.5;
+  } },
+  "Shotgun Wedding": { wedding: true, needs: x => x.fusions > 0 },   // used by fusionOpts
+  // ---- Plushy ----
+  "Claw Machine": { perm: true, claw: true, core: cre => cre.some(d => d.attrs.includes("fluffy")),
+    score: (g, p) => hasClaw(p) ? 0 : units(p).some(fluffy) || p.hand.some(fluffy) ? 6 : 1.2 },
+  "Plush Catalogue": { play(g, p, c) {   // any card with "Plush" in its name
+    const pick = x => {
+      if (!/plush/i.test(x.d.name)) return null;
+      if (x.d.name === "Plush Collector") return !hasClaw(p) && !p.hand.some(isClaw) && !units(p).some(u => u.d.name === x.d.name) ? 9 : 1;
+      if (x.d.kind !== "creature") return 0.5;
+      const f = Math.max(0, x.d.flux - (x.d.fx && x.d.fx.patchwork ? p.waste.filter(fluffy).length : 0));
+      return defValue(x.d) - (f > p.maxFlux + 1 ? 4 : 0);
+    };
+    let best = null; for (const x of p.deck) { const s = pick(x); if (s != null && (best == null || s > best)) best = s; }
+    return best == null ? null : { pri: 0, score: 1 + best * 0.25, run: () => cast(g, p, c, () => tutor(g, p, pick)) };
+  } },
+  "Needle and Thread": { play(g, p, c) {   // up to 2 Fluffy creatures from the Waste Repository back to the hand
+    const list = fluffyWaste(p).filter(x => x.d.kind === "creature").sort((a, b) => defValue(b.d) - defValue(a.d)).slice(0, 2);
+    if (!list.length) return null;
+    const s = list.reduce((a, x) => a + defValue(x.d) * 0.3, 0) - (hasPatchwork(p) ? list.length * 1.2 : 0);
+    return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => {
+      list.forEach(x => { const i = p.waste.indexOf(x); if (i >= 0) { p.waste.splice(i, 1); p.hand.push(x); } });
+      L(g, `  ${who(g, p)} returns ${list.map(x => x.d.name).join(" and ")} to the hand.`);
+    }) } : null;
+  } },
 };
 
 // The card text each effect above was written for (textHash). The editor compares it with the current text.
@@ -882,33 +1114,33 @@ const FX_TEXT = {
   "Ritual Pit": "1y1hlbr",
   "Bull Run": "wo0nar",
   "Goblin Bank": "2h6mga",
-  "Cherub": "1i4xkro",
-  "Holy Acolyte": "1gn0xd8",
-  "Sanctified Knight": "kxmoya",
-  "Judicator Angel": "1s5f5uq",
-  "Chapel Guard": "rqexuo",
-  "Purifier Nun": "1vnz049",
-  "Bellkeeper Monk": "1puh9sl",
-  "Pain Drinker": "169aojl",
-  "Carrion Duchess": "ywk7kl",
-  "Nomed The Dark Viscount": "ntpdy7",
-  "Renroc The Dark Marquis": "1vm6v6c",
-  "Blood Priest": "1eg1uiq",
-  "Blood Imp": "1shj6kh",
-  "Vein Ripper": "8rzk2y",
-  "Flesh Collector": "1q5hw2w",
-  "Hemogoblin": "199bhf2",
-  "Goblin": "15jv2o1",
-  "Penny Stock Goblin": "xjpujb",
+  "Cherub": "160t25m",
+  "Acolyte Adam": "jmu3li",
+  "Sanctified Knight": "6doxi9",
+  "Judicator Angel": "1akkkfs",
+  "Chapel Guard": "1rr35fj",
+  "Purifier Nun": "1vt86vl",
+  "Bellkeeper Monk": "1fdt87x",
+  "Beelzechud": "vxhv0k",
+  "Carrion The Dark Duchess": "162n1oe",
+  "Nomed The Dark Viscount": "kz10p3",
+  "Renroc The Dark Marquis": "1yqlgwa",
+  "Blood Priest": "bl85kl",
+  "Blood Imp": "m8o3k0",
+  "Vein Ripper": "10k62iz",
+  "Salem": "1xbc774",
+  "Hemogoblin": "ryel57",
+  "Goblin": "1vi286c",
+  "Penny Stock Goblin": "17185i0",
   "Sanctuary Bells": "1x70bw",
-  "Seraphim Wall": "xkxa1g",
-  "Fallen Angel": "q4xo63",
-  "Lord Lazarus": "zapp81",
-  "Arch Cleric": "jyr4g9",
-  "Skinless Titan": "1fhqarz",
-  "The Meat Cathedral": "1om48",
-  "Ergof The Dark Emperor": "faf0qc",
-  "Hop Goblin": "pm1wvk",
+  "Seraphim Wall": "11sz8ci",
+  "Fallen Angel": "1bnxukr",
+  "Lord Lazarus": "s26g4x",
+  "Arch Cleric": "1stpgub",
+  "Beelzechad": "137aqi9",
+  "The Meat Cathedral": "1wnvz6c",
+  "Ergof The Dark Emperor": "5je1g9",
+  "Hop Goblin": "14zn8rm",
   "Divine Silence": "16r81in",
   "Divine Shelter": "103rf6k",
   "Open Vein": "1h3uaxc",
@@ -925,35 +1157,55 @@ const FX_TEXT = {
   "Pipebomb": "v0icxo",
   "Space Squid": "o208j4",
   "Unfuse": "2rr8zr",
-  "Goblin General": "v3esdv",
-  "Gob-omber": "t7o3k6",
-  "Goblin Miner": "d8v9",
-  "Soul Sucker": "2l5tm3",
-  "Archangel": "23e116",
-  "Goblin Pit Boss": "1l9geuw",
-  "Orc": "1y9qf3n",
+  "Goblin General": "8qmmvx",
+  "Gob-omber": "1o9ssaa",
+  "Goblin Miner": "dyc7gj",
+  "Scrooger": "1fxt3o0",
+  "Gabe": "scrh2r",
+  "Goblin Pit Boss": "11mmduo",
+  "Mountain Orc": "1tb89cv",
   "It's Free Fuse-Estate": "15ldyzt",
   "Crimson Altar": "1svaf0d",
-  "Seraph of Judgment": "1io6xgj",
-  "Goblin King": "1p28xfm",
-  "Goblin Bombardier": "70thxd",
-  "Indulgence Seller": "ogn18i",
+  "Seraph of Judgment": "17hohne",
+  "Goblin King": "1gnko0t",
+  "Goblin Bombardier": "8mrue2",
+  "Indulgence Seller": "ldfco8",
   "Market Research": "79bnsq",
   "Overclock": "omv5k",
   "Blood Ledger": "1vrh362",
+  "Boss's Orders": "18lwpa2",
+  "Melting Pot": "9ifnp4",
+  "Twisted Dimensions": "1gcqmai",
+  "Shotgun Wedding": "lzqift",
+  "Claw Machine": "gm5re3",
+  "Arcade Kid": "1eyswx1",
+  "Plush Collector": "1xib0ej",
+  "Plush Catalogue": "m8v2ln",
+  "Needle and Thread": "10111wp",
+  "Plush Cherub": "1kyu47t",
+  "Plush Blood Imp": "fmy7gt",
+  "Plush Goblin": "1y7wq9e",
+  "Plush Vein Ripper": "1lqltp1",
+  "Plush Sanctified Knight": "1z2y5w",
+  "Plush Judicator Angel": "18xzc53",
+  "Plush Dark Duchess": "bcc52v",
+  "Patchwork Plush": "40pmdj",
+  "Mega Plush": "sw3s1l",
 };
 
 /* ---------------- the AI ---------------- */
 function handCreatureOpts(g, p) {   // hand creatures with every way to pay for them (Blood Price)
   const W = phpW(g, p), spare = Math.floor(wasteSpare(p).length / 2), out = [];
   for (const c of p.hand) {
-    const d = c.d; if (d.kind !== "creature" || d.flux == null) continue;
+    const d = c.d; if (d.kind !== "creature" || d.flux == null || (fluffy(c) && !hasClaw(p))) continue;
+    const disc = (d.fx && d.fx.patchwork ? Math.min(d.flux, p.waste.filter(fluffy).length) : 0)   // Patchwork Plush
+      + (fluffy(c) && says(p.field.c.d, /'Fluffy' creatures cost (\d+) less flux/i) ? num(p.field.c.d, /'Fluffy' creatures cost (\d+) less flux/i, 0) : 0);   // Claw Machine
     const opts = [];
     for (let k = 0; k <= (d.bp || 0); k++) {
       const per = num(d, /pay (\d+) PHP(?: per flux)?: reduce this creature's flux cost/i, 3);   // Blood Price, from the card text
       let php = per * k, waste = 0;
       if (d.fx && d.fx.bpWaste) { const w = Math.min(k, spare); waste = 2 * w; php = per * (k - w); }
-      opts.push({ flux: d.flux - k, php, waste, cost: php * W + waste * 0.15 });
+      opts.push({ flux: Math.max(0, d.flux - disc - k), php, waste, cost: php * W + waste * 0.15 });
     }
     out.push({ c, d, value: defValue(d), opts, unholy: hasAttr(d, "unholy") });
   }
@@ -989,18 +1241,32 @@ function fusionOpts(g, p) {
   const pitFree = pit && says(pitZ.c.d, /costs no flux|without paying the 2 flux/i);
   const estate = p.hand.find(c => c.d.fx && c.d.fx.estate);
   const altar = !!(p.field && p.field.c.d.fx && p.field.c.d.fx.altar);
-  for (const [l1, l2] of [[0, 1], [1, 2]]) {
-    const a = p.lanes[l1], b = p.lanes[l2];
-    if (!a || !b || a.d.kind !== "creature" || b.d.kind !== "creature") continue;
-    const okA = a.d.flux >= R.fuseMin, okB = b.d.flux >= R.fuseMin;
-    const usesPit = !(okA && okB);
-    if (usesPit && !(pit && ((okA && pitOk(b.d)) || (okB && pitOk(a.d))))) continue;
+  const pot = fieldFx(g, "pot");   // Melting Pot: any flux cost can fuse
+  const wedding = freeZone(p) ? p.hand.find(c => c.d.fx && c.d.fx.wedding) : null;
+  const unit = x => !!x && (x.d.kind === "creature" || (R.fuseFusions && x.d.kind === "fusion"));
+  const big = d => d.kind === "fusion" || pot || d.flux >= R.fuseMin;   // fusions count as 5+ flux (v4.5)
+  const pairs = [];
+  for (const [l1, l2] of [[0, 1], [1, 2]]) { const a = p.lanes[l1], b = p.lanes[l2]; if (unit(a) && unit(b)) pairs.push({ a, b }); }
+  if (wedding) {   // Shotgun Wedding: a creature you control + a creature card from your hand
+    const seenH = new Set();
+    for (const c of p.hand) if (c.d.kind === "creature" && c.d.flux != null && !seenH.has(c.d.name) && seenH.add(c.d.name))
+      for (const a of units(p)) if (unit(a)) pairs.push({ a, b: { card: c, d: c.d, splices: [] }, wed: true });
+  }
+  for (const { a, b, wed } of pairs) {
+    const okA = big(a.d), okB = big(b.d), usesPit = !(okA && okB);
+    if (usesPit && (wed || !(pit && ((okA && pitOk(b.d)) || (okB && pitOk(a.d)))))) continue;
+    const carried = R.carryDamage ? fuseDamage(a) + (wed ? 0 : fuseDamage(b)) : 0;
+    const n = 2 + spliceCount(a) + (wed ? 0 : spliceCount(b));   // fusion splices the new fusion would have
+    const lose = keepWorth(g, a) + (wed ? defValue(b.d) * 0.75 : keepWorth(g, b));
     const seen = new Set();
     for (const fc of p.fdeck) {
       if (seen.has(fc.d.name)) continue; seen.add(fc.d.name);
-      if (!recipeFits(fc.d.recipe, [a.d, b.d])) continue;
-      const gain = defValue(fc.d) - keepWorth(g, a) - keepWorth(g, b) - (usesPit ? 0.5 : 0) + 1;
-      if (p.flux >= R.fuseFlux) out.push({ gain, flux: R.fuseFlux, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "flux", pit: usesPit }) });
+      if (!recipeFits(fc.d.recipe, [a.d, b.d]) || carried >= fc.d.hp) continue;
+      const extra = (fc.d.fx && fc.d.fx.perSplice || 0) * (n - 2);
+      const gain = defValue(fc.d) + extra - carried / 2 - lose - (usesPit ? 0.5 : 0) + 1 - (wed ? 0.6 : 0);
+      const lanes = wed ? 0 : 1, w = wed ? { wedding } : {};
+      if (p.flux >= R.fuseFlux) out.push({ gain, flux: R.fuseFlux, lanes, uses: wed ? b.card : null, run: () => fuse(g, p, a, b, fc, { kind: "flux", pit: usesPit, ...w }) });
+      if (wed) continue;
       if (pitFree) out.push({ gain: gain - (usesPit ? 0 : 0.5), flux: 0, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "pit", pit: true }) });
       if (estate) out.push({ gain: gain - 0.8, flux: 0, lanes: 1, run: () => fuse(g, p, a, b, fc, { kind: "estate", card: estate, pit: usesPit }) });
       if (altar) for (const v of units(p)) if (v !== a && v !== b && hasAttr(v.d, "unholy"))
@@ -1013,7 +1279,8 @@ function bestPlan(g, p) {   // which fusion (if any) and which hand creatures ma
   const crea = handCreatureOpts(g, p), empty = emptyLanes(p).length;
   let best = null;
   for (const fo of [null].concat(fusionOpts(g, p))) {
-    const sub = bestSubset(g, p, crea, p.flux - (fo ? fo.flux : 0), empty + (fo ? fo.lanes : 0), p.pact);
+    const pool = fo && fo.uses ? crea.filter(e => e.c !== fo.uses) : crea;   // Shotgun Wedding uses that hand creature
+    const sub = bestSubset(g, p, pool, p.flux - (fo ? fo.flux : 0), empty + (fo ? fo.lanes : 0), p.pact);
     const score = (fo ? fo.gain : 0) + sub.score;
     if (!best || score > best.score) best = { score, fo, sub };
   }
@@ -1039,7 +1306,7 @@ function planOption(g, p) {
 }
 function permOption(g, p, c) {
   const f = c.d.fx;
-  if (c.d.kind === "field") { if (p.field) return null; }
+  if (c.d.kind === "field") { if (p.field && !(f.claw && !hasClaw(p) && (units(p).some(fluffy) || p.hand.some(fluffy)))) return null; }
   else {
     if (!freeZone(p) || p.zones.some(z => z.c.d.name === c.d.name)) return null;
     if (p.zones.length >= R.zones - 1 && p.hand.some(x => x !== c && !isUnitKind(x.d.kind) && !(x.d.fx && x.d.fx.perm))) return null;   // keep a zone for one-shots
@@ -1132,6 +1399,7 @@ function mainPhase(g, p) {
     const o = opts[0];
     if (o.key) p.once.add(o.key);
     o.run();
+    clawCheck(g);
     checkEnd(g);
   }
 }
@@ -1142,10 +1410,11 @@ function battle(g, p) {
     for (const u of units(p)) {
       if (u.attacked || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo)) continue;
       for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t) + jitter(g, p); if (!best || s > best.s) best = { s, u, t }; } }
-      if (!o.lanes[u.lane]) { const s = scoreFace(g, u) + jitter(g, p); if (!best || s > best.s) best = { s, u, t: null }; }
+      if (canFace(g, u)) { const s = scoreFace(g, u) + jitter(g, p); if (!best || s > best.s) best = { s, u, t: null }; }
     }
     if (!best || best.s <= 0.2) break;
     if (best.t) fight(g, best.u, best.t); else directAttack(g, best.u);
+    clawCheck(g);
   }
 }
 function endTurn(g, p) {
@@ -1153,6 +1422,7 @@ function endTurn(g, p) {
   for (const u of units(p)) if (u.frenzy) { sacrifice(g, p, u); if (g.over) return; }
   for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.endEachTurn) q.field.c.d.fx.endEachTurn(g, q);
   for (const u of units(p)) if (u.stolen) giveBack(g, u);
+  clawCheck(g);
   for (const u of allUnits(g)) { u.tAtk = 0; u.tSpd = 0; u.negated = false; }
   while (p.hand.length > R.handLimit) {
     const c = p.hand.slice().sort((a, b) => keepValue(g, p, a) - keepValue(g, p, b))[0];
@@ -1174,7 +1444,11 @@ function playTurn(g) {
   if (R.reactor) { reactorChoice(g, p, first); if (g.over) return; }
   for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; u.winded = false; }
   for (const q of g.p) for (const z of spellsOf(q).slice()) if (z.bomb && z.bomb.by === p.i) removeSpell(g, q, z, "Pipebomb");
-  for (const c of p.lazarus.splice(0)) { const i = p.waste.indexOf(c); if (i >= 0 && emptyLanes(p).length) { p.waste.splice(i, 1); materialize(g, p, c, chooseLane(g, p, c.d), "lazarus"); } }
+  for (const c of p.lazarus.splice(0)) {
+    const i = p.waste.indexOf(c);
+    if (i >= 0 && emptyLanes(p).length) { p.waste.splice(i, 1); materialize(g, p, c, chooseLane(g, p, c.d), "lazarus"); }
+    else if (c.under) { const rest = c.under; c.under = null; wasteAll(g, rest); }   // no lane: its splices go to the Waste Repository too
+  }
   for (const u of units(p)) { const f = fxOf(u); if (f && f.startTurn) f.startTurn(g, u); if (g.over) return; }
   for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.startTurn) f.startTurn(g, p, z); }
   for (const amt of p.broker.splice(0)) {
@@ -1224,6 +1498,8 @@ function randomDeck(defs, rng) {
   for (const d of wshuffle(pool)) { if (n >= nCre) break; add(d, Math.min(nCre - n, copies())); }
   // fusions it can make from its own 5+ flux creatures (or a 3-4 flux Unholy one with Ritual Pit)
   const deckCre = [...counts.keys()].map(k => defs.get(k));
+  // a deck's core spell goes in 3 times (Claw Machine for decks with Fluffy creatures)
+  for (const d of all) if (!isUnitKind(d.kind) && d.fx && d.fx.core && d.fx.core(deckCre)) add(d, 3);
   const pitTargets = deckCre.filter(pitOk).length;
   const canPit = pitTargets && all.some(d => d.name === "Ritual Pit" && inF(d));
   const big = deckCre.filter(d => d.flux >= R.fuseMin);

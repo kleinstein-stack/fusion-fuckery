@@ -10,46 +10,62 @@ Goblin Bank,Continuous Spell,N/A,N/A,N/A,,"At the start of your turn: Gain 1 gol
 Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,At the end of your turn: a random 'Mutant' creature mutates. ,Mutant,,yes
 Cherub,Creature,1,2,1,3,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-When materialized: Restore 2 HP to another creature.",Angel,Holy / Humanoid / Winged,
-Holy Acolyte,Creature,1,5,2,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+When materialized: Restore 2 HP to another creature.
+Favorite language: Python. Recently matched with Salem.",Angel,Holy / Humanoid / Winged,
+Acolyte Adam,Creature,1,5,2,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-Once per turn: Restore 2 HP to another creature.",Angel,Holy / Humanoid,
-Sanctified Knight,Creature,3,8,5,2,Your creatures in the lanes next to this creature take 1 less combat damage.,Angel,Holy / Humanoid / Noble,
+Once per turn: Restore 2 HP to another creature.
+Still trying to prove himself.",Angel,Holy / Humanoid,
+Sanctified Knight,Creature,3,8,5,2,"Your creatures in the lanes next to this creature take 1 less combat damage.
+Use code SANCTIFIED for a discount on Angel Energy.",Angel,Holy / Humanoid / Noble,
 Judicator Angel,Creature,4,10,7,4,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Angel,Holy / Humanoid / Winged / Noble,
-Chapel Guard,Creature,4,12,6,1,"The first time this creature would be destroyed, it survives with 1 HP instead.",Angel,Holy / Humanoid,
+When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.
+Weighs every soul. Brings a morning star in case of a tie.",Angel,Holy / Humanoid / Winged / Noble,
+Chapel Guard,Creature,4,12,6,1,"The first time this creature would be destroyed, it survives with 1 HP instead.
+Halberd polished, posture perfect.",Angel,Holy / Humanoid,
 Purifier Nun,Creature,2,10,4,2,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage to it instead.",Angel,Holy / Humanoid,
+When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage to it instead.
+Holy water, administered at speed.",Angel,Holy / Humanoid,
 Bellkeeper Monk,Creature,3,10,6,1,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is in play).",Angel,Holy / Humanoid,
-Pain Drinker,Creature,5,6,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is in play).
+Bell nunchucks. Don't ask.",Angel,Holy / Humanoid,
+Beelzechud,Creature,5,6,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 
-Whenever you lose PHP: This creature gains +1 ATK until end of turn.",Blood Demon,Unholy / Humanoid,
-Carrion Duchess,Creature,3,10,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Whenever you lose PHP: This creature gains +1 ATK until end of turn.
+Has strong opinions on Ken-Taco-Hut.",Blood Demon,Unholy / Humanoid,
+Carrion The Dark Duchess,Creature,3,10,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 
-At the end of your turn: You may pay 2 PHP to return an 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.",Blood Demon,Unholy / Humanoid / Noble,
+At the end of your turn: You may pay 2 PHP to return an 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.
+Owns half the real estate in hell. Keeps to herself.",Blood Demon,Unholy / Humanoid / Noble,
 Nomed The Dark Viscount,Creature,6,11,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
 
-Whenever this creature deals combat damage: Gain 1 PHP.",Blood Demon,Unholy / Humanoid / Noble,
+Whenever this creature deals combat damage: Gain 1 PHP.
+The parties are lavish. The mansion is rented.",Blood Demon,Unholy / Humanoid / Noble,
 Renroc The Dark Marquis,Creature,5,8,7,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
 
-Once per turn: Pay 2 PHP to destroy a creature with 4 or less HP.",Blood Demon,Unholy / Humanoid / Noble,
+Once per turn: Pay 2 PHP to destroy a creature with 4 or less HP.
+Never lets you forget whose blood he carries.",Blood Demon,Unholy / Humanoid / Noble,
 Blood Priest,Creature,4,8,5,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 
-Whenever you sacrifice a creature: Gain 2 PHP.",Blood Demon,Unholy / Humanoid,
+Whenever you sacrifice a creature: Gain 2 PHP.
+Mortal remains make excellent compost.",Blood Demon,Unholy / Humanoid,
 Blood Imp,Creature,1,2,1,2,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 
-When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Blood Demon,Unholy / Beast / Winged,
-Vein Ripper,Creature,4,4,3,3,Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.,Blood Demon,Unholy / Beast,
-Flesh Collector,Creature,7,12,9,1,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
+When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.
+Unfiltered. Always.",Blood Demon,Unholy / Beast / Winged,
+Vein Ripper,Creature,4,4,3,3,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
+Carries a barrel of honey whiskey. Doesn't share.",Blood Demon,Unholy / Beast,
+Salem,Creature,7,12,9,1,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
 
-Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.",Blood Demon,Unholy / Amorphous,
+Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.
+Daughter of Ergof. Don't bring it up.",Blood Demon,Unholy / Amorphous,
 Hemogoblin,Creature,1+d8,8,6,3,"Once per turn: Pay 2 PHP to gain 2 gold.
 
-Once per turn: Pay 2 gold to give this creature +1 Speed until end of turn.",Goblin,Greedy / Unholy / Humanoid,
+Once per turn: Pay 2 gold to give this creature +1 Speed until end of turn.
+Prays to demons for better odds.",Goblin,Greedy / Unholy / Humanoid,
 Ankylosaurus,Creature,3,11,4,,"The first time each turn this creature would take combat damage, reduce that damage by 2.",Dino,Prehistoric / Beast,yes
 Brontosaurus,Creature,2,10,3,,"This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!",Dino,Prehistoric / Beast,yes
 Triceratops,Creature,4,6,3,,"When this creature attacks, you may deal 2 damage to a creature adjacent to the one targeted.",Dino,Prehistoric / Beast,yes
@@ -58,10 +74,12 @@ Velociraptor,Creature,4(bleed1),3,2,,"When this creature attacks, it may deal 1 
 Dino egg,Creature,1,2,1,,"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including 'T-Rex'). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.",Dino,Prehistoric / Beast,yes
 Galorpian,Creature,4,7,3,,"Why are you blue?
 Once per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.",Galorpian,Amorphous,yes
-Goblin,Creature,1+d4,3,2,2,"Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently.",Goblin,Greedy / Humanoid,
+Goblin,Creature,1+d4,3,2,2,"Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently.
+Mr. Money Bags, self-proclaimed.",Goblin,Greedy / Humanoid,
 Penny Stock Goblin,Creature,1+d2,2,1,2,"Whenever you gain gold: This creature gains +1 ATK until end of turn.
 
-On your turn: You may banish this creature to gain 1 gold.",Goblin,Greedy / Humanoid,
+On your turn: You may banish this creature to gain 1 gold.
+Penny stocks today. A yacht tomorrow.",Goblin,Greedy / Humanoid,
 Jonnhy '5 inches',Creature,3,5,2,,He's walking here! Legend says he's Gregg’s cousing from New York. Whenever another Mundane creature is Materialized: Restore 1 HP to this creature.,Mundane,Humanoid / Greedy,yes
 Gregg,Creature,4,6,3,,"Gregg has no effect, he's just a dude.",Mundane,Humanoid,yes
 Gregg's Friend Joe,Creature,4,4,2,,When this creature attacks: Another Mundane creature gains +1 ATK until end of turn.,Mundane,Humanoid,yes
@@ -92,7 +110,9 @@ Greggs,Field Spell,N/A,N/A,N/A,,All 'Gregg' cards on your field restore +1 hp at
 Brood Fog,Field Spell,N/A,N/A,N/A,,"At the end of your turn, each Infested creature takes 1 damage.
 If an Infested creature dies, the player controlling that creature draws 1 card.",Parasite,,yes
 Seraphim Wall,Fusion,7,30,,1,"{Chapel Guard + any Holy creature}
-Your creatures in the lanes next to this creature take 1 less combat damage.",Angel,Holy / Guardian / Heavy,
+Your creatures in the lanes next to this creature take 1 less combat damage.
+When one of your creatures would be destroyed: You may banish a fusion splice from under this creature. That creature survives with 1 HP instead.
+Biblically accurate. Be not afraid.",Angel,Holy / Guardian / Heavy,
 Crimson Cherub,Fusion,4,8,,,{Cherub + Blood Imp},Angel / Blood Demon,Abomination / (Un)Holy / Winged,yes
 Alexandru,Creature/Thiefling,3,5,3,,"Once per turn, flip all coins you control. For each heads: steal a random card from your opponent’s hand, reveal it and put it on top of their deck.",,,yes
 Alexanduex,Creature/Thiefling,7,15,N/A,,"{2 'Thiefling' creatures with 'Alex' in their name}
@@ -102,32 +122,35 @@ Once per turn, flip all coins you control. For each heads, choose one:
 Tails do nothing.",,,yes
 Alexandre,Creature/Thiefling,4,8,5,,"Whenever you steal a card, coin, or Flux, this creature gains +1 ATK permanently.",,,yes
 Fallen Angel,Fusion,11,20,,3,"{any Holy creature + any Unholy creature}
-Once per turn, when you restore HP to a creature or pay PHP: Deal 2 damage to the enemy creature in front of this creature.",Angel / Blood Demon,Holy / Unholy / Winged,
+Once per turn, when you restore HP to a creature or pay PHP: Deal 1 damage to the enemy creature in front of this creature for each fusion splice under it.
+Feathers at the shoulder, bat wing at the tips.",Angel / Blood Demon,Holy / Unholy / Winged,
 Lord Lazarus,Fusion,9,22,,2,"{any 2 Noble creatures}
-The first time this creature is destroyed, return it from your Waste Repository to the field at the start of your next turn, with its ATK, HP and Speed halved (4 ATK / 11 HP / 1 Speed). If all your lanes are full then, it stays in your Waste Repository.",Angel / Blood Demon,Noble,
+When this creature is destroyed: You may banish a fusion splice from under it. If you do, return it to the field at the start of your next turn with its other fusion splices and its ATK, HP and Speed halved (4 ATK / 11 HP / 1 Speed). If all your lanes are full then, it goes to your Waste Repository.
+An ordinary man, raised to heaven by his deeds.",Angel / Blood Demon,Noble,
 Arch Cleric,Fusion,7,26,,2,"{Bellkeeper Monk + any Holy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
-
-At the start of your turn: Restore 3 HP to a creature you control.",Angel,Holy / Cleric,
-Skinless Titan,Fusion,14,18,N/A,2,"{Pain Drinker + any Unholy creature}
-At the end of your turn: Lose 2 PHP.
-
+At the start of your turn: Restore 2 HP to a creature you control.
+Once per turn: Banish a fusion splice from under this creature to restore 5 HP to a creature you control.
+Third eye open.",Angel,Holy / Cleric,
+Beelzechad,Fusion,14,18,N/A,2,"{Beelzechud + any Unholy creature}
+At the end of your turn: Lose 2 PHP, unless you banish a fusion splice from under this creature.
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.
-
-Whenever this creature destroys a creature in combat: Deal 2 damage to each enemy creature.",Blood Demon,Unholy / Heavy,
-The Meat Cathedral,Fusion,8,28,N/A,1,"{Blood Priest + any Unholy creature}
-Once per turn: Banish 2 cards from your Waste Repository to restore 5 HP to a creature or gain 5 PHP.
-
-Whenever you sacrifice a creature: This creature gains +2 ATK permanently.",Blood Demon,Unholy / Guardian / Heavy,
+Whenever this creature destroys a creature in combat: Deal 2 damage to each enemy creature.
+An absolute chad.",Blood Demon,Unholy / Heavy,
+The Meat Cathedral,Fusion,8,24,N/A,1,"{Blood Priest + any Unholy creature}
+Once per turn: Banish 2 cards from your Waste Repository, or 1 fusion splice from under this creature, to restore 4 HP to a creature or gain 4 PHP.
+Whenever you sacrifice a creature: This creature gains +2 ATK permanently.
+Zero brains. All lean meat.",Blood Demon,Unholy / Guardian / Heavy,
 Ergof The Dark Emperor,Fusion,9,20,N/A,3,"{Nomed The Dark Viscount + Renroc The Dark Marquis}
-Once per turn: Pay 3 PHP to destroy a creature with 6 or less HP.",Blood Demon,Unholy / Humanoid / Noble / Winged,
+Once per turn: Pay 3 PHP to destroy a creature with 6 or less HP, or banish a fusion splice from under this creature to destroy a creature with 10 or less HP.
+He used to be chill. Then he lost everything.",Blood Demon,Unholy / Humanoid / Noble / Winged,
 TT-rex,Fusion,15(bleed5),30,N/A,,"{T-Rex + T-Rex}
 
 Life... uh, finds a way",Dino,Beast / Carnivore / Heavy,yes
 Hop Goblin,Fusion,5+d12,20,N/A,2,"{any 2 Greedy creatures}
-This creature rolls its die twice and keeps the higher result.
-
-Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently.",Goblin,Greedy / Small / Heavy,
+This creature rolls its die once for each fusion splice under it (at least once) and keeps the highest result.
+Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently.
+Two goblins, one trench coat, one brain cell.",Goblin,Greedy / Small / Heavy,
 Purrramid,Fusion,10,20,N/A,,"{3 Cats} This furry purrramid is just so cute! :3 
 If this creature doesn’t attack: Restore 3 HP to it at end phase.
 ",Mundane,Beast / Heavy,yes
@@ -202,44 +225,86 @@ Space Squid,Spell,N/A,N/A,N/A,,Take control of one of your opponent's creatures 
 Unfuse,Spell,N/A,N/A,N/A,,Break a fusion back down into its fusion splices.,,,
 Goblin General,Creature,1+d6,6,5,2,"Your other 'Greedy' creatures roll their dice twice and keep the higher result.
 
-Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.",Goblin,Greedy / Humanoid,
-Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.",Goblin,Greedy / Humanoid,
+Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.
+He remembers the glory days. He won't say what he did in them.",Goblin,Greedy / Humanoid,
+Gob-omber,Creature,1+d6,6,5,3,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.
+Zero trigger discipline. Plenty of triggers.",Goblin,Greedy / Humanoid,
 Goblin Miner,Creature,d6,8,4,2,"When materialized and at the start of your turn: Gain 1 gold.
 
-Once per turn: You may pay 2 gold. At the start of your next turn, gain 1 flux for that turn instead of 1 gold.",Goblin,Greedy / Humanoid,
-Soul Sucker,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
-At the start of your turn: This creature gains +1 ATK permanently for each creature that died since your last turn.
+Once per turn: You may pay 2 gold. At the start of your next turn, gain 1 flux for that turn instead of 1 gold.
+Long shifts underground, home in time for dinner.",Goblin,Greedy / Humanoid,
+Scrooger,Fusion,4+d8,26,,2,"{any Unholy creature + any Greedy creature}
+This creature has +1 ATK for each fusion splice under it.
+Whenever another creature dies: Gain 1 gold or 1 PHP. If it was a creature you controlled (not a fusion), you may put it under this creature as a fusion splice instead.
+Iced out, red-faced, and it's all under the mattress.",Blood Demon / Goblin,Unholy / Greedy,
+Gabe,Creature,6,14,10,3,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-Whenever a creature dies: Gain 1 gold or 1 PHP.",Blood Demon / Goblin,Unholy / Greedy,
-Archangel,Creature,6,14,10,3,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
-
-Once per turn: Restore 2 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
+Once per turn: Restore 2 HP to a creature you control.
+His dagger holds a thousand demon souls, Ergof's father among them.",Angel,Holy / Humanoid / Winged,
 Goblin Pit Boss,Creature,2+d10,10,7,2,"Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold.
 
-Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.",Goblin,Greedy / Humanoid,
-Orc,Creature,5+d20,12,9,1,Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack deals half damage.,Goblin,Greedy / Humanoid,
+Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.
+The house always wins. He just works for the house.",Goblin,Greedy / Humanoid,
+Mountain Orc,Creature,5+d20,12,9,1,"Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack deals half damage.
+Just him, the mountain and his goat.",Goblin,Greedy / Humanoid,
 It's Free Fuse-Estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux.
 
 (Fusing: once per turn, 2 creatures you control in lanes next to each other that each cost 5 or more flux become the fusion splices of a fusion from your Fusion Deck whose recipe they meet. The fusion takes one of their lanes.)",,,
 Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one of the fusion splices instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,4,"{Judicator Angel + any Holy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
-
-When this creature attacks: Restore 2 HP to a creature you control.",Angel,Holy / Winged,
+When this creature attacks: Restore 2 HP to each creature you control for each fusion splice under this creature.
+Only steps in when the realm itself is at stake.",Angel,Holy / Winged,
 Goblin King,Fusion,3+d10,24,,2,"{Goblin General + any Greedy creature}
 Your 'Greedy' creatures roll their dice twice and keep the higher result.
-
-At the start of your turn: Gain 1 gold.
-
-Your 'Greedy' creatures gain +1 ATK for every 5 gold in your pool.",Goblin,Greedy / Humanoid,
+At the start of your turn: Gain 1 gold for each fusion splice under this creature.
+Your 'Greedy' creatures gain +1 ATK for every 5 gold in your pool.
+Democratically elected. Drives an imported Skyline.",Goblin,Greedy / Humanoid,
 Goblin Bombardier,Fusion,4+d8,22,,3,"{Gob-omber + any Greedy creature}
-Once per turn: Pay X gold. Deal X damage to an enemy creature and half of X (rounded down) to the creatures in the lanes next to it.",Goblin,Greedy / Humanoid,
+Once per turn: Pay X gold, or banish a fusion splice from under this creature for X = 4. Deal X damage to an enemy creature and half of X (rounded down) to the creatures in the lanes next to it.
+Threaded two mountains with a bomb aboard. He'll tell you about it.",Goblin,Greedy / Humanoid,
 Indulgence Seller,Fusion,8,24,,2,"{any Holy creature + any Greedy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
-
-Once per turn: Pay X gold to restore 2X HP to a creature you control.",Angel / Goblin,Holy / Greedy,
+Once per turn: Pay X gold to restore 2X HP to a creature you control. Each fusion splice you banish from under this creature for this counts as 3 gold.
+You'll pay with more than gold.",Angel / Goblin,Holy / Greedy,
 Market Research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for a 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
 Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to Oblivion. Gain 2 flux this turn.
 
 The warning lights are mostly decorative.",,,
-Blood Ledger,Field Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP to draw 1 card.",Blood Demon,,
+Blood Ledger,Continuous Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP to draw 1 card.",Blood Demon,,
+Boss's Orders,Spell,,,,,"Move a creature to an empty lane on its controller's side. Moving isn't arriving, so it can still attack this turn.",,,
+Melting Pot,Field Spell,,,,,Fusing doesn't need creatures that cost 5 or more flux: any creatures that meet a recipe can become fusion splices. (This affects both players.),,,
+Twisted Dimensions,Field Spell,,,,,"Speed is reversed: the slower creature strikes first. An attacker gets -1 Speed for its attack instead of +1, and ties still go to the attacker. (This affects both players.)",,,
+Shotgun Wedding,Spell,,,,,"Fuse a creature you control with a creature card from your hand, as if it were in the lane next to it. Pay the 2 flux and follow the recipe and the 5+ flux rule as normal. This is your fusion for the turn; the fusion takes your creature's lane.",,,
+Claw Machine,Field Spell,,,,,"Your 'Fluffy' creatures cost 1 less flux to materialize.
+Your 'Fluffy' creatures can attack your opponent directly even when an enemy creature is in front of them, unless your opponent controls a 'Fluffy' creature. They slip past it, so it doesn't hit back.
+Once per turn, when a 'Fluffy' creature you control is destroyed: Draw 1 card.
+The prize is always just out of reach.",Plushy,,
+Arcade Kid,Creature,1,3,1,2,"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.
+One more try. Just one more.",Plushy,Humanoid,
+Plush Collector,Creature,2,6,3,2,"Once per turn: Search your deck for a Claw Machine, show it to your opponent and put it into your hand.
+Mint condition, tags still on.",Plushy,Humanoid,
+Plush Catalogue,Spell,,,,,"Search your deck for a card with 'Plush' in its name, show it to your opponent and put it into your hand.",Plushy,,
+Needle and Thread,Spell,,,,,Return up to 2 'Fluffy' creatures from your Waste Repository to your hand.,Plushy,,
+Plush Cherub,Creature,1,2,1,3,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+When materialized: Restore 2 HP to another creature.",Plushy,Holy / Humanoid / Winged / Fluffy,
+Plush Blood Imp,Creature,1,2,1,2,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Plushy,Unholy / Beast / Winged / Fluffy,
+Plush Goblin,Creature,1+d4,3,2,2,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+When materialized: Gain 1 gold.",Plushy,Greedy / Humanoid / Fluffy,
+Plush Vein Ripper,Creature,4,6,3,3,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+It squeaks when it bites.",Plushy,Unholy / Beast / Fluffy,
+Plush Sanctified Knight,Creature,3,9,5,2,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+Your creatures in the lanes next to this creature take 1 less combat damage.",Plushy,Holy / Humanoid / Noble / Fluffy,
+Plush Judicator Angel,Creature,4,10,6,4,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Plushy,Holy / Humanoid / Winged / Noble / Fluffy,
+Plush Dark Duchess,Creature,3,10,5,2,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Unholy / Humanoid / Noble / Fluffy,
+Patchwork Plush,Creature,3,14,8,1,"Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0), and has +1 ATK for each of them.
+Stitched together from the ones that didn't make it.",Plushy,Fluffy / Amorphous,
+Mega Plush,Fusion,8,24,,2,"{any 2 'Fluffy' creatures}
+Fluffy (you can only materialize this creature while you control a Claw Machine, and it's destroyed if you stop controlling one).
+Your other 'Fluffy' creatures have +1 ATK for each fusion splice under this creature.
+If your Claw Machine would leave the field: You may banish a fusion splice from under this creature instead. Your Claw Machine stays.
+Won on the first try. Nobody believes him.",Plushy,Fluffy / Heavy,
