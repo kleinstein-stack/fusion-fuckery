@@ -1,8 +1,11 @@
 Name,Type,ATK,HP,Flux Cost,Speed,Description,Faction,Attribute,Cold Storage
 Ritual Pit,Continuous Spell,N/A,N/A,,,Once per turn: Banish an 'Unholy' creature from your Waste Repository. Your next fusion this turn may use an 'Unholy' creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,
-The bodega,Continuous Spell,N/A,N/A,N/A,,"During your End Phase, you may discard 1 card, then draw 1 card. If the card you discarded was a Mundane Creature, choose 1 Mundane Creature on the field; it gains +2 ATK.",Mundane,,yes
-Primordial Soup,Continuous Spell,N/A,N/A,N/A,,"At the end of each turn, all Dino creatures you control gain +1 HP. Once per turn, the first Dino creature you Materialize costs 1 less Flux.
-Once per game you may banish 3 'Dino' cards from your waste repository, then as long as this card is on the field at the start of every turn roll a d20 if it lands on 1 all cards on either side of the field get destroyed.",Dino,,yes
+The bodega,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: You may discard 1 card, then draw 1 card. If you discarded an 'Ordinary' creature, put a Complaint on an enemy creature.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+Primordial Soup,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Put the top card of your deck into your Waste Repository.
+
+At the start of your turn: Roll a d20. On a 1, destroy every creature on the field.",Dino,,
 Bull Run,Continuous Spell,N/A,N/A,N/A,,"The first time you gain gold each turn: Gain 1 more gold.
 
 While you have 5 or more gold in your pool, your 'Greedy' creatures gain +1 ATK.",Goblin,,
@@ -15,27 +18,25 @@ Acolyte Adam,Creature,1,5,2,2,"Radiance (when this creature is restored past its
 
 Once per turn: Restore 2 HP to another creature.
 ",Angel,Holy / Humanoid,
-Sanctified Knight,Creature,3,8,5,4,Your creatures in the lanes next to this creature take 1 less combat damage.,Angel,Holy / Humanoid / Noble,
-Judicator Angel,Creature,4,10,7,7,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Sanctified Knight,Creature,3,8,5,4,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
 
-When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Angel,Holy / Humanoid / Winged / Noble,
-Chapel Guard,Creature,4,12,6,1,"The first time this creature would be destroyed, it survives with 1 HP instead.
+Your creatures in the lanes next to this creature take 1 less combat damage.",Angel,Holy / Humanoid / Noble,
+Judicator Angel,Creature,4,10,7,7,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
 
+When this creature Descends: The attacking creature gets -3 ATK until end of turn.",Angel,Holy / Humanoid / Winged / Noble,
+Chapel Guard,Creature,4,12,6,1,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
 
-
-
-
-
+The first time this creature would be destroyed, it survives with 1 HP instead.
 
 Halberd polished, posture perfect.",Angel,Holy / Humanoid,
-Purifier Nun,Creature,2,10,4,3,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Purifier Nun,Creature,2,10,4,3,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
 
-When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage to it instead.
-",Angel,Holy / Humanoid,
+When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage to it instead.",Angel,Holy / Humanoid,
 Bellkeeper Monk,Creature,3,10,6,2,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-At the start of your turn: Restore 1 HP to each of your creatures (2 HP while 'Sanctuary Bells' is in play).
-",Angel,Holy / Humanoid,
+At the start of your turn: Restore 1 HP to each of your creatures.
+
+Your Descends cost 1 less flux.",Angel,Holy / Humanoid,
 Beelzechud,Creature,5,6,5,5,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.
@@ -70,11 +71,25 @@ Hemogoblin,Creature,1+d8,8,6,5,"Once per turn: Pay 2 PHP to gain 2 gold.
 
 Once per turn: Pay 2 gold to give this creature +2 Speed until end of turn.
 ",Goblin,Greedy / Unholy / Humanoid,
-Ankylosaurus,Creature,3,11,4,,"The first time each turn this creature would take combat damage, reduce that damage by 2.",Dino,Prehistoric / Beast,yes
-Brontosaurus,Creature,2,10,3,,"This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!",Dino,Prehistoric / Beast,yes
-Triceratops,Creature,4,6,3,,"When this creature attacks, you may deal 2 damage to a creature adjacent to the one targeted.",Dino,Prehistoric / Beast,yes
-T-Rex,Creature,6(bleed2),9,,,Can only be materialized by hatching from a Dino Egg.,Dino,Prehistoric / Beast,yes
-Velociraptor,Creature,4(bleed1),3,2,,"When this creature attacks, it may deal 1 damage (no bleed) to a creature adjacent to the one targeted.",Dino,Prehistoric / Beast,yes
+Ankylosaurus,Creature,3,9,4,2,"Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).
+
+The first time each turn this creature would take combat damage, reduce that damage by 2.",Dino,Prehistoric / Beast,
+Brontosaurus,Creature,4,15,7,1,"Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
+
+Fossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost).
+
+This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!",Dino,Prehistoric / Beast,
+Triceratops,Creature,4,9,5,3,"Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
+
+Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+T-Rex,Creature,7,12,9,4,"Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
+
+Fossil 5 (you may materialize this creature from your Waste Repository by banishing 5 other cards from your Waste Repository instead of paying its flux cost).
+
+When materialized from your Waste Repository: Deal 3 damage to the enemy creature in front of this creature.",Dino,Prehistoric / Beast,
+Velociraptor,Creature,2,3,2,7,"Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).
+
+When this creature attacks: Deal 1 damage to a creature in a lane next to its target.",Dino,Prehistoric / Beast,
 Dino egg,Creature,1,2,1,,"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including 'T-Rex'). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.",Dino,Prehistoric / Beast,yes
 Galorpian,Creature,4,7,3,,"Why are you blue?
 Once per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.",Galorpian,Amorphous,yes
@@ -95,13 +110,19 @@ On your turn: You may banish this creature to gain 1 gold.
 
 
 Penny stocks today. A yacht tomorrow.",Goblin,Greedy / Humanoid,
-Jonnhy '5 inches',Creature,3,5,2,,He's walking here! Legend says he's Gregg’s cousing from New York. Whenever another Mundane creature is Materialized: Restore 1 HP to this creature.,Mundane,Humanoid / Greedy,yes
-Gregg,Creature,4,6,3,,"Gregg has no effect, he's just a dude.",Mundane,Humanoid,yes
-Gregg's Friend Joe,Creature,4,4,2,,When this creature attacks: Another Mundane creature gains +1 ATK until end of turn.,Mundane,Humanoid,yes
-Gregg's Dawg ,Creature,3,9,3,,The first time each turn another Mundane creature would take combat damage: Reduce that damage by 1.,Mundane,Beast / Guardian,yes
+Jonnhy '5 inches',Creature,4,10,4,5,"Whenever your opponent pays a fine: Gain 1 PHP and 1 gold.
+
+He's walking here! Legend says he's Gregg's cousin from New York.",Mundane,Ordinary / Humanoid / Greedy,
+Gregg,Creature,5,8,3,4,"Gregg has no effect, he's just a dude.",Mundane,Ordinary / Humanoid,
+Gregg's Friend Joe,Creature,4,9,4,5,"When this creature attacks: Put a Complaint on the creature it attacks.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
+Gregg's Dawg ,Creature,4,12,5,3,Your other 'Ordinary' creatures take 1 less combat damage.,Mundane,Ordinary / Beast / Guardian,
 Bunny,Creature,2,3,1,,"Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
 ",Mundane,Beast,yes
-Cat,Creature,3,6,2,,If this creature doesn’t attack: Restore 1 HP to it at end phase.,Mundane,Beast,yes
+Cat,Creature,3,7,2,6,"At the end of your turn, if this creature didn't attack: Put a Complaint on an enemy creature.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Beast,
 Spine Crawler,Creature,4,4,2,,Whenever this creature mutates: it gains +1 ATK.,Mutant,Fractured / Amorphous,yes
 Failed Clone,Creature,2,3,1,,When materialized: Mutate (D6).,Mutant,Fractured / Humanoid,yes
 Mutation Host,Creature,4,5,3,,Once per turn: You may force another creature to mutate.,Mutant,Fractured / Amorphous,yes
@@ -119,9 +140,13 @@ Flesh Tick,Creature,2,5,2,,"When attached to a creature, the host cannot gain HP
 Parasite Larva,Creature,1,3,1,,"While attached, the host's damage get's reduced by -1 ATK. At the end of each turn, the host takes 1 damage.
 ",Parasite,Insect,yes
 Egg incubator,Equipment,N/A,N/A,N/A,,"Equip this 'Egg incubator' to any 'egg' creature. The first time this equiped 'egg' were to take damage from a creature in combat, negate this damage.",,,yes
-Gregg's Vape,Equipment/Mundane,N/A,N/A,N/A,,Equip this to a card that has 'Gregg' in the name (including Ggrreegg). The creature gains +4 ATK.,Mundane,,yes
-Sanctuary Bells,Field Spell,,,,,"At the end of your turn: Restore 1 HP to each 'Holy' creature on the field, yours and your opponent's.",Angel,,
-Greggs,Field Spell,N/A,N/A,N/A,,All 'Gregg' cards on your field restore +1 hp at the end of every turn.,Mundane,,yes
+Gregg's Vape,Spell,N/A,N/A,N/A,,"Choose a creature you control with 'Gregg' in its name: It gains +4 ATK until end of turn. At the end of your turn, put a Complaint on it (no vaping indoors).
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+Sanctuary Bells,Field Spell,,,,,"At the end of your turn: Restore 1 HP to each 'Holy' creature on the field, yours and your opponent's.
+
+Your Descends cost 1 less flux.",Angel,,
+Greggs,Field Spell,N/A,N/A,N/A,,At the end of each turn: Restore 1 HP to each creature with 'Gregg' in its name.,Mundane,,
 Brood Fog,Field Spell,N/A,N/A,N/A,,"At the end of your turn, each Infested creature takes 1 damage.
 If an Infested creature dies, the player controlling that creature draws 1 card.",Parasite,,yes
 Seraphim Wall,Fusion,7,30,,1,"{Chapel Guard + any Holy creature}
@@ -164,30 +189,39 @@ Whenever you banish creature(s) this way: This creature gains +1 ATK permanently
 Ergof The Dark Emperor,Fusion,9,20,N/A,6,"{Nomed The Dark Viscount + Renroc The Dark Marquis}
 Once per turn: Pay 3 PHP to destroy a creature with 6 or less HP, or banish a fusion splice from under this creature to destroy a creature with 10 or less HP.
 ",Blood Demon,Unholy / Humanoid / Noble / Winged,
-TT-rex,Fusion,15(bleed5),30,N/A,,"{T-Rex + T-Rex}
+TT-rex,Fusion,11,22,N/A,3,"{T-Rex + any Prehistoric creature}
+Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
 
-Life... uh, finds a way",Dino,Beast / Carnivore / Heavy,yes
+Once per turn: Banish a fusion splice from under this creature to materialize a 'Prehistoric' creature from your Waste Repository without paying its Fossil cost.
+
+Life... uh, finds a way",Dino,Prehistoric / Beast / Heavy,
 Hop Goblin,Fusion,5+d12,20,N/A,3,"{any 2 Greedy creatures}
 This creature rolls its die once for each fusion splice under it and keeps the highest result. (if you have no splices, only roll once) 
 
 Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently.
 ",Goblin,Greedy / Small / Heavy,
-Purrramid,Fusion,10,20,N/A,,"{3 Cats} This furry purrramid is just so cute! :3 
-If this creature doesn’t attack: Restore 3 HP to it at end phase.
-",Mundane,Beast / Heavy,yes
+Purrramid,Fusion,6,18,N/A,2,"{Cat + Cat}
+This fusion can be made from creatures of any flux cost.
+
+At the end of your turn, if this creature didn't attack: Restore 3 HP to it.
+
+This furry purrramid is just so cute! :3",Mundane,Ordinary / Beast / Heavy,
 Cabbit,Fusion,4,8,N/A,,"{Cat + Bunny}
 If this creature doesn’t attack: Restore 1 HP to it at end phase.
 Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
 ",Mundane,,yes
-HOA President,Fusion,12,30,,,"{Suburbia + any Mundane Fusion}
+HOA President,Fusion,11,26,N/A,2,"{The Local Legend + any Ordinary creature}
+Fines cost your opponent 1 more flux.
 
-Once per turn, Choose one:
-- Negate a creature’s effects until end of turn.
-- Restore 3 HP to all Mundane creatures you control.
-- All Mundane creatures you control gain +2 ATK until end of turn.",Mundane,,yes
+Once per turn, choose one:
+- Put a Complaint on an enemy creature.
+- Your 'Ordinary' creatures gain +2 ATK until end of turn.
+- Restore 3 HP to each of your 'Ordinary' creatures.",Mundane,Ordinary / Humanoid / Noble,
 Short Change,Instant Spell/Thiefling,,,,,"Target opponent loses 1 Flux. You gain 1 Flux this turn. If they had no Flux, draw 1 card.",,,yes
-The Local Legend,Fusion,8,16,,,"{Any 2 Mundane creatures with different names}
-Once per turn: Another Mundane creature gains +2 ATK until end of turn.",Mundane,,yes
+The Local Legend,Fusion,9,22,N/A,4,"{any 2 Ordinary creatures with different names}
+Once per turn: Banish a fusion splice from under this creature to put a Complaint on each enemy creature.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
 Patient Zero,Fusion,6,13,N/A,,"{Mutation Host + any 'Mutant' creature}
 Once per turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.",Mutant,Abomination / Humanoid,yes
 The Aberration,Fusion,7,12,N/A,,"{2 Mutants}
@@ -205,8 +239,12 @@ Anytime a player steals an amount of cards, double that amount. Only one 'Detroi
 (Field Spell)",,,yes
 Sacrificial Lamb,Instant Spell,N/A,N/A,N/A,,Banish 2 'Unholy' creatures from your Waste Repository to gain 6 PHP.,Blood Demon,,
 Market Crash,Instant Spell,,,,,Pay 5 gold: All 'Greedy' creatures you control gain +3 ATK until end of turn.,Goblin,,
-HOA Complaint,Instant Spell,,,,,"Target a creature, it loses 2 ATK until end of turn. If that creature is not a Mundane: It also loses its effects until end of turn.",Mundane,,yes
-Tax Evasion,Instant Spell,,,,,Prevent up to 5 combat damage that would be dealt to a Mundane creature this battle.,Mundane,,yes
+HOA Complaint,Instant Spell,N/A,N/A,N/A,,"Put a Complaint on an enemy creature. If it already had one, it also loses its effects until end of turn.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+Tax Evasion,Instant Spell,N/A,N/A,N/A,,"When an enemy creature attacks an 'Ordinary' creature you control: Prevent up to 5 combat damage to your creature in that fight, then put a Complaint on the attacker.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
 "RS PRO 115mm Stainless Steel Curved Tweezers
 ",Instant Spell,N/A,N/A,N/A,,"Remove one attached 'Parasite' creature from an infested creature (that 'Parasite' creature goes to your hand). If you do, deal 2 damage to that infested creature.",Parasite,,yes
 Thiefling Sleight of Hand,Instant Spell/Thiefling,N/A,N/A,N/A,,"When your opponent casts a spell, grab that spell card from your opponent and shuffle it in your deck.
@@ -216,8 +254,8 @@ Thiefling Sleight of Hand,Instant Spell/Thiefling,N/A,N/A,N/A,,"When your oppone
 Loaded Dice,Instant Spell,,,,,"Choose a coin flip or die roll, yours or your opponent's. Flip or roll it again and use the second result.",,,
 Blood Frenzy,Spell,,,,,Choose an 'Unholy' creature you control: It gains +4 ATK and +2 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,
 Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next 'Unholy' creature you materialize this turn costs 2 less flux.,Blood Demon,,
-Archaeologist,Spell,N/A,N/A,N/A,,Banish 3 'Dino' creatures from your Waste Repository. Materialize any 'Dino' creature that isn't a 'T-Rex' from your hand or deck.,Dino,,yes
-Fossil Record,Spell,N/A,N/A,N/A,,"Return a Dino creature from your Waste Repository to your hand. If it was a Dino Egg or T-Rex, draw 1 card.",Dino,,yes
+Archaeologist,Spell,N/A,N/A,N/A,,Put the top 4 cards of your deck into your Waste Repository. Then you may materialize a 'Prehistoric' creature from your Waste Repository by paying its Fossil cost.,Dino,,
+Fossil Record,Spell,N/A,N/A,N/A,,Return up to 2 'Prehistoric' creatures from your Waste Repository to your hand.,Dino,,
 Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards plus 1.
 
 For each 'Greedy' creature you put on the bottom of your deck this way, gain 1 gold.",Goblin,,
@@ -229,19 +267,21 @@ At the start of your next turn, look up the same asset again:
 - If it didn't change, flip a coin. Heads counts as rose, tails as fell.
 After that this card resolves.",Goblin,,
 Bad Bunny Concert tickets,Spell,N/A,N/A,N/A,,"Turn any creature on the field into a creature named 'Bunny', it keeps it's ATK & HP but looses any effects and original atribute(s).",Mundane,,yes
-Costco Hot Dog and Soda Comb for $1.5,Spell,,,,,Restore 4 HP to a Mundane creature. Draw 1 card.,Mundane,,yes
+Costco Hot Dog and Soda Comb for $1.5,Spell,N/A,N/A,N/A,,Restore 4 HP to an 'Ordinary' creature. Draw 1 card.,Mundane,,
 Genetic Collapse,Spell,,,,,"Destroy a ‘Mutant’ creature you control. Deal damage equal to its ATK, to any creature on the field.",Mutant,,yes
 Forced Evolution,Spell,,,,,"Choose a creature. It restores +2 HP, then mutates.",Mutant,,yes
 Host Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK and 3 HP permanently.,Parasite,,yes
 Infection Burst,Spell,N/A,N/A,N/A,,Infest a target creature with a 'Parasite' creature from your hand or Waste Repository.,Parasite,,yes
 And for my next trick...,Spell,N/A,N/A,N/A,,"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don't have any coins left. After stealing their coin, add this card to their deck and shuffel.",,,yes
 Crack a pack,Spell,N/A,N/A,N/A,,"Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository. ",,,yes
-Energy Drink,Spell,N/A,N/A,N/A,,Choose a creature you control: Restore half its max HP (rounded down).,,,
+Energy Drink,Spell,N/A,N/A,N/A,,Choose a creature you control: Restore half its max HP (rounded down). It gains +2 Speed until end of turn.,,,
 Jar of Materialism,Spell,N/A,N/A,N/A,,"Draw 1 card and then draw another card.
 
 Just different enough not to get sued...",,,
 Microwave,Spell,N/A,N/A,N/A,,Reheat a creature (not a fusion) from any Waste Repository and materialize it on your side of the field.,,,
-Pipebomb,Spell,N/A,N/A,N/A,,"Choose a Continuous Spell or Field Spell on the field and put a 'Pipebomb' on it. At the start of your next turn, the 'Pipebomb' explodes and destroys that card.",,,
+Pipebomb,Instant Spell,N/A,N/A,N/A,,"Choose one:
+- Negate a spell as your opponent plays it. It goes to their Waste Repository.
+- Destroy a Continuous Spell or Field Spell on the field.",,,
 Space Squid,Spell,N/A,N/A,N/A,,"Pay PHP equal to an enemy creature's flux cost (10 for a fusion): Take control of it until the start of your next turn. Move it to an empty lane on your side; if it was winded, it isn't any more. Then return it to its owner.
 
 You can't play this card if you have no empty lane.",,,
@@ -267,10 +307,11 @@ This creature has +1 ATK for each fusion splice under it.
 
 Whenever another creature dies: Gain 1 gold or 1 PHP. If it was a creature you controlled (not a fusion), you may put it under this creature as a fusion splice instead.
 ",Blood Demon / Goblin,Unholy / Greedy,
-Gabe,Creature,6,14,10,6,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Gabe,Creature,6,14,10,6,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
 
-Once per turn: Restore 2 HP to a creature you control.
-",Angel,Holy / Humanoid / Winged,
+When this creature Descends: Destroy the attacking creature if it has 6 HP or less.
+
+Once per turn: Restore 2 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
 Goblin Pit Boss,Creature,2+d10,10,7,3,"Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold.
 
 Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.
@@ -321,7 +362,7 @@ The warning lights are mostly decorative.",,,
 Blood Ledger,Continuous Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP to draw 1 card.",Blood Demon,,
 Boss's Orders,Spell,,,,,"Move a creature to an empty lane on its controller's side. Moving isn't arriving, so it can still attack this turn.",,,
 Melting Pot,Field Spell,,,,,Fusing doesn't need creatures that cost 5 or more flux: any creatures that meet a recipe can become fusion splices. (This affects both players.),,,
-Twisted Dimensions,Field Spell,,,,,"Speed is reversed: the slower creature strikes first. An attacker gets -1 Speed for its attack instead of +1, and ties still go to the attacker. (This affects both players.)",,,
+Twisted Dimensions,Field Spell,,,,,"Speed is reversed: the slower creature strikes first. An attacker gets -1 Speed for its attack instead of +1, and a tie is still a coin flip. (This affects both players.)",,,
 Shotgun Wedding,Spell,,,,,"Fuse a creature you control with a creature card from your hand, as if it were in the lane next to it. Pay the 2 flux and follow the recipe and the 5+ flux rule as normal. This is your fusion for the turn; the fusion takes your creature's lane.",,,
 Claw Machine,Field Spell,,,,,You can only materialize 'Fluffy' creatures while you control this card.,Plushy,,
 Arcade Kid,Creature,1,3,1,5,"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.
@@ -365,3 +406,55 @@ Mega Plush,Fusion,8,24,,2,"{any 2 'Fluffy' creatures}
 
 Your other 'Fluffy' creatures have +1 ATK for each fusion splice under this creature.
 If your Claw Machine would leave the field: You may banish a fusion splice from under this creature instead. ",Plushy,Fluffy / Heavy,
+Compsognathus,Creature,1,2,1,7,"Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost).
+
+When this creature dies: Put the top 2 cards of your deck into your Waste Repository.",Dino,Prehistoric / Beast,
+Dilophosaurus,Creature,3,5,4,5,"Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).
+
+When materialized: Deal 2 damage to the enemy creature in front of this creature.",Dino,Prehistoric / Beast,
+Pteranodon,Creature,4,7,6,7,"Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).
+
+When materialized from your Waste Repository: Return another 'Prehistoric' creature from your Waste Repository to your hand.",Dino,Prehistoric / Beast / Winged,
+Necrosaurus,Fusion,9,22,N/A,4,"{any Prehistoric creature + any Unholy creature}
+This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repository.",Dino / Blood Demon,Prehistoric / Unholy / Heavy,
+Nosy Neighbor,Creature,5,11,6,3,"When materialized: Put a Complaint on up to 2 enemy creatures.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
+Mall Cop Gary,Creature,7,16,9,2,"Enemy creatures with a Complaint can't attack.
+
+Once per turn: Put a Complaint on an enemy creature.
+
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
+Neighborhood Watch,Spell,N/A,N/A,N/A,,"This card stays in its spell zone for your opponent's next 2 turns, then goes to your Waste Repository. Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,
+Apprentice,Creature,1,3,1,5,Whenever you play a spell: This creature gains +1 ATK until end of turn.,Wizard,Arcane / Humanoid,
+Toad Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
+Mail-Order Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard 1 card.
+
+Certified (pending).",Wizard,Arcane / Humanoid,
+Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,
+Night School Professor,Creature,3,8,4,3,Once per turn: Banish 2 cards from your Waste Repository to return a spell from it to your hand.,Wizard,Arcane / Humanoid,
+Head Librarian,Creature,3,9,5,3,"The first time you play a spell each turn: You may draw 1 card.
+
+Shhh.",Wizard,Arcane / Humanoid,
+Battlemage,Creature,5,10,6,5,This creature has +1 ATK for each spell you've played this turn.,Wizard,Arcane / Humanoid,
+The Archmage,Creature,6,15,9,4,"The first one-shot spell (Spell or Instant Spell) you play each turn resolves twice.
+
+He learned it all from a 14 hour video essay.",Wizard,Arcane / Humanoid / Noble,
+Wizard Tower,Fusion,7,24,N/A,1,"{any 2 Arcane creatures}
+At the start of your turn: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
+Spellsword,Fusion,10,20,N/A,6,"{Battlemage + any Arcane creature}
+Whenever you play a spell: This creature gains +2 ATK until end of turn.",Wizard,Arcane / Humanoid,
+Abracadabra,Spell,N/A,N/A,N/A,,"Draw 2 cards, then discard 1 card.",Wizard,,
+Card Trick,Spell,N/A,N/A,N/A,,"Draw 1 card. Spellcount 3+: Draw 2 cards instead.
+
+(Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
+Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. Spellcount 3+: Deal 4 damage instead.
+
+(Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
+Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to an enemy creature or your opponent.,Wizard,,
+Déjà Vu,Spell,N/A,N/A,N/A,,"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it.",Wizard,,
+Frogify,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK, 1 HP and no effects. Then it turns back, with the HP it had.",Wizard,,
+Spellbook,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: If your Spellcount is 3 or more, you may draw 1 card.
+
+(Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
+Community College of Magic,Field Spell,N/A,N/A,N/A,,Whenever a player plays their 3rd spell in a turn: They may draw 1 card. (This affects both players.),Wizard,,

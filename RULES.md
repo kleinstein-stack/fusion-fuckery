@@ -1,9 +1,9 @@
-# Fusion Fuckery: Rulebook v4.6 (gameplay v2)
+# Fusion Fuckery: Rulebook v4.7 (gameplay v2)
 
 Decided on 2026-10-19. This replaces the Rulebook v2.1 (*The Blocking Update*) wherever the two disagree; everything
-v2.1 says that isn't covered here still applies. The Dino, Mutant, Parasite, Bleed and Equipment rules are only in
-v2.1, because those cards are in cold storage. The player-facing version with diagrams is
-`Fusion Fuckery Rulebook v4.6 (editable).docx` (opens in Google Docs) and `Fusion Fuckery Rulebook v4.6.pdf`. The card editor's checks and simulators use these numbers
+v2.1 says that isn't covered here still applies. The Mutant, Parasite, Bleed and Equipment rules are only in v2.1,
+because those cards are in cold storage (the Dinos and the Mundane cards came back in v4.7 with new rules, 14.5 and 14.6). The player-facing version with diagrams is
+`Fusion Fuckery Rulebook v4.7 (editable).docx` (opens in Google Docs) and `Fusion Fuckery Rulebook v4.7.pdf`. The card editor's checks and simulators use these numbers
 (`PLAY` in `tools/editor-template.html`, `R` in `tools/battle-sim.js`).
 
 **v4.3 (2026-10-21):** 40 starting PHP (was 30), a free redraw for an opening hand with 0 or 1 creatures, and creatures
@@ -41,6 +41,18 @@ Fluffy creatures (no discount, no slipping past blockers, no card draw), and Flu
 fusion splice for 6 damage and 2 to the creatures next to the target. **The Meat Cathedral** was too strong: 7/20
 (was 8/24), 3 HP or 3 PHP (was 4) and +1 ATK (was +2). Goblins and gold were confirmed balanced. The v4.5 cards, decks
 and rulebook are saved under the git tag `save-before-v4.6` and in `saves/versions/` ("SAVE before v4.6 rules").
+
+**v4.7 (2026-11-04): three factions and Descend.** **Dinos are back** (14.5): a Waste Repository deck built on
+**Fossil**, with **Stampede** on Triceratops, Brontosaurus and T-Rex (Dino Egg and Egg Incubator stay in cold storage).
+**Mundane is back** (14.6): Gregg and the neighbourhood bury the opponent in **Complaints**; Bunny, Cabbit and Bad Bunny
+Concert Tickets stay in cold storage, and Nosy Neighbor, Mall Cop Gary and Neighborhood Watch are new. **New faction:
+Wizards** (14.8), a spellslinger deck built on **Spellcount**. **Angels get Descend** (14.7): Purifier Nun, Sanctified
+Knight, Chapel Guard, Judicator Angel and Gabe can be materialized on the opponent's turn when an enemy attacks, and the
+attack hits them instead; Bellkeeper Monk and Sanctuary Bells make it cheaper. **Spell review:** Pipebomb is now an
+Instant that negates a spell as it's played or destroys a Continuous or Field Spell right away (10.7); Energy Drink also
+gives +2 Speed; Twisted Dimensions' text now says a tie is still a coin flip (the v4.6 rule). New starter decks:
+Jurassic Junkyard, Bone Yard, Red Tape and Night School. The v4.6 cards, decks and rulebook are saved under the git tag
+`save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
 
 ## 1. The Golden Rules
 
@@ -157,6 +169,9 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    the first player may respond to that, and so on. When both pass, the chain resolves **newest first**.
 6. Activated creature effects ("Once per turn: …") are only used in your Main Phases unless the card says
    otherwise. Triggered effects ("When…", "Whenever…", "At the end of…") happen whenever they trigger.
+7. **Negating a spell (Pipebomb, v4.7):** play it in response to a spell (a chain, 5). The negated spell does nothing
+   and goes to its owner's Waste Repository. It was still played, so it counts for Spellcount (14.8) and "whenever you
+   play a spell" effects.
 
 ## 11. Health, damage & destruction
 
@@ -295,6 +310,55 @@ you play them early.
   faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy; they search for the Claw
   Machine. Plush Catalogue searches for any card with "Plush" in its name, including more Plush Catalogues.
 
+### 14.5 Fossil & Stampede (Dinos, v4.7)
+- **Fossil X:** "you may materialize this creature from your Waste Repository by banishing X other cards from your Waste
+  Repository instead of paying its flux cost." It's a natural materialize: Main Phase 1, an empty lane, "when
+  materialized" triggers, and the creature has arrived (it can't attack this turn). It can't be combined with Blood
+  Price. The banished cards go to Oblivion, so every Fossil burns some of the fuel for the next one.
+- **"When materialized from your Waste Repository"** (Pteranodon, T-Rex) triggers on Fossil, Archaeologist, TT-rex and
+  Microwave alike.
+- **Milling:** "put the top cards of your deck into your Waste Repository" (Compsognathus, Archaeologist, Primordial Soup)
+  fills your Waste Repository on purpose. Milling an empty deck does nothing; drawing from one still costs 5 PHP.
+- **Stampede:** "when this creature destroys a creature in combat, the leftover damage hits your opponent." Leftover
+  = the hit minus the HP the creature had left. It works on hits back too, and a creature that survives (Chapel Guard,
+  Seraphim Wall) leaves nothing over.
+- In the battle sim Dino decks were too strong at first (the best pure-Dino build won 87% against the playtest decks);
+  trimming the bigger Dinos' stats brought the two starters to about 51% (Jurassic Junkyard) and 56% (Bone Yard).
+
+### 14.6 Complaints (Mundane, v4.7)
+- **Complaint:** a counter on a creature (use a coin or a die). Each one gives it **−2 ATK**, and while it has any its
+  **"once per turn" effects don't work**. Complaints stack. Card text: "(Complaint: the creature has -2 ATK for each
+  one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)"
+- **Fines:** in your Main Phase you may pay **3 flux** to remove one Complaint from a creature you control, as often as
+  you can pay. HOA President makes fines cost its opponent 1 more. Jonnhy '5 inches' pays out whenever you pay one.
+- Complaints stay when a creature changes sides (Space Squid) and go away when it leaves the field.
+- **Mall Cop Gary:** enemy creatures with a Complaint can't attack. **Neighborhood Watch** is a Spell that stays in its
+  spell zone for your opponent's next 2 turns (it isn't a Continuous Spell, so Pipebomb can't destroy it).
+- **Purrramid** {Cat + Cat} can be made from creatures of any flux cost, an exception to the 5+ flux rule (13).
+
+### 14.7 Descend (Angels, v4.7)
+- **Descend:** "when an enemy creature attacks, you may materialize this creature from your hand by paying its flux
+  cost; the attack hits this creature instead." Do it after the attack is declared and its "when this creature
+  attacks" effects resolve. Put it in any empty lane; the attacker fights it, whatever lane it's in, whether it was
+  attacking a creature or you directly.
+- You pay with the flux you have left. **Flux isn't refilled until your Reactor Phase**, so flux you don't spend on
+  your turn is there for a Descend on your opponent's turn.
+- It's a materialize: "when materialized" effects trigger. It arrived on your opponent's turn, so it can attack on
+  yours. It isn't winded, so it hits back as normal. "When this creature Descends" effects (Judicator Angel, Gabe)
+  happen before the fight.
+- Bellkeeper Monk and Sanctuary Bells each make your Descends cost 1 less flux. Fusions can't Descend.
+
+### 14.8 Spellcount (Wizards, v4.7)
+- **Spellcount:** the number of spells you've played this turn, including Instants on your opponent's turn. A spell
+  counts itself, so the third spell you play sees Spellcount 3. Track it with a die; it goes back to 0 at the end of
+  every turn. A negated spell still counts.
+- "Spellcount 3+: …" means the bonus applies when your Spellcount is 3 or more as the card resolves.
+- **One-shot spell:** a Spell or Instant Spell (not a Continuous or Field Spell). **The Archmage:** the first one-shot
+  spell you play each turn resolves twice (costs aren't paid again). **Déjà Vu** plays a one-shot spell from your Waste
+  Repository as if it were in your hand, then banishes it.
+- **Frogify:** the creature is a 1 ATK / 1 HP Frog with no effects until the end of your next turn. If it survives,
+  it turns back with the HP it had when it was frogified.
+
 ## 15. Advanced rules
 
 1. **Forgotten effects:** a forgotten optional effect ("may") is gone. A forgotten mandatory one is resolved if it's
@@ -328,12 +392,16 @@ you play them early.
 | Unfuse | the splices come back at full HP and split the fusion's damage, never below 1 HP |
 | Empty deck | lose 5 PHP for each draw you can't make |
 | Hand limit | 8 |
+| Complaint | −2 ATK each, no "once per turn" effects. Pay a 3 flux fine in your Main Phase to remove one |
+| Descend | On your opponent's turn, when an enemy attacks: materialize it from your hand with leftover flux; the attack hits it |
+| Spellcount | Spells you've played this turn, counting the one being played |
 
 ## Designer notes
 
 **Factions are internal.** Angel, Blood Demon and Goblin are names for designing the game and for the starter deck
 boxes; players never need them. Card text never names a faction: it names the attribute instead (**Holy** for
-Angels, **Unholy** for Blood Demons, **Greedy** for Goblins, **Fluffy** for Plushies). Rules terms: a fusion is made
+Angels, **Unholy** for Blood Demons, **Greedy** for Goblins, **Fluffy** for Plushies, **Prehistoric** for Dinos,
+**Ordinary** for Mundane, **Arcane** for Wizards). Rules terms: a fusion is made
 of **fusion splices**.
 
 **Plushies (v4.5)** are modelled on Yu-Gi-Oh!'s Toons: one Field Spell holds the whole deck up (the risk), searching
@@ -343,6 +411,16 @@ Claw Machine discount and evasion paid for the dependency until v4.6, when the p
 Waste Repository, so losing plushies feeds it. In the battle sim (4,000-game runs) Plushy decks won 46–50% and the
 Plushy starter deck 49–52% against random decks. First drafts were much weaker (22%): the plushies had lower stats than
 the originals and the creature in front hit them back when they slipped past.
+
+**v4.7 factions.** Archetypes the game didn't have yet, from Magic, Pokémon, Yu-Gi-Oh! and Weiß Schwarz: **Mundane** is
+Magic's taxes plus Pokémon's status conditions (Complaints), **Wizards** are Magic's spellslingers (free spells, so
+the payoffs count spells: Spell Slinger burns 1 per spell, Battlemage grows), and **Descend** is Magic's flash and Weiß
+Schwarz's backup, so Angels now decide every turn whether to spend their flux or hold it as a threat. In the battle sim
+the first drafts were weak (Mundane 21%, Wizards 28% against the six playtest decks): Mundane creatures got +1 ATK and
++2 HP and the fine went from 2 to 3 flux (52–54%); Spell Slinger went from "3 damage at Spellcount 3" to 1 damage to
+the opponent for every spell, and Big Fireball can hit the opponent (51–56%). Wizard draws are optional ("may") so the
+deck doesn't run itself out. Angels with Descend win about 61% (51% with the same deck and no Descend); Fallen Grace and
+Holy Hustle barely changed.
 
 **Stat budget.** points = ATK + HP ÷ 2 + (Speed − 4) ÷ 2 + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
 **28 for fusions**. Two 5-flux creatures are worth 22, so a fusion pays them back plus the fuse.

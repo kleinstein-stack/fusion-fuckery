@@ -1,4 +1,4 @@
-/* Fusion Fuckery battle simulator (Rulebook v4.5, gameplay v2).
+/* Fusion Fuckery battle simulator (Rulebook v4.7, gameplay v2).
    Plays whole games between two decks with a rule-of-thumb AI, so the editor's Battle sim tab can play thousands
    of them and show which cards and combinations win too often. No DOM in here: tools/build.ps1 inlines this file
    into the editor, which runs it on the page (to watch one game) and in Web Workers (for big runs).
@@ -9,6 +9,7 @@ var BattleSim = (function () {
 "use strict";
 
 const R = { speedNormal: 4, speedScale: 0.5, coinTie: true,   // v4.6: Speed 1-8 and a coin flip on a speed tie
+  descend: true, fine: 3, complaintAtk: 2,   // v4.7: Descend (Angels) and the 2 flux fine that removes a Complaint (Mundane)
   php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
   handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
   early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
@@ -55,7 +56,7 @@ const units = p => p.lanes.filter(Boolean);
 const foe = (g, p) => g.p[1 - p.i];
 const allUnits = g => units(g.p[0]).concat(units(g.p[1]));
 const onField = (g, u) => !!u && g.p[u.ctrl].lanes[u.lane] === u;
-const fxOf = u => u.negated ? null : u.d.fx;
+const fxOf = u => u.negated || u.frog ? null : u.d.fx;
 const emptyLanes = p => [0, 1, 2].filter(l => !p.lanes[l]);
 const hasAttr = (d, a) => d.attrs.includes(a);
 const spellsOf = p => p.field ? p.zones.concat([p.field]) : p.zones;
@@ -94,7 +95,8 @@ function rollCount(g, u) {
   return Math.max(advantage(g, u) ? 2 : 1, f && f.rollPerSplice ? spliceCount(u) : 1);
 }
 function atkOf(g, u) {   // ATK without the die
-  let a = u.atk + u.pAtk + u.tAtk + u.radAtk;
+  if (u.frog) return 1;   // Frogify (v4.7)
+  let a = u.atk + u.pAtk + u.tAtk + u.radAtk - R.complaintAtk * (u.complaints || 0);   // a Complaint (v4.7): -2 ATK each
   const p = g.p[u.ctrl];
   for (const k of units(p)) { const f = fxOf(k); if (f && f.aura) a += f.aura(g, k, u); }
   for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.aura) a += f.aura(g, p, u); }
@@ -305,6 +307,45 @@ function banishUnit(g, u) {
   u.c.under = null; g.p[u.c.owner].oblivion.push(u.c); wasteAll(g, u.splices);
   L(g, `  ${u.d.name} is banished.`);
 }
+// Dinos (v4.6): "Fossil X" brings a creature back from your Waste Repository by banishing X other cards there instead of
+// paying flux; milling puts the top cards of a deck into its owner's Waste Repository.
+const fossilOf = d => { const m = String(d.text || "").match(/Fossil (\d+) \(/); return m ? +m[1] : null; };
+const prehistoric = c => isUnitKind(c.d.kind) && hasAttr(c.d, "prehistoric");
+function mill(g, p, n) {
+  n = Math.min(n, p.deck.length); if (!n) return;
+  for (let k = 0; k < n; k++) toWaste(g, p.deck.pop());
+  L(g, `  ${who(g, p)} puts the top ${n} card${n > 1 ? "s" : ""} of the deck into the Waste Repository.`);
+}
+function fossilFuel(p, keep, x) {   // what the AI banishes first: spells, then creatures that can't come back, then other Fossils
+  const rank = c => isUnitKind(c.d.kind) ? (fossilOf(c.d) != null ? 3 + defValue(c.d) / 20 : 1 + defValue(c.d) / 40) : 0;
+  return p.waste.filter(c => c !== keep && !p.lazarus.includes(c)).sort((a, b) => rank(a) - rank(b)).slice(0, x);
+}
+function fossilRaise(g, p, c, x) {   // banish x other Waste Repository cards (0 = free) and materialize c from there
+  const lane = emptyLanes(p).length ? chooseLane(g, p, c.d) : null; if (lane == null) return null;
+  const fuel = fossilFuel(p, c, x); if (fuel.length < x) return null;
+  banishFromWaste(g, p, fuel);
+  const i = p.waste.indexOf(c); if (i < 0) return null;
+  p.waste.splice(i, 1);
+  if (x) L(g, `  ${who(g, p)} banishes ${x} card${x > 1 ? "s" : ""} from the Waste Repository (Fossil ${x}).`);
+  return materialize(g, p, c, lane, "fossil");
+}
+function bestFossil(g, p, free) {   // the Prehistoric creature in p's Waste Repository most worth bringing back
+  let best = null;
+  for (const c of p.waste) {
+    const x = free ? 0 : fossilOf(c.d); if (x == null || !prehistoric(c) || p.lazarus.includes(c)) continue;
+    const fuel = fossilFuel(p, c, x); if (fuel.length < x) continue;
+    const loss = fuel.reduce((s, f) => s + (fossilOf(f.d) != null ? 2 : isUnitKind(f.d.kind) ? 0.6 : 0.3), 0);
+    const s = defValue(c.d) * 0.8 - loss;
+    if (!best || s > best.s) best = { c, x, s };
+  }
+  return best;
+}
+function fossilOption(g, p) {
+  if (g.phase !== 1 || !emptyLanes(p).length) return null;
+  const b = bestFossil(g, p, false);
+  return b && b.s > 1 ? { pri: 2, score: b.s, run: () => fossilRaise(g, p, b.c, b.x) } : null;
+}
+const ankyOf = (g, u) => { const f = fxOf(u); return f && f.reduceFirst && u.ankyTurn !== g.turnNo ? f.reduceFirst : 0; };
 function banishFromWaste(g, p, list) { for (const c of list) { const i = p.waste.indexOf(c); if (i >= 0) { p.waste.splice(i, 1); p.oblivion.push(c); } } }
 function sacrifice(g, p, u) {
   if (!onField(g, u)) return;
@@ -325,8 +366,9 @@ function materialize(g, p, c, lane, how) {
   p.lanes[lane] = u;
   if (c.owner === p.i && how !== "lazarus") p.st.played.add(c.d.ix);
   if (!p.st.firstCre) p.st.firstCre = p.turns;
-  L(g, `${who(g, p)} ${how === "hand" ? "plays" : how === "lazarus" ? "brings back" : "materializes"} ${c.d.name} (${LANE[lane]} lane)${how === "lazarus" ? " at half stats" : ""}.`);
+  L(g, `${who(g, p)} ${how === "hand" ? "plays" : how === "lazarus" ? "brings back" : how === "fossil" ? "digs up" : how === "descend" ? "descends with" : "materializes"} ${c.d.name} (${LANE[lane]} lane)${how === "lazarus" ? " at half stats" : how === "fossil" || how === "waste" ? " from the Waste Repository" : ""}.`);
   const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
+  if (f && f.onRaise && (how === "fossil" || how === "waste") && onField(g, u)) f.onRaise(g, u);
   return u;
 }
 function cast(g, p, c, effect) {   // a one-shot Spell or Instant: it uses a spell zone while it resolves
@@ -334,7 +376,10 @@ function cast(g, p, c, effect) {   // a one-shot Spell or Instant: it uses a spe
   p.hand.splice(i, 1);
   if (c.owner === p.i) p.st.played.add(c.d.ix);
   L(g, `${who(g, p)} casts ${c.d.name}.`);
+  spellPlayed(g, p, c);
+  if (g.over || countered(g, p, c)) { toWaste(g, c); return; }
   effect();
+  if (!g.over && archmageTwice(g, p)) { L(g, `  The Archmage: ${c.d.name} resolves again.`); effect(); }
   toWaste(g, c);
 }
 function putInPlay(g, p, c) {   // Continuous or Field Spell
@@ -342,6 +387,8 @@ function putInPlay(g, p, c) {   // Continuous or Field Spell
   p.hand.splice(i, 1);
   if (c.owner === p.i) p.st.played.add(c.d.ix);
   L(g, `${who(g, p)} puts ${c.d.name} into play.`);
+  spellPlayed(g, p, c);
+  if (g.over || countered(g, p, c)) { toWaste(g, c); return; }
   if (c.d.kind === "field") { if (p.field) toWaste(g, p.field.c); p.field = { c }; } else p.zones.push({ c });
   clawCheck(g);   // replacing a Claw Machine destroys your plushies
 }
@@ -382,9 +429,9 @@ function fuse(g, p, a, b, fc, pay) {
   const fromHand = !!b.card;
   if (!onField(g, a) || (!fromHand && !onField(g, b)) || p.fused || p.fdeck.indexOf(fc) < 0) return;
   if (fromHand && p.hand.indexOf(b.card) < 0) return;
-  if (pay.wedding) { const i = p.hand.indexOf(pay.wedding); if (i < 0) return; p.hand.splice(i, 1); if (pay.wedding.owner === p.i) p.st.played.add(pay.wedding.d.ix); L(g, `${who(g, p)} casts ${pay.wedding.d.name}.`); toWaste(g, pay.wedding); }
+  if (pay.wedding) { const i = p.hand.indexOf(pay.wedding); if (i < 0) return; p.hand.splice(i, 1); if (pay.wedding.owner === p.i) p.st.played.add(pay.wedding.d.ix); L(g, `${who(g, p)} casts ${pay.wedding.d.name}.`); toWaste(g, pay.wedding); spellPlayed(g, p, pay.wedding); }
   if (pay.kind === "flux") p.flux -= R.fuseFlux;
-  else if (pay.kind === "estate") { const i = p.hand.indexOf(pay.card); if (i < 0) return; p.hand.splice(i, 1); if (pay.card.owner === p.i) p.st.played.add(pay.card.d.ix); L(g, `${who(g, p)} casts ${pay.card.d.name}.`); toWaste(g, pay.card); }
+  else if (pay.kind === "estate") { const i = p.hand.indexOf(pay.card); if (i < 0) return; p.hand.splice(i, 1); if (pay.card.owner === p.i) p.st.played.add(pay.card.d.ix); L(g, `${who(g, p)} casts ${pay.card.d.name}.`); toWaste(g, pay.card); spellPlayed(g, p, pay.card); }
   else if (pay.kind === "altar") { sacrifice(g, p, pay.victim); if (g.over || !onField(g, a) || (!fromHand && !onField(g, b))) return; }
   if (pay.pit) { const c = wasteUnholy(p)[0]; if (c) banishFromWaste(g, p, [c]); p.once.add("Ritual Pit"); }
   const parts = fromHand ? [a] : [a, b];
@@ -434,7 +481,7 @@ function unfuse(g, by, u) {
 }
 function steal(g, p, u, until) {   // Space Squid: until the end of this turn, or (v4.6) the start of your next turn
   const o = g.p[u.ctrl], free = emptyLanes(p);
-  if (!free.length || !onField(g, u)) return;
+  if (!free.length || !onField(g, u) || u.ctrl === p.i) return;
   const lane = free.includes(u.lane) ? u.lane : free[0];
   o.lanes[u.lane] = null;
   u.stolen = { home: u.lane, until: until || "end" }; u.ctrl = p.i; u.lane = lane; u.attacked = false; u.winded = false;
@@ -454,6 +501,7 @@ function giveBack(g, u) {
 function guardOf(g, u) {   // Sanctified Knight: 1 less combat damage for creatures next to it
   let n = 0; const p = g.p[u.ctrl];
   for (const l of NB[u.lane]) { const k = p.lanes[l], f = k && fxOf(k); if (f && f.guardNeighbors) n += f.guardNeighbors; }
+  if (hasAttr(u.d, "ordinary")) for (const k of units(p)) { const f = k !== u && fxOf(k); if (f && f.guardOrdinary) n += f.guardOrdinary; }   // Gregg's Dawg
   return n;
 }
 function useLoadedDice(g, q) {
@@ -485,10 +533,16 @@ function rollDie(g, u, noReroll) {
 }
 function hitUnit(g, src, tgt, n, ctx, rolled) {
   n = ctx.shelter === tgt ? 0 : Math.max(0, n - guardOf(g, tgt));
+  if (ctx.tax && ctx.tax.u === tgt && n > 0) { const pr = Math.min(n, ctx.tax.left); n -= pr; ctx.tax.left -= pr; }   // Tax Evasion
+  const anky = n > 0 ? ankyOf(g, tgt) : 0; if (anky) { n = Math.max(0, n - anky); tgt.ankyTurn = g.turnNo; }   // Ankylosaurus
   L(g, `  ${src.d.name} hits ${tgt.d.name} for ${n}${rolled ? ` (rolled ${rolled})` : ""}${ctx.shelter === tgt ? " (Divine Shelter)" : ""}.`);
   if (n <= 0) return 0;
+  const before = tgt.hp, foeP = g.p[tgt.ctrl];
   const dealt = damage(g, tgt, n, { src, combat: true });
   const f = fxOf(src); if (f && f.onCombatDamage) f.onCombatDamage(g, src, dealt);
+  if (n > before && !onField(g, tgt) && !g.over && says(src.d, /Stampede \(/) && (ctx.attack || !says(src.d, /Stampede \(when this creature attacks/i))) {   // Stampede: the leftover hits the player
+    L(g, `  Stampede: ${n - Math.max(0, before)} damage carries through to ${who(g, foeP)}.`); losePHP(g, foeP, n - Math.max(0, before), { combat: true });
+  }
   return dealt;
 }
 function strike(g, src, tgt, ctx) {
@@ -502,7 +556,7 @@ function strike(g, src, tgt, ctx) {
   if (orc && nat === 20) for (const l of NB[lane]) { const t2 = side.lanes[l]; if (t2) hitUnit(g, src, t2, n, ctx, 0); }
   return dealt;
 }
-function expHit(g, src, tgt) { return Math.max(0, expAtk(g, src) - guardOf(g, tgt)); }
+function expHit(g, src, tgt) { return Math.max(0, expAtk(g, src) - guardOf(g, tgt) - ankyOf(g, tgt)); }
 function survives(u, hp) { const f = fxOf(u); return hp > 0 || !!(f && f.survive && !u.chapel); }
 const canHitBack = u => !(R.winded && u.winded);
 // Winded: after attacking, u can't hit back on the other player's next turn, so the creatures that can reach it hit it for free
@@ -573,7 +627,7 @@ function scoreFace(g, att) {
 }
 function bestAttack(g, u) {   // AI: the best score u can get from one attack this turn
   const o = foe(g, g.p[u.ctrl]); let best = -Infinity;
-  if (R.sick && u.arrived === g.turnNo) return best;   // it can't attack yet
+  if ((R.sick && u.arrived === g.turnNo) || lockedOut(g, u)) return best;   // it can't attack (yet)
   for (const l of [u.lane].concat(NB[u.lane])) if (o.lanes[l]) best = Math.max(best, scoreFight(g, u, o.lanes[l]));
   if (canFace(g, u)) best = Math.max(best, scoreFace(g, u));
   return best;
@@ -589,23 +643,31 @@ function fight(g, att, def, intercepted) {
   att.attacked = true; if (R.winded) att.winded = true;
   if (!intercepted) {
     L(g, `${att.d.name} attacks ${def.d.name}.`);
+    watchToll(g, att); if (g.over) return;
     const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, def);
     if (g.over || !onField(g, att) || !onField(g, def)) return;
+    const dsc = descendResponse(g, o, att, def);
+    if (dsc) { if (g.over || !onField(g, att)) return; def = dsc; }
   }
-  const ctx = { shelter: null };
+  const ctx = { shelter: null, tax: null };
   shelterResponse(g, o, att, def, ctx);
+  taxResponse(g, o, att, def, ctx);
+  if (g.over || !onField(g, att) || !onField(g, def)) return;
   const back = canHitBack(def);
   if (!back) L(g, `  ${def.d.name} is winded and can't hit back.`);
   const first = !back || attFirst(g, att, def, true), a = first ? att : def, b = first ? def : att;
-  strike(g, a, b, { shelter: ctx.shelter, attack: a === att });
-  if (onField(g, a) && onField(g, b) && (b === att || back)) strike(g, b, a, { shelter: ctx.shelter, attack: b === att });
+  strike(g, a, b, { shelter: ctx.shelter, tax: ctx.tax, attack: a === att });
+  if (onField(g, a) && onField(g, b) && (b === att || back)) strike(g, b, a, { shelter: ctx.shelter, tax: ctx.tax, attack: b === att });
 }
 function directAttack(g, att) {
   const p = g.p[att.ctrl], o = foe(g, p);
   att.attacked = true; if (R.winded) att.winded = true;
   L(g, `${att.d.name} attacks ${who(g, o)} directly.`);
+  watchToll(g, att); if (g.over) return;
   const f = fxOf(att); if (f && f.onAttack) f.onAttack(g, att, null);
   if (g.over || !onField(g, att)) return;
+  const dsc = descendResponse(g, o, att, null);
+  if (dsc) { if (g.over || !onField(g, att)) return; return fight(g, att, dsc, true); }
   const blocker = interceptChoice(g, att, true);
   if (blocker) { L(g, `  ${blocker.d.name} steps in front of it.`); return fight(g, att, blocker, true); }
   const { backs, late } = hitBacks(g, att), early = new Set(backs.filter(e => !attFirst(g, att, e, true)));
@@ -623,6 +685,152 @@ function directAttack(g, att) {
   }
   for (const e of backs) if (!early.has(e) && onField(g, att) && onField(g, e)) strike(g, e, att, {});
   for (const e of late) if (onField(g, att) && onField(g, e)) { L(g, `  ${e.d.name} is winded, so it hits back last.`); strike(g, e, att, {}); }
+}
+
+
+/* ---------------- v4.7: Complaints, Descend, Spellcount ---------------- */
+// Mundane: a Complaint gives -2 ATK (atkOf) and stops "once per turn" effects (mainPhase). Its controller may pay a fine
+// (3 flux, +1 for each HOA President the other player controls) in their Main Phase to remove one.
+function complain(g, u, n) {
+  if (!onField(g, u)) return;
+  u.complaints = (u.complaints || 0) + (n || 1);
+  L(g, `  ${u.d.name} gets a Complaint (${u.complaints}).`);
+}
+const copLock = (g, q) => units(q).some(k => { const f = fxOf(k); return f && f.copLock; });   // Mall Cop Gary
+const lockedOut = (g, u) => !!u.complaints && copLock(g, foe(g, g.p[u.ctrl]));
+function fineCost(g, p) { let n = R.fine; for (const k of units(foe(g, p))) { const f = fxOf(k); if (f && f.fineUp) n += 1; } return n; }
+function complaintWorth(g, p, u) {   // what one more Complaint on the enemy u is worth to p
+  if (!onField(g, u) || u.ctrl === p.i) return -1;
+  const f = fxOf(u);
+  let s = Math.min(2, atkOf(g, u)) * 0.6 * (u.complaints ? 0.8 : 1) + 0.2;
+  if (!u.complaints && f && f.acts) s += 1.5;
+  if (!u.complaints && copLock(g, p)) s += expAtk(g, u) * 0.4;
+  return s;
+}
+function bestComplaint(g, p, skip) {
+  let best = null;
+  for (const u of units(foe(g, p))) { if (skip && skip.includes(u)) continue; const s = complaintWorth(g, p, u); if (!best || s > best.s) best = { u, s }; }
+  return best;
+}
+function payFine(g, p, u, cost) {
+  if (!onField(g, u) || !u.complaints || p.flux < cost) return;
+  p.flux -= cost; u.complaints--;
+  L(g, `${who(g, p)} pays a ${cost} flux fine: ${u.d.name} loses a Complaint (${u.complaints} left).`);
+  for (const k of units(foe(g, p))) { const f = fxOf(k); if (f && f.onFine) f.onFine(g, k); }
+}
+function fineOption(g, p) {   // AI: pay a fine when the creature is worth more than what the flux would do this turn
+  const cost = fineCost(g, p); if (p.flux < cost) return null;
+  let best = null;
+  for (const u of units(p)) {
+    if (!u.complaints || u.stolen) continue;
+    const look = () => valueOf(g, u) + (g.phase === 1 ? Math.max(0, bestAttack(g, u)) : 0);
+    const before = look(); u.complaints--; const after = look() + (!u.complaints && fxOf(u) && fxOf(u).acts ? 1.5 : 0); u.complaints++;
+    if (!best || after - before > best.s) best = { u, s: after - before };
+  }
+  if (!best) return null;
+  let spend = 0;
+  if (g.phase === 1) { const b0 = bestPlan(g, p).score; p.flux -= cost; spend = b0 - bestPlan(g, p).score; p.flux += cost; }
+  spend += descendHold(g, p, cost);
+  const s = best.s - spend - 0.3;
+  return s > 0.4 ? { pri: 1, score: s, run: () => payFine(g, p, best.u, cost) } : null;
+}
+function watchToll(g, att) {   // Neighborhood Watch: an attacker with a Complaint costs its controller 2 PHP
+  if (!att.complaints) return;
+  const p = g.p[att.ctrl], n = foe(g, p).zones.filter(z => z.watch).length; if (!n) return;
+  L(g, `  Neighborhood Watch: ${who(g, p)} loses ${2 * n} PHP.`); losePHP(g, p, 2 * n);
+}
+function taxResponse(g, o, att, def, ctx) {   // Tax Evasion: up to 5 less combat damage to an Ordinary creature, a Complaint on the attacker
+  if (!hasAttr(def.d, "ordinary") || ctx.shelter === def) return;
+  const c = o.hand.find(x => x.d.fx && x.d.fx.tax); if (!c || !freeZone(o)) return;
+  const r = previewFight(g, att, def), v = valueOf(g, def);
+  if ((r.dDies && v >= 4) || r.dLoss >= 4) cast(g, o, c, () => { ctx.tax = { u: def, left: num(c.d, /prevent up to (\d+)/i, 5) }; complain(g, att); });
+}
+const anyCost = d => says(d, /made from creatures of any flux cost/i);
+// Angels: Descend. When an enemy creature attacks, materialize a Descend creature from your hand with the flux you have
+// left (it isn't refilled until your Reactor Phase); the attack hits it instead.
+const descendOf = c => c.d.kind === "creature" && says(c.d, /Descend \(/);
+function descDisc(g, p) {
+  let n = 0;
+  for (const u of units(p)) { const f = fxOf(u); if (f && f.descDisc) n += num(u.d, /Descends cost (\d+) less flux/i, 1); }
+  for (const z of spellsOf(p)) if (says(z.c.d, /Descends cost (\d+) less flux/i)) n += num(z.c.d, /Descends cost (\d+) less flux/i, 1);
+  return n;
+}
+const descendCost = (g, p, c) => Math.max(0, (c.d.flux || 0) - descDisc(g, p));
+function descendHold(g, p, spend) {   // on your own turn: the flux you'd want left for a Descend
+  if (!R.descend) return 0;
+  const costs = p.hand.filter(descendOf).map(c => descendCost(g, p, c)); if (!costs.length) return 0;
+  const m = Math.min(...costs);
+  return p.flux >= m && p.flux - spend < m ? 1.5 : 0;
+}
+function fightWorth(g, o, att, x, xWorth) {   // the fight att vs o's x, for o
+  const r = previewFight(g, att, x);
+  return (r.aDies ? killWorth(g, o, att) : (r.aLoss / Math.max(1, att.maxHp)) * valueOf(g, att) * 0.6)
+    - (r.dDies ? xWorth : (r.dLoss / Math.max(1, x.maxHp)) * xWorth * 0.5);
+}
+function descendResponse(g, o, att, target) {
+  if (!R.descend || g.active === o.i || !emptyLanes(o).length) return null;
+  const face = expAtk(g, att);
+  const was = target ? fightWorth(g, o, att, target, keepWorth(g, target)) : -face * phpW(g, o) * (face >= o.php ? 100 : 1);
+  let best = null;
+  for (const c of o.hand) {
+    if (!descendOf(c) || (fluffy(c) && !hasClaw(o))) continue;
+    const cost = descendCost(g, o, c); if (cost > o.flux) continue;
+    const lane = chooseLane(g, o, c.d), v = makeUnit(g, o, c, lane, false), vw = defValue(c.d);
+    const kill = num(c.d, /destroy the attacking creature if it has (\d+) HP or less/i, 0), minus = num(c.d, /attacking creature gets -(\d+) ATK/i, 0);
+    let s;
+    if (kill && att.hp <= kill) s = killWorth(g, o, att) + 1;
+    else { att.tAtk -= minus; s = fightWorth(g, o, att, v, vw); att.tAtk += minus; }
+    s -= was;
+    if (!best || s > best.s) best = { c, cost, lane, s };
+  }
+  if (!best || best.s + jitter(g, o) <= 0.6) return null;
+  o.flux -= best.cost; o.hand.splice(o.hand.indexOf(best.c), 1);
+  const u = materialize(g, o, best.c, best.lane, "descend"); if (!u) return null;
+  L(g, `  ${u.d.name} descends in front of ${att.d.name} (${best.cost} flux).`);
+  const f = fxOf(u); if (f && f.onDescend) f.onDescend(g, u, att);
+  return onField(g, u) ? u : null;
+}
+// Wizards: Spellcount = the spells a player has played this turn (a spell counts itself). Pipebomb negates a spell as it's
+// played; The Archmage makes the first one-shot spell each turn resolve twice.
+function spellPlayed(g, p, c) {
+  p.sc = (p.sc || 0) + 1;
+  if (g.log && p.sc >= 2) L(g, `  (Spellcount ${p.sc})`);
+  for (const u of units(p)) { const f = fxOf(u); if (f && f.onSpell) f.onSpell(g, u, c); if (g.over) return; }
+  if (p.sc === 3 && drawOk(p, 1)) for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.college) { L(g, `  Community College of Magic: ${who(g, p)} draws a card.`); draw(g, p, 1); }
+}
+const drawOk = (p, n) => p.deck.length >= n + 6;   // the AI stops drawing extra cards before its deck runs out
+function countered(g, p, c) {
+  if (g.countering) return false;
+  const o = foe(g, p), pb = o.hand.find(x => x.d.fx && x.d.fx.pipebomb && says(x.d, /negate a spell/i));
+  if (!pb || !freeZone(o)) return false;
+  const worth = (g.pendingWorth != null ? g.pendingWorth : 2) + jitter(g, o);
+  if (worth < 4) return false;
+  g.countering = true; cast(g, o, pb, () => {}); g.countering = false;
+  L(g, `  Pipebomb: ${c.d.name} is negated.`);
+  return true;
+}
+function archmageTwice(g, p) {
+  if (p.once.has("The Archmage:twice") || !units(p).some(u => { const f = fxOf(u); return f && f.twice; })) return false;
+  p.once.add("The Archmage:twice"); return true;
+}
+const oneShot = c => !isUnitKind(c.d.kind) && !!(c.d.fx && c.d.fx.play);
+function spellBack(g, p, filter) {   // the best spell in p's Waste Repository back to the hand
+  const list = p.waste.filter(c => !isUnitKind(c.d.kind) && c.d.fx && (!filter || filter(c)) && !p.lazarus.includes(c));
+  if (!list.length) return null;
+  const c = list.sort((a, b) => (b.d.factions.length ? 1 : 0) - (a.d.factions.length ? 1 : 0) || holdWorth(b) - holdWorth(a))[0];
+  p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  ${c.d.name} goes back to ${who(g, p)}'s hand.`);
+  return c;
+}
+function discardWorst(g, p) {
+  if (!p.hand.length) return null;
+  const c = p.hand.slice().sort((a, b) => keepValue(g, p, a) - keepValue(g, p, b))[0];
+  p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c); L(g, `  ${who(g, p)} discards ${c.d.name}.`);
+  return c;
+}
+function frogify(g, u, until) {
+  if (!onField(g, u) || u.frog) return;
+  u.frog = { until, hp: u.hp, maxHp: u.maxHp, die: u.die }; u.hp = 1; u.maxHp = 1; u.die = 0;
+  L(g, `  ${u.d.name} is a Frog (1 ATK, 1 HP, no effects) until the end of the next turn.`);
 }
 
 /* ---------------- card effects ---------------- */
@@ -676,7 +884,7 @@ function chooseLane(g, p, d) {
   let best = free[0], bs = -Infinity;
   for (const l of free) {
     let s = 0;
-    if (d.flux >= R.fuseMin || pitOk(d) || fieldFx(g, "pot")) for (const nl of NB[l]) {
+    if (d.flux >= R.fuseMin || pitOk(d) || fieldFx(g, "pot") || p.fdeck.some(fc => anyCost(fc.d))) for (const nl of NB[l]) {
       const nu = p.lanes[nl];
       if (nu && (nu.d.kind === "creature" || R.fuseFusions) && p.fdeck.some(fc => recipeFits(fc.d.recipe, [d, nu.d]))) s += 4;
     }
@@ -694,7 +902,8 @@ const FX = {
   "Cherub": { value: 1, onPlay(g, u) { const p = g.p[u.ctrl], t = bestHeal(g, p, 2, u); if (t && t.s > 0) restoreHP(g, p, t.u, 2); } },
   "Acolyte Adam": { value: 2, acts: [healAct(2, false)] },
   "Sanctified Knight": { value: 2, guardNeighbors: 1 },
-  "Judicator Angel": { value: 2, onAttack(g, u) { const p = g.p[u.ctrl]; NB[u.lane].forEach(l => { if (p.lanes[l]) restoreHP(g, p, p.lanes[l], 2); }); } },
+  "Judicator Angel": { value: 2, onAttack(g, u) { if (!says(u.d, /when this creature attacks: restore/i)) return; const p = g.p[u.ctrl]; NB[u.lane].forEach(l => { if (p.lanes[l]) restoreHP(g, p, p.lanes[l], 2); }); },
+    onDescend(g, u, att) { const n = num(u.d, /attacking creature gets -(\d+) ATK/i, 0); if (n) { att.tAtk -= n; L(g, `  ${att.d.name} gets -${n} ATK until end of turn.`); } } },
   "Chapel Guard": { value: 3, survive: true },
   "Purifier Nun": { value: 2, onPlay(g, u) {
     const p = g.p[u.ctrl], others = says(u.d, /restore \d+ HP to another creature/i); let best = null;
@@ -706,11 +915,14 @@ const FX = {
     if (!best || best.s <= 0) return;
     if (hasAttr(best.t.d, "unholy")) { L(g, `  Purifier Nun deals 3 damage to ${best.t.d.name}.`); damage(g, best.t, 3, {}); } else restoreHP(g, p, best.t, 3);
   } },
-  "Bellkeeper Monk": { value: 3, startTurn(g, u) {
-    const p = g.p[u.ctrl], n = g.p.some(q => q.field && q.field.c.d.fx && q.field.c.d.fx.bells) ? 2 : 1;
+  "Bellkeeper Monk": { value: 3, descDisc: true, startTurn(g, u) {
+    const p = g.p[u.ctrl], n = says(u.d, /2 HP while 'Sanctuary Bells'/i) && g.p.some(q => q.field && q.field.c.d.fx && q.field.c.d.fx.bells) ? 2 : 1;
     units(p).forEach(t => restoreHP(g, p, t, n));
   } },
-  "Gabe": { value: 2, acts: [healAct(2, true)] },
+  "Gabe": { value: 2, acts: [healAct(2, true)], onDescend(g, u, att) {
+    const n = num(u.d, /destroy the attacking creature if it has (\d+) HP or less/i, 0);
+    if (n && att.hp <= n && onField(g, att)) { L(g, `  Gabe destroys ${att.d.name}.`); kill(g, att, {}); }
+  } },
   "Beelzechud": { value: 1, onLosePHP(g, u) { u.tAtk += 1; } },
   "Carrion The Dark Duchess": { value: 3, endTurn(g, u) {
     const p = g.p[u.ctrl], cost = num(u.d, /pay (\d+) PHP to return/i, 2), maxHp = num(u.d, /with (\d+) or less max HP/i, 5);
@@ -894,7 +1106,7 @@ const SPELLS = {
   "Bull Run": { perm: true, goldBonus: true, wantsGold5: true, score: () => 2.5,
     aura: (g, p, u) => hasAttr(u.d, "greedy") && p.gold >= num(spellsOf(p).find(z => z.c.d.fx && z.c.d.fx.goldBonus).c.d, /while you have (\d+) or more gold/i, 5) ? 1 : 0 },
   "Goblin Bank": { perm: true, startTurn(g, p) { if (p.gold < 5) gainGold(g, p, 1); }, score: () => 2.5 },
-  "Sanctuary Bells": { perm: true, bells: true, score: () => 2.5,   // follows its text, old and new wordings
+  "Sanctuary Bells": { perm: true, bells: true, score: (g, p) => 2.5 + (p.hand.some(descendOf) ? 0.5 : 0),   // follows its text, old and new wordings
     startTurn(g, p, z) { if (says(z.c.d, /start of your turn: restore 1 HP to each of your 'Holy'/i)) units(p).forEach(u => { if (hasAttr(u.d, "holy")) restoreHP(g, p, u, 1); }); },
     endEachTurn(g, q) {
       const d = q.field.c.d;
@@ -914,13 +1126,14 @@ const SPELLS = {
   "It's Free Fuse-Estate": { estate: true, needs: x => x.fusions > 0 },
   "Jar of Materialism": { play(g, p, c) {
     const cost = num(c.d, /pay (\d+) PHP/i, 0), n = num(c.d, /draw (\d+) cards/i, 2);
-    if (p.deck.length < n || (cost && !canPay(p, cost))) return null;
+    if (!drawOk(p, n) || (cost && !canPay(p, cost))) return null;
     const s = 2.5 * n - cost * phpW(g, p);
     return s > 0.4 ? { pri: 0, score: s, run: () => cast(g, p, c, () => { if (cost) payPHP(g, p, cost); if (!g.over) draw(g, p, n); }) } : null;
   } },
   "Energy Drink": { play(g, p, c) {
     const t = bestHeal(g, p, u => Math.floor(u.maxHp / 2));
-    return t && t.s > 1.2 ? { pri: 3, score: t.s - 0.8, run: () => cast(g, p, c, () => restoreHP(g, p, t.u, t.n)) } : null;
+    const sp = num(c.d, /\+(\d+) Speed/i, 0);
+    return t && t.s > 1.2 ? { pri: 3, score: t.s - 0.8 + sp * 0.15, run: () => cast(g, p, c, () => { restoreHP(g, p, t.u, t.n); if (sp && onField(g, t.u)) t.u.tSpd += sp; }) } : null;
   } },
   "Open Vein": { play(g, p, c) {
     if (!canPay(p, 3)) return null;
@@ -1005,14 +1218,18 @@ const SPELLS = {
     const handBest = g.phase === 1 ? Math.max(0, ...p.hand.filter(x => x.d.kind === "creature" && (x.d.flux - (x.d.bp || 0)) <= p.flux).map(x => defValue(x.d))) : 0;
     return { pri: best.v >= Math.max(7, handBest) ? 1 : 3, score: best.v - 2, run: () => cast(g, p, c, () => {
       const i = best.q.waste.indexOf(best.x); if (i < 0 || !emptyLanes(p).length) return;
-      best.q.waste.splice(i, 1); materialize(g, p, best.x, chooseLane(g, p, best.x.d), "effect");
+      best.q.waste.splice(i, 1); materialize(g, p, best.x, chooseLane(g, p, best.x.d), "waste");
     }) };
   } },
-  "Pipebomb": { play(g, p, c) {
-    const o = foe(g, p), ts = spellsOf(o).filter(z => !z.bomb);
+  "Pipebomb": { pipebomb: true, play(g, p, c) {   // v4.7: negate a spell as it's played (see countered), or destroy a Continuous or Field Spell now
+    const o = foe(g, p), ts = spellsOf(o).filter(z => !z.bomb && !z.watch);
     if (!ts.length) return null;
-    const z = ts.find(x => x === o.field) || ts[0];
-    return { pri: 1, score: 2.5, run: () => cast(g, p, c, () => { z.bomb = { by: p.i }; L(g, `  Pipebomb is placed on ${z.c.d.name}.`); }) };
+    const z = ts.find(x => x === o.field && isClaw(x.c)) || ts.find(x => x === o.field) || ts[0];
+    const now = says(c.d, /destroy a continuous spell or field spell/i), s = (isClaw(z.c) && units(o).some(fluffy) ? 5 : 2.5) - (now ? 0.8 : 0);
+    return { pri: 1, score: s, run: () => cast(g, p, c, () => {
+      if (now) { if (spellsOf(o).includes(z)) removeSpell(g, o, z, "Pipebomb"); }
+      else { z.bomb = { by: p.i }; L(g, `  Pipebomb is placed on ${z.c.d.name}.`); }
+    }) };
   } },
   "Space Squid": { play(g, p, c) {
     if (g.phase !== 1 || g.turnNo === 1 || !emptyLanes(p).length) return null;
@@ -1131,18 +1348,284 @@ const SPELLS = {
   } },
 };
 
+// Dinos (v4.6)
+Object.assign(FX, {
+  "Compsognathus": { value: 0.8, onDeath(g, u) { mill(g, g.p[u.ctrl], num(u.d, /top (\d+) cards/i, 2)); } },
+  "Velociraptor": { value: 1, onAttack(g, u, t) {   // 1 damage to a creature next to its target
+    if (!t || !onField(g, t)) return; const o = g.p[t.ctrl], ns = NB[t.lane].map(l => o.lanes[l]).filter(Boolean);
+    if (ns.length) damage(g, ns.sort((a, b) => a.hp - b.hp)[0], num(u.d, /deal (\d+) damage to a creature in a lane next/i, 1), {});
+  } },
+  "Dilophosaurus": { value: 1.5, onPlay(g, u) { const t = foe(g, g.p[u.ctrl]).lanes[u.lane]; if (t) damage(g, t, num(u.d, /deal (\d+) damage to the enemy creature in front/i, 2), {}); } },
+  "Ankylosaurus": { value: 1.5, reduceFirst: 2 },
+  "Triceratops": { value: 1.5 },
+  "Pteranodon": { value: 1.5, onRaise(g, u) {   // dug up: another Prehistoric creature from the Waste Repository to your hand
+    const p = g.p[u.ctrl], list = p.waste.filter(c => prehistoric(c) && !p.lazarus.includes(c));
+    if (!list.length) return; const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0];
+    p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  Pteranodon returns ${c.d.name} to the hand.`);
+  } },
+  "Brontosaurus": { value: 1.5 },
+  "T-Rex": { value: 2, onRaise(g, u) { const t = foe(g, g.p[u.ctrl]).lanes[u.lane]; if (t) damage(g, t, num(u.d, /deal (\d+) damage to the enemy creature in front/i, 3), {}); } },
+  "TT-rex": { value: 4, perSplice: 1, acts: [{ id: "raise", pri: 2, ai(g, u) {   // banish a splice: a Prehistoric creature back for free
+    const p = g.p[u.ctrl]; if (g.phase !== 1 || u.stolen || !spliceCount(u) || !emptyLanes(p).length) return null;
+    const b = bestFossil(g, p, true); if (!b) return null;
+    const s = defValue(b.c.d) * 0.8 - spliceCost(u);
+    return s > 1 ? { score: s, run: () => { if (banishSplice(g, u)) fossilRaise(g, p, b.c, 0); } } : null;
+  } }] },
+  "Necrosaurus": { value: 2, aura(g, k, u) { return k === u ? g.p[u.ctrl].waste.filter(prehistoric).length : 0; } },
+});
+Object.assign(SPELLS, {
+  "Archaeologist": { needs: x => (x.dino || 0) >= 6, play(g, p, c) {   // mill 4, then dig one up for its Fossil cost
+    if (g.phase !== 1) return null;
+    const n = num(c.d, /top (\d+) cards/i, 4); if (p.deck.length < n + 4) return null;
+    const s = 1.5 + (emptyLanes(p).length ? 2 : 0) + Math.min(2, p.waste.filter(prehistoric).length * 0.5);
+    return { pri: 2, score: s, run: () => cast(g, p, c, () => {
+      mill(g, p, n); if (!emptyLanes(p).length) return;
+      const b = bestFossil(g, p, false); if (b && b.s > 0) fossilRaise(g, p, b.c, b.x);
+    }) };
+  } },
+  "Fossil Record": { needs: x => (x.dino || 0) >= 6, play(g, p, c) {   // up to 2 Prehistoric creatures back to the hand
+    const k = num(c.d, /up to (\d+) 'Prehistoric'/i, 2), list = p.waste.filter(x => prehistoric(x) && !p.lazarus.includes(x)).sort((a, b) => defValue(b.d) - defValue(a.d)).slice(0, k);
+    if (!list.length) return null;
+    const s = list.reduce((a, x) => a + defValue(x.d) * 0.3, 0) - 1;
+    return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { list.forEach(x => { const i = p.waste.indexOf(x); if (i >= 0) { p.waste.splice(i, 1); p.hand.push(x); } }); L(g, `  ${list.map(x => x.d.name).join(" and ")} go back to the hand.`); }) } : null;
+  } },
+  "Primordial Soup": { perm: true, needs: x => (x.dino || 0) >= 6, score: (g, p) => p.deck.length > 10 ? 2.2 : 0.4,
+    endTurn(g, p) { mill(g, p, 1); },
+    startTurn(g, p) {   // d20: on a 1 every creature on the field is destroyed
+      const r = 1 + Math.floor(g.dice() * 20); if (r !== 1) return;
+      L(g, `  Primordial Soup rolls a 1: every creature on the field is destroyed.`);
+      for (const u of allUnits(g)) { if (onField(g, u)) destroy(g, u, {}); if (g.over) return; }
+    } },
+});
+
+
+// v4.7: Mundane (Complaints), Wizards (Spellcount)
+const ordinary = u => hasAttr(u.d, "ordinary");
+const complainAct = { id: "complain", pri: 1, ai(g, u) {
+  const p = g.p[u.ctrl], t = bestComplaint(g, p);
+  return t && t.s > 0.5 ? { score: t.s, run: () => complain(g, t.u) } : null;
+} };
+Object.assign(FX, {
+  "Cat": { value: 1, endTurn(g, u) { if (u.attacked) return; const t = bestComplaint(g, g.p[u.ctrl]); if (t) complain(g, t.u); } },
+  "Gregg": {},
+  "Gregg's Friend Joe": { value: 1, onAttack(g, u, t) { if (t && onField(g, t)) complain(g, t); } },
+  "Jonnhy '5 inches'": { value: 1, onFine(g, u) { const p = g.p[u.ctrl]; L(g, `  Jonnhy: +1 PHP and +1 gold.`); gainPHP(g, p, 1); gainGold(g, p, 1); } },
+  "Gregg's Dawg": { value: 2, guardOrdinary: 1 },
+  "Nosy Neighbor": { value: 2, onPlay(g, u) {
+    const p = g.p[u.ctrl], a = bestComplaint(g, p); if (!a) return; complain(g, a.u);
+    const b = bestComplaint(g, p, [a.u]); if (b) complain(g, b.u);
+  } },
+  "Mall Cop Gary": { value: 3, copLock: true, acts: [complainAct] },
+  "The Local Legend": { value: 3, perSplice: 1, acts: [{ id: "rally", pri: 1, ai(g, u) {
+    const p = g.p[u.ctrl]; if (!spliceCount(u) || u.stolen) return null;
+    const s = units(foe(g, p)).reduce((a, x) => a + complaintWorth(g, p, x), 0) - spliceCost(u) - 0.5;
+    return s > 0.5 ? { score: s, run: () => { if (banishSplice(g, u)) units(foe(g, p)).forEach(x => complain(g, x)); } } : null;
+  } }] },
+  "HOA President": { value: 4, perSplice: 1, fineUp: true, acts: [{ id: "rule", pri: 1, ai(g, u) {
+    const p = g.p[u.ctrl], ord = units(p).filter(ordinary), opts = [];
+    const t = bestComplaint(g, p); if (t) opts.push({ s: t.s, run: () => complain(g, t.u) });
+    if (g.phase === 1) {
+      let gain = 0;
+      for (const k of ord) { if (k.attacked) continue; const b = Math.max(0, bestAttack(g, k)); k.tAtk += 2; gain += Math.max(0, bestAttack(g, k)) - b; k.tAtk -= 2; }
+      opts.push({ s: gain, run: () => { ord.forEach(k => { k.tAtk += 2; }); L(g, `  HOA President: Ordinary creatures get +2 ATK.`); } });
+    }
+    opts.push({ s: ord.reduce((s, k) => s + healWorth(g, k, 3), 0), run: () => ord.forEach(k => restoreHP(g, p, k, 3)) });
+    const b = opts.sort((x, y) => y.s - x.s)[0];
+    return b && b.s > 0.5 ? { score: b.s, run: b.run } : null;
+  } }] },
+  "Purrramid": { value: 3, endTurn(g, u) { if (!u.attacked) restoreHP(g, g.p[u.ctrl], u, num(u.d, /restore (\d+) HP to it/i, 3)); } },
+  // Wizards
+  "Apprentice": { value: 1.5, onSpell(g, u) { u.tAtk += 1; } },
+  "Toad Familiar": { value: 1.5, onDeath(g, u) { spellBack(g, g.p[u.ctrl]); } },
+  "Mail-Order Wizard": { value: 1, onPlay(g, u) { const p = g.p[u.ctrl]; draw(g, p, 1); discardWorst(g, p); } },
+  "Spell Slinger": { value: 1.5, onSpell(g, u) {
+    const p = g.p[u.ctrl], face = num(u.d, /whenever you play a spell: deal (\d+) damage to your opponent/i, 0);
+    if (face) { L(g, `  Spell Slinger deals ${face} damage to ${who(g, foe(g, p))}.`); p.st.face += face; losePHP(g, foe(g, p), face); return; }
+    if (p.sc !== 3) return;
+    let best = null; for (const t of units(foe(g, p))) { const s = damageWorth(g, p, t, 3); if (!best || s > best.s) best = { t, s }; }
+    if (best) { L(g, `  Spell Slinger deals 3 damage to ${best.t.d.name}.`); damage(g, best.t, 3, {}); }
+  } },
+  "Night School Professor": { value: 1.5, acts: [{ id: "class", pri: 0, ai(g, u) {
+    const p = g.p[u.ctrl], spells = p.waste.filter(oneShot); if (!spells.length || p.waste.length < 3) return null;
+    return { score: 2, run: () => {
+      const keep = spells.sort((a, b) => holdWorth(b) - holdWorth(a))[0];
+      const fuel = p.waste.filter(c => c !== keep && !p.lazarus.includes(c)).sort((a, b) => (oneShot(a) ? 1 : 0) - (oneShot(b) ? 1 : 0) || defValue(a.d) - defValue(b.d)).slice(0, 2);
+      if (fuel.length < 2) return; banishFromWaste(g, p, fuel); spellBack(g, p, c => c === keep);
+    } };
+  } }] },
+  "Head Librarian": { value: 2.5, onSpell(g, u) { const p = g.p[u.ctrl], k = "Head Librarian:" + u.uid; if (p.once.has(k) || !drawOk(p, 1)) return; p.once.add(k); L(g, `  Head Librarian: ${who(g, p)} draws a card.`); draw(g, p, 1); } },
+  "Battlemage": { value: 1.5, aura(g, k, u) { return k === u ? g.p[u.ctrl].sc || 0 : 0; } },
+  "The Archmage": { value: 3, twice: true },
+  "Wizard Tower": { value: 3, perSplice: 0.5, startTurn(g, u) { spellBack(g, g.p[u.ctrl], oneShot); } },
+  "Spellsword": { value: 2, onSpell(g, u) { u.tAtk += 2; } },
+});
+Object.assign(SPELLS, {
+  // Mundane
+  "HOA Complaint": { play(g, p, c) {
+    const t = bestComplaint(g, p); if (!t) return null;
+    const s = t.s + (t.u.complaints && fxOf(t.u) ? (fxOf(t.u).value || 1) * 0.6 : 0) - 0.6;
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => {
+      if (!onField(g, t.u)) return;
+      if (t.u.complaints) { t.u.negated = true; L(g, `  ${t.u.d.name} loses its effects until end of turn.`); }
+      complain(g, t.u);
+    }) } : null;
+  } },
+  "Tax Evasion": { tax: true },
+  "Costco Hot Dog and Soda Comb for $1.5": { play(g, p, c) {
+    let best = null; for (const u of units(p)) if (ordinary(u) && !u.stolen) { const s = healWorth(g, u, 4); if (!best || s > best.s) best = { u, s }; }
+    const s = (best ? best.s : 0) + 2 - 0.4;
+    return { pri: 3, score: s, run: () => cast(g, p, c, () => { if (best) restoreHP(g, p, best.u, 4); draw(g, p, 1); }) };
+  } },
+  "The bodega": { perm: true, score: () => 2.2, endTurn(g, p) {
+    if (!drawOk(p, 1) || !p.hand.length) return;
+    const ordC = c => c.d.kind === "creature" && hasAttr(c.d, "ordinary"), keep = c => isUnitKind(c.d.kind) ? 3 + defValue(c.d) * 0.1 - (ordC(c) ? 0.6 : 0) : 3.5;
+    const c = p.hand.slice().sort((a, b) => keep(a) - keep(b))[0], ord = ordC(c);
+    if (keep(c) >= 3.6) return;
+    L(g, `  The bodega:`); p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c); L(g, `  ${who(g, p)} swaps ${c.d.name} for a new card.`); draw(g, p, 1);
+    if (ord) { const t = bestComplaint(g, p); if (t) complain(g, t.u); }
+  } },
+  "Greggs": { perm: true, score: (g, p) => 1 + [...units(p).map(u => u.c), ...p.hand].filter(c => /gregg/i.test(c.d.name) && isUnitKind(c.d.kind)).length * 0.4,
+    endEachTurn(g, q) { for (const u of allUnits(g)) if (/gregg/i.test(u.d.name)) restoreHP(g, g.p[u.ctrl], u, 1); } },
+  "Gregg's Vape": { play(g, p, c) {
+    if (g.phase !== 1 || g.turnNo === 1) return null;
+    let best = null;
+    for (const u of units(p)) {
+      if (!/gregg/i.test(u.d.name) || u.attacked || u.stolen) continue;
+      const b = Math.max(0, bestAttack(g, u)); u.tAtk += 4; const s = Math.max(0, bestAttack(g, u)) - b - 1.2; u.tAtk -= 4;
+      if (!best || s > best.s) best = { u, s };
+    }
+    return best && best.s > 0.5 ? { pri: 3, score: best.s, run: () => cast(g, p, c, () => { if (!onField(g, best.u)) return; best.u.tAtk += 4; best.u.vape = true; L(g, `  ${best.u.d.name} gets +4 ATK.`); }) } : null;
+  } },
+  "Neighborhood Watch": { play(g, p, c) {   // a Spell that stays in its spell zone for the opponent's next 2 turns
+    const o = foe(g, p), bad = units(o).filter(u => u.complaints).length, makers = units(p).filter(u => fxOf(u) && (fxOf(u).copLock || fxOf(u).acts || u.d.name === "Cat")).length;
+    const s = 0.8 + bad * 1.2 + makers * 0.4;
+    return s > 1.5 ? { pri: 3, score: s, run: () => {
+      const i = p.hand.indexOf(c); if (i < 0) return; p.hand.splice(i, 1); if (c.owner === p.i) p.st.played.add(c.d.ix);
+      L(g, `${who(g, p)} casts ${c.d.name}.`); spellPlayed(g, p, c);
+      if (g.over || countered(g, p, c)) { toWaste(g, c); return; }
+      p.zones.push({ c, watch: 2 });
+    } } : null;
+  } },
+  // Wizards
+  "Abracadabra": { play(g, p, c) {
+    if (!drawOk(p, 2)) return null;
+    return { pri: 0, score: 2.6, run: () => cast(g, p, c, () => { draw(g, p, 2); discardWorst(g, p); }) };
+  } },
+  "Card Trick": { play(g, p, c) {
+    if (!drawOk(p, 2)) return null;
+    const big = (p.sc || 0) + 1 >= 3, others = p.hand.filter(x => x !== c && oneShot(x)).length;
+    const s = 1.8 + (big ? 2.4 : 0) - (!big && others >= 2 - (p.sc || 0) ? 0.8 : 0);
+    return { pri: 0, score: s, run: () => cast(g, p, c, () => draw(g, p, (p.sc || 0) >= 3 ? 2 : 1)) };
+  } },
+  "Pocket Fireball": { play(g, p, c) {
+    const big = (p.sc || 0) + 1 >= 3, n = big ? 4 : 2, others = p.hand.filter(x => x !== c && oneShot(x)).length;
+    let best = null; for (const t of units(foe(g, p))) { const s = damageWorth(g, p, t, n); if (!best || s > best.s) best = { t, s }; }
+    if (!best) return null;
+    const s = best.s - 0.8 - (!big && others >= 2 - (p.sc || 0) ? 1 : 0);
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => { if (onField(g, best.t)) damage(g, best.t, (p.sc || 0) >= 3 ? 4 : 2, {}); }) } : null;
+  } },
+  "Big Fireball": { play(g, p, c) {
+    if (!p.flux) return null;
+    let best = null;
+    const o = foe(g, p), face = says(c.d, /enemy creature or your opponent/i);
+    const costOf = x => { let cost = 0; if (g.phase === 1) { const b0 = bestPlan(g, p).score; p.flux -= x; cost = b0 - bestPlan(g, p).score; p.flux += x; } return cost + descendHold(g, p, x); };
+    for (const t of units(o)) {
+      const x = Math.min(p.flux, t.hp);
+      const s = damageWorth(g, p, t, x) - costOf(x) - 0.5; if (!best || s > best.s) best = { t, x, s };
+    }
+    if (face) { const x = p.flux, s = x * phpW(g, o) * (x >= o.php ? 100 : 1) - costOf(x) - 0.5; if (!best || s > best.s) best = { t: null, x, s }; }
+    return best && best.s > 0.5 ? { pri: best.t ? 1 : 3, score: best.s, run: () => {
+      if (p.flux < best.x) return; p.flux -= best.x; L(g, `${who(g, p)} pays ${best.x} flux for Big Fireball.`);
+      cast(g, p, c, () => { if (!best.t) { L(g, `  Big Fireball hits ${who(g, o)} for ${best.x}.`); p.st.face += best.x; losePHP(g, o, best.x); } else if (onField(g, best.t)) damage(g, best.t, best.x, {}); });
+    } } : null;
+  } },
+  "Déjà Vu": { play(g, p, c) {   // a one-shot spell from the Waste Repository, played as if from the hand, then banished
+    let best = null;
+    for (const x of p.waste.slice()) {
+      const f = x.d.fx; if (!oneShot(x) || x.d.name === c.d.name || f.perm) continue;
+      const i = p.waste.indexOf(x); p.waste.splice(i, 1); p.hand.push(x);
+      let o = null; try { o = f.play(g, p, x); } finally { p.hand.splice(p.hand.indexOf(x), 1); p.waste.splice(i, 0, x); }
+      if (o && (!best || o.score > best.o.score)) best = { x, o };
+    }
+    if (!best || best.o.score - 0.8 <= 0.4) return null;
+    return { pri: best.o.pri, score: best.o.score - 0.8, run: () => cast(g, p, c, () => {
+      const i = p.waste.indexOf(best.x); if (i < 0) return;
+      p.waste.splice(i, 1); p.hand.push(best.x); L(g, `  Déjà Vu: ${best.x.d.name} again.`);
+      best.o.run();
+      for (const pile of [p.waste, p.hand]) { const j = pile.indexOf(best.x); if (j >= 0) { pile.splice(j, 1); p.oblivion.push(best.x); } }
+    }) };
+  } },
+  "Frogify": { play(g, p, c) {
+    let best = null;
+    for (const t of units(foe(g, p))) { if (t.d.kind === "fusion" || t.frog) continue; const s = valueOf(g, t) * 0.6 - 1; if (!best || s > best.s) best = { t, s }; }
+    return best && best.s > 0.5 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => frogify(g, best.t, g.turnNo + 2)) } : null;
+  } },
+  "Spellbook": { perm: true, needs: x => (x.wizard || 0) >= 6, score: () => 2.2, endTurn(g, p, z) {
+    if ((p.sc || 0) >= num(z.c.d, /spellcount is (\d+) or more/i, 3) && drawOk(p, 1)) { L(g, `  Spellbook: ${who(g, p)} draws a card.`); draw(g, p, 1); }
+  } },
+  "Community College of Magic": { perm: true, college: true, needs: x => (x.wizard || 0) >= 6, score: (g, p) => fieldFx(g, "college") ? 0 : 2 },
+});
+
 // The card text each effect above was written for (textHash). The editor compares it with the current text.
 const FX_TEXT = {
+  "Community College of Magic": "9hklc8",
+  "Spellbook": "dgytun",
+  "Frogify": "czpdf",
+  "Déjà Vu": "1g2fpub",
+  "Big Fireball": "1hc9rpk",
+  "Pocket Fireball": "1tcpcji",
+  "Card Trick": "1px03bp",
+  "Abracadabra": "463aao",
+  "Spellsword": "hzlbri",
+  "Wizard Tower": "1fin9wd",
+  "The Archmage": "11g9ta0",
+  "Battlemage": "12o21dh",
+  "Head Librarian": "1mo9vux",
+  "Night School Professor": "1qlkzrz",
+  "Spell Slinger": "1mjllps",
+  "Mail-Order Wizard": "1evmc4m",
+  "Toad Familiar": "1ui173g",
+  "Apprentice": "9k5vpj",
+  "Neighborhood Watch": "w3o9t5",
+  "Gregg's Vape": "8ujfm7",
+  "Greggs": "1axuv7n",
+  "The bodega": "8ydr59",
+  "Costco Hot Dog and Soda Comb for $1.5": "kn6ur1",
+  "Tax Evasion": "1pq4gq8",
+  "HOA Complaint": "1u2cs31",
+  "Purrramid": "1k6yd2r",
+  "HOA President": "13lme0v",
+  "The Local Legend": "sjsun9",
+  "Mall Cop Gary": "7chnhh",
+  "Nosy Neighbor": "1uz26ag",
+  "Gregg's Dawg": "sqlodm",
+  "Jonnhy '5 inches'": "9rzrnw",
+  "Gregg's Friend Joe": "wza2hl",
+  "Gregg": "1ltg8qp",
+  "Cat": "lv3nyf",
+  "Compsognathus": "qx59lb",
+  "Velociraptor": "1r3r44s",
+  "Dilophosaurus": "1x35ylb",
+  "Ankylosaurus": "xkmu55",
+  "Triceratops": "h4ioa",
+  "Pteranodon": "18nvqfq",
+  "Brontosaurus": "6arhh",
+  "T-Rex": "7gtq1j",
+  "TT-rex": "1mead2a",
+  "Necrosaurus": "1a7rnrd",
+  "Archaeologist": "zcpxne",
+  "Fossil Record": "9ixkax",
+  "Primordial Soup": "zksqi2",
   "Ritual Pit": "1y1hlbr",
   "Bull Run": "wo0nar",
   "Goblin Bank": "2h6mga",
   "Cherub": "1i4xkro",
   "Acolyte Adam": "1gn0xd8",
-  "Sanctified Knight": "kxmoya",
-  "Judicator Angel": "1s5f5uq",
-  "Chapel Guard": "1rr35fj",
-  "Purifier Nun": "1vnz049",
-  "Bellkeeper Monk": "1puh9sl",
+  "Sanctified Knight": "bww8hi",
+  "Judicator Angel": "1m7vax1",
+  "Chapel Guard": "jwsi1v",
+  "Purifier Nun": "mt4i5s",
+  "Bellkeeper Monk": "m752qs",
   "Beelzechud": "169aojl",
   "Carrion The Dark Duchess": "ywk7kl",
   "Nomed The Dark Viscount": "ntpdy7",
@@ -1154,7 +1637,7 @@ const FX_TEXT = {
   "Hemogoblin": "1mc553j",
   "Goblin": "1vi286c",
   "Penny Stock Goblin": "17185i0",
-  "Sanctuary Bells": "1x70bw",
+  "Sanctuary Bells": "gw6dsi",
   "Seraphim Wall": "1xi0gg8",
   "Fallen Angel": "hg5lep",
   "Lord Lazarus": "1r75yjy",
@@ -1173,17 +1656,17 @@ const FX_TEXT = {
   "Blood Pact Summoning Circle": "1jpgxtw",
   "Goblin Shuffle": "1au5pap",
   "Goblin Stock Broker": "1qrqb09",
-  "Energy Drink": "1jkpyof",
+  "Energy Drink": "1eo04hn",
   "Jar of Materialism": "1frc2vt",
   "Microwave": "1xmfz69",
-  "Pipebomb": "v0icxo",
+  "Pipebomb": "1nqlt7y",
   "Space Squid": "udsda7",
   "Unfuse": "2rr8zr",
   "Goblin General": "v3esdv",
   "Gob-omber": "1o9ssaa",
   "Goblin Miner": "d8v9",
   "Scrooger": "ld1tn1",
-  "Gabe": "23e116",
+  "Gabe": "1nktpyp",
   "Goblin Pit Boss": "11mmduo",
   "Mountain Orc": "1y9qf3n",
   "It's Free Fuse-Estate": "15ldyzt",
@@ -1197,7 +1680,7 @@ const FX_TEXT = {
   "Blood Ledger": "1vrh362",
   "Boss's Orders": "18lwpa2",
   "Melting Pot": "9ifnp4",
-  "Twisted Dimensions": "1gcqmai",
+  "Twisted Dimensions": "1ys5s",
   "Shotgun Wedding": "lzqift",
   "Claw Machine": "18u65sc",
   "Arcade Kid": "fs5awq",
@@ -1229,7 +1712,7 @@ function handCreatureOpts(g, p) {   // hand creatures with every way to pay for 
       if (d.fx && d.fx.bpWaste) { const w = Math.min(k, spare); waste = 2 * w; php = per * (k - w); }
       opts.push({ flux: Math.max(0, d.flux - disc - k), php, waste, cost: php * W + waste * 0.15 });
     }
-    out.push({ c, d, value: defValue(d), opts, unholy: hasAttr(d, "unholy") });
+    out.push({ c, d, value: defValue(d) - (R.descend && descendOf(c) && units(p).length >= 2 ? 2 : 0), opts, unholy: hasAttr(d, "unholy") });
   }
   out.sort((a, b) => a.d.ix - b.d.ix);   // copies next to each other, for the de-dupe below
   return out;
@@ -1275,8 +1758,8 @@ function fusionOpts(g, p) {
       for (const a of units(p)) if (unit(a)) pairs.push({ a, b: { card: c, d: c.d, splices: [] }, wed: true });
   }
   for (const { a, b, wed } of pairs) {
-    const okA = big(a.d), okB = big(b.d), usesPit = !(okA && okB);
-    if (usesPit && (wed || !(pit && ((okA && pitOk(b.d)) || (okB && pitOk(a.d)))))) continue;
+    const okA = big(a.d), okB = big(b.d), pitNeed = !(okA && okB);
+    const pairOk = !(pitNeed && (wed || !(pit && ((okA && pitOk(b.d)) || (okB && pitOk(a.d))))));
     const carried = R.carryDamage ? fuseDamage(a) + (wed ? 0 : fuseDamage(b)) : 0;
     const n = 2 + spliceCount(a) + (wed ? 0 : spliceCount(b));   // fusion splices the new fusion would have
     const lose = keepWorth(g, a) + (wed ? defValue(b.d) * 0.75 : keepWorth(g, b));
@@ -1284,6 +1767,8 @@ function fusionOpts(g, p) {
     for (const fc of p.fdeck) {
       if (seen.has(fc.d.name)) continue; seen.add(fc.d.name);
       if (!recipeFits(fc.d.recipe, [a.d, b.d]) || carried >= fc.d.hp) continue;
+      const any = anyCost(fc.d); if (!pairOk && !any) continue;   // v4.7: "can be made from creatures of any flux cost"
+      const usesPit = pitNeed && !any;
       const extra = (fc.d.fx && fc.d.fx.perSplice || 0) * (n - 2);
       const gain = defValue(fc.d) + extra - carried / 2 - lose - (usesPit ? 0.5 : 0) + 1 - (wed ? 0.6 : 0);
       const lanes = wed ? 0 : 1, w = wed ? { wedding } : {};
@@ -1397,13 +1882,15 @@ function mainPhase(g, p) {
       else if (f.play && freeZone(p)) add(f.play(g, p, c));
     }
     for (const u of units(p)) {
-      const f = fxOf(u); if (!f || !f.acts) continue;
+      const f = fxOf(u); if (!f || !f.acts || u.complaints) continue;   // a Complaint stops "once per turn" effects
       for (const a of f.acts) {
         const key = u.d.name + ":" + a.id;
         if (p.once.has(key)) continue;
         const o = a.ai(g, u); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
       }
     }
+    add(fossilOption(g, p));
+    add(fineOption(g, p));
     for (const z of spellsOf(p)) {
       const f = z.c.d.fx; if (!f || !f.acts) continue;
       for (const a of f.acts) {
@@ -1420,7 +1907,7 @@ function mainPhase(g, p) {
     opts.sort((a, b) => (a.pri - b.pri) || (b.score - a.score));
     const o = opts[0];
     if (o.key) p.once.add(o.key);
-    o.run();
+    g.pendingWorth = o.score; o.run(); g.pendingWorth = null;
     clawCheck(g);
     checkEnd(g);
   }
@@ -1430,7 +1917,7 @@ function battle(g, p) {
   for (let guard = 0; guard < 10 && !g.over; guard++) {
     let best = null;
     for (const u of units(p)) {
-      if (u.attacked || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo)) continue;
+      if (u.attacked || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo) || lockedOut(g, u)) continue;
       for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t) + jitter(g, p); if (!best || s > best.s) best = { s, u, t }; } }
       if (canFace(g, u)) { const s = scoreFace(g, u) + jitter(g, p); if (!best || s > best.s) best = { s, u, t: null }; }
     }
@@ -1443,7 +1930,12 @@ function endTurn(g, p) {
   for (const u of units(p)) { const f = fxOf(u); if (f && f.endTurn) f.endTurn(g, u); if (g.over) return; }
   for (const u of units(p)) if (u.frenzy) { sacrifice(g, p, u); if (g.over) return; }
   for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.endEachTurn) q.field.c.d.fx.endEachTurn(g, q);
+  for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.endTurn) { f.endTurn(g, p, z); if (g.over) return; } }
   for (const u of units(p)) if (u.stolen && u.stolen.until !== "start") giveBack(g, u);
+  for (const u of units(p)) if (u.vape) { u.vape = false; L(g, `  No vaping indoors:`); complain(g, u); }   // Gregg's Vape
+  for (const u of allUnits(g)) if (u.frog && g.turnNo >= u.frog.until) { u.hp = u.frog.hp; u.maxHp = u.frog.maxHp; u.die = u.frog.die; u.frog = null; L(g, `  ${u.d.name} turns back from a Frog.`); }
+  const opp = foe(g, p);   // Neighborhood Watch: one of the opponent's 2 turns is over
+  for (const z of opp.zones.slice()) if (z.watch && --z.watch <= 0) { opp.zones.splice(opp.zones.indexOf(z), 1); toWaste(g, z.c); L(g, `  ${z.c.d.name} goes to the Waste Repository.`); }
   clawCheck(g);
   for (const u of allUnits(g)) { u.tAtk = 0; u.tSpd = 0; u.negated = false; }
   while (p.hand.length > R.handLimit) {
@@ -1454,7 +1946,7 @@ function endTurn(g, p) {
 function playTurn(g) {
   const p = g.p[g.active], o = foe(g, p);
   g.turnNo++; p.turns++;
-  g.p.forEach(q => q.once.clear());
+  g.p.forEach(q => { q.once.clear(); q.sc = 0; });   // Spellcount (v4.7) counts this turn's spells
   p.fused = false; p.pact = 0; g.phase = 0;
   const first = p.turns === 1;
   if (!(first && g.first === p.i)) { draw(g, p, 1); if (g.over) return; }
@@ -1532,7 +2024,7 @@ function randomDeck(defs, rng) {
   const fcounts = new Map(); let fn = 0;
   for (const d of shuffle(rng, fusions.slice())) { if (rng() >= 0.6) continue; const k = Math.min(10 - fn, rng() < 0.5 ? 1 : 2); if (k > 0) { fcounts.set(d.name, k); fn += k; } }
   const ctx = { fusions: fn, pitTargets, unholy: 0, dice: 0 };
-  for (const [k, q] of counts) { const d = defs.get(k); if (hasAttr(d, "unholy")) ctx.unholy += q; if (d.die) ctx.dice += q; }
+  for (const [k, q] of counts) { const d = defs.get(k); if (hasAttr(d, "unholy")) ctx.unholy += q; if (hasAttr(d, "prehistoric")) ctx.dino = (ctx.dino || 0) + q; if (hasAttr(d, "arcane")) ctx.wizard = (ctx.wizard || 0) + q; if (d.die) ctx.dice += q; }
   const spells = all.filter(d => !isUnitKind(d.kind) && simulated(d) && (!d.factions.length || inF(d)) && !(d.fx && d.fx.needs && !d.fx.needs(ctx)));
   const sw = list => list.map(d => ({ d, k: Math.pow(rng(), 1 / (d.factions.length ? 2 : 1)) })).sort((a, b) => b.k - a.k).map(x => x.d);
   for (const d of sw(spells)) { if (n >= 30) break; const r = rng(); add(d, r < 0.4 ? 1 : r < 0.8 ? 2 : 3); }
