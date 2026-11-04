@@ -345,7 +345,7 @@ Radiance (when this creature is restored past its max HP, it gains your choice o
 
 Once per turn: Pay X gold to restore 2X HP to a creature you control. Each fusion splice you banish from under this creature for this counts as 3 gold.
 ",Angel / Goblin,Holy / Greedy,
-Market Research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for a 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
+Market Research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for any 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
 Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to Oblivion. Gain 2 flux this turn.
 
 
@@ -357,7 +357,7 @@ Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to O
 
 
 The warning lights are mostly decorative.",,,
-Blood Ledger,Continuous Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP to draw 1 card.",Blood Demon,,
+Blood Ledger,Continuous Spell,N/A,N/A,N/A,,"Once per turn, in your Main Phase: Pay 2 PHP. If you do Search your deck for any 'Unholy' creature, show it to your opponent and put it into your hand.",Blood Demon,,
 Boss's Orders,Spell,,,,,"Move a creature to an empty lane on its controller's side. Moving isn't arriving, so it can still attack this turn.",,,
 Melting Pot,Field Spell,,,,,Fusing doesn't need creatures that cost 5 or more flux: any creatures that meet a recipe can become fusion splices. (This affects both players.),,,
 Twisted Dimensions,Field Spell,,,,,"Speed is reversed: the slower creature strikes first. An attacker gets -1 Speed for its attack instead of +1, and a tie is still a coin flip. (This affects both players.)",,,
@@ -444,7 +444,7 @@ Wizard Tower,Fusion,7,24,N/A,1,"{any 2 Arcane creatures}
 At the start of your turn: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
 Spellsword,Fusion,10,20,N/A,6,"{Battlemage + any Arcane creature}
 Whenever you play a spell: This creature gains +2 ATK until end of turn.",Wizard,Arcane / Humanoid,
-Abracadabra,Spell,N/A,N/A,N/A,,"Choose a creature that isn't a fusion: Return it to its owner's hand. Spellcount 3+: Choose up to 2 instead.
+Abracadabra,Spell,N/A,N/A,N/A,,"You can only cast this spell if your spell count is +3: Choose a creature that isn't a fusion: Return it to its owner's hand.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
@@ -457,34 +457,22 @@ Is this your card?",Wizard,,
 Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. Spellcount 3+: Deal 4 damage instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
-Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to an enemy creature.,Wizard,,
+Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to a creature.,Wizard,,
 Déjà Vu,Spell,N/A,N/A,N/A,,"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it.",Wizard,,
-Polymorph,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK, ,it's original HP and no effects. Then it turns back, with the HP it had.",Wizard,,
+Polymorph,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK, it's original HP and no effects. Then it turns back, with the HP it had before this spell activated.",Wizard,,
 Spelling Mistake,Instant Spell,N/A,N/A,N/A,,"Swap a creature's ATK and HP, using the numbers it has right now. It stays swapped until it leaves the field. If its HP becomes 0, it's destroyed.
 
-It was supposed to be a healing spell.",Wizard,,
-Wild Magic,Spell,N/A,N/A,N/A,,"Roll a d6:
-1: Oops. Your creature with the highest ATK has 1 ATK and no effects until end of turn.
-2: Every creature on the field gets +2 ATK until end of turn.
-3: Draw 2 cards.
-4: Gain 3 flux this turn.
-5: Deal 5 damage to an enemy creature.
-6: Roll twice more and use both results.
+It was supposed to be a healing spell...",Wizard,,
+Extra Credit,Spell,N/A,N/A,N/A,,"You can only cast this spell if your spell count is +3: Choose a creature you control: It can attack twice this turn.
 
-Spellcount 3+: Roll twice and choose which result to use.
+Teacher's pet.
+
+
+
+
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
-Extra Credit,Spell,N/A,N/A,N/A,,"Choose a creature you control: It can attack twice this turn.
-
-Teacher's pet.",Wizard,,
 Spellbook,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: If your Spellcount is 3 or more, you may draw 1 card.
 
 (Spellcount: the number of spells you've played this turn.)",Wizard,,
-Community College of Magic,Field Spell,N/A,N/A,N/A,,"
-
-
-
-
-
-
-Whenever a player plays their 3rd spell in a turn: They may draw 1 card. (This affects both players.)",Wizard,,
+Community College of Magic,Field Spell,N/A,N/A,N/A,,Whenever a player plays their 3rd spell in a turn: They gain 1 flux.,Wizard,,
