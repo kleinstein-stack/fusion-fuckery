@@ -95,7 +95,7 @@ function rollCount(g, u) {
   return Math.max(advantage(g, u) ? 2 : 1, f && f.rollPerSplice ? spliceCount(u) : 1);
 }
 function atkOf(g, u) {   // ATK without the die
-  if (u.frog) return 1;   // Frogify (v4.7)
+  if (u.frog) return 1;   // a Frog: Polymorph, Wild Magic's "Oops" (v4.7)
   let a = u.atk + u.pAtk + u.tAtk + u.radAtk - R.complaintAtk * (u.complaints || 0);   // a Complaint (v4.7): -2 ATK each
   const p = g.p[u.ctrl];
   for (const k of units(p)) { const f = fxOf(k); if (f && f.aura) a += f.aura(g, k, u); }
@@ -801,7 +801,7 @@ function spellPlayed(g, p, c) {
 const drawOk = (p, n) => p.deck.length >= n + 6;   // the AI stops drawing extra cards before its deck runs out
 function countered(g, p, c) {
   if (g.countering) return false;
-  const o = foe(g, p), pb = o.hand.find(x => x.d.fx && x.d.fx.pipebomb && says(x.d, /negate a spell/i));
+  const o = foe(g, p), pb = o.hand.find(x => x.d.fx && x.d.fx.pipebomb && (says(x.d, /negate a spell/i) || (x.d.kind === "instant" && says(x.d, /spell card, destroy it/i))));
   if (!pb || !freeZone(o)) return false;
   const worth = (g.pendingWorth != null ? g.pendingWorth : 2) + jitter(g, o);
   if (worth < 4) return false;
@@ -827,10 +827,64 @@ function discardWorst(g, p) {
   p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c); L(g, `  ${who(g, p)} discards ${c.d.name}.`);
   return c;
 }
-function frogify(g, u, until) {
+function frogify(g, u, until) {   // Polymorph: 1 ATK and no effects until the end of the caster's next turn; its HP stays
   if (!onField(g, u) || u.frog) return;
-  u.frog = { until, hp: u.hp, maxHp: u.maxHp, die: u.die }; u.hp = 1; u.maxHp = 1; u.die = 0;
-  L(g, `  ${u.d.name} is a Frog (1 ATK, 1 HP, no effects) until the end of the next turn.`);
+  u.frog = { until, die: u.die }; u.die = 0;
+  L(g, `  ${u.d.name} is a Frog (1 ATK, no effects) until ${until > g.turnNo ? "the end of the next turn" : "end of turn"}.`);
+}
+function bounce(g, u) {   // Abracadabra: back to its owner's hand (never a fusion), as a new card
+  if (!onField(g, u)) return;
+  g.p[u.ctrl].lanes[u.lane] = null;
+  g.p[u.owner].hand.push(u.c);
+  L(g, `  ${u.d.name} goes back to ${who(g, g.p[u.owner])}'s hand.`);
+}
+function bounceWorth(g, p, t) {   // sending an enemy creature back: it has to be paid for again, but its damage is gone
+  const v = valueOf(g, t);
+  return v * 0.4 + Math.min(t.d.flux || 0, foe(g, p).maxFlux) * 0.35 - ((t.maxHp - t.hp) / Math.max(1, t.maxHp)) * v * 0.35 - (t.complaints || 0) * 1.2;
+}
+const bounceTargets = (g, p) => units(foe(g, p)).filter(t => t.d.kind !== "fusion").map(t => ({ t, s: bounceWorth(g, p, t) })).filter(x => x.s > 0.3).sort((a, b) => b.s - a.s);
+function swapStats(g, u) {   // Spelling Mistake: its ATK becomes its current HP and its HP its current ATK; later changes still apply
+  if (!onField(g, u)) return;
+  const a = atkOf(g, u), h = u.hp;
+  u.atk = h; u.pAtk = 0; u.hp = a; u.maxHp = a; u.radHp = 0;
+  L(g, `  ${u.d.name} swaps its ATK and HP: ${h} ATK, ${a} HP.`);
+  if (u.hp <= 0) kill(g, u, {});
+}
+function swapWorth(g, p, t) {   // AI: what swapping t's ATK and HP is worth to p (null: not worth trying)
+  if (t.frog) return null;
+  const a = atkOf(g, t); if (a <= 0) return killWorth(g, p, t);
+  const mine = t.ctrl === p.i, sv = { atk: t.atk, pAtk: t.pAtk, hp: t.hp, maxHp: t.maxHp, radHp: t.radHp };
+  const fights = () => g.phase === 1 ? Math.max(0, ...units(p).filter(u => !u.attacked).map(u => mine ? (u === t ? bestAttack(g, u) : -Infinity) : ([u.lane].concat(NB[u.lane]).includes(t.lane) ? scoreFight(g, u, t) : -Infinity))) : 0;
+  const v0 = valueOf(g, t), f0 = fights();
+  t.atk = t.hp; t.pAtk = 0; t.hp = a; t.maxHp = a; t.radHp = 0;
+  const v1 = valueOf(g, t), f1 = fights();
+  Object.assign(t, sv);
+  return mine ? (f1 - f0) + (v1 - v0) * 0.3 - 0.8 : (v0 - v1) + Math.max(0, f1 - f0) - 0.4;
+}
+// Wild Magic: a d6. 1 Oops (your highest-ATK creature is a Frog), 2 +2 ATK for everything, 3 draw 2, 4 +3 flux,
+// 5 5 damage to an enemy creature, 6 roll twice more. Spellcount 3+: roll twice and keep the better result.
+const topAtk = (g, p) => units(p).sort((a, b) => atkOf(g, b) - atkOf(g, a))[0] || null;
+function wildWorth(g, p, r) {
+  const o = foe(g, p);
+  if (r === 1) { const u = topAtk(g, p); return u ? -(g.phase === 1 && !u.attacked ? Math.max(0, atkOf(g, u) - 1) * 0.4 : 0) - (u.d.fx ? 0.8 : 0) : 0; }
+  if (r === 2) return g.phase === 1 ? units(p).filter(u => !u.attacked && !(R.sick && u.arrived === g.turnNo)).length * 1.4 - units(o).length * 0.5 : -units(o).length * 0.3;
+  if (r === 3) return drawOk(p, 2) ? 4.5 : 0.5;
+  if (r === 4) return g.phase === 1 ? 2.2 : p.hand.some(x => x.d.name === "Big Fireball") ? 1.5 : 0.2;
+  if (r === 5) return Math.max(0, ...units(o).map(t => damageWorth(g, p, t, 5)));
+  return 4;
+}
+function wildMagic(g, p, choose, depth) {
+  const roll = () => 1 + Math.floor(g.dice() * 6);
+  let r = roll();
+  if (choose) { const r2 = roll(); L(g, `  Wild Magic rolls ${r} and ${r2}.`); if (wildWorth(g, p, r2) > wildWorth(g, p, r)) r = r2; }
+  L(g, `  Wild Magic: ${r}.`);
+  const o = foe(g, p);
+  if (r === 1) { const u = topAtk(g, p); if (u) { L(g, `  Oops.`); frogify(g, u, g.turnNo); } }
+  else if (r === 2) { for (const u of allUnits(g)) u.tAtk += 2; L(g, `  Every creature gets +2 ATK.`); }
+  else if (r === 3) draw(g, p, 2);
+  else if (r === 4) { p.flux += 3; L(g, `  ${who(g, p)} gains 3 flux.`); }
+  else if (r === 5) { let best = null; for (const t of units(o)) { const s = damageWorth(g, p, t, 5); if (!best || s > best.s) best = { t, s }; } if (best) damage(g, best.t, 5, {}); }
+  else if (depth < 3) { wildMagic(g, p, false, depth + 1); if (!g.over) wildMagic(g, p, false, depth + 1); }
 }
 
 /* ---------------- card effects ---------------- */
@@ -1221,11 +1275,11 @@ const SPELLS = {
       best.q.waste.splice(i, 1); materialize(g, p, best.x, chooseLane(g, p, best.x.d), "waste");
     }) };
   } },
-  "Pipebomb": { pipebomb: true, play(g, p, c) {   // v4.7: negate a spell as it's played (see countered), or destroy a Continuous or Field Spell now
-    const o = foe(g, p), ts = spellsOf(o).filter(z => !z.bomb && !z.watch);
+  "Pipebomb": { pipebomb: true, play(g, p, c) {   // v4.7: destroy a spell as it's played (see countered) or one that's in play, right away
+    const any = says(c.d, /spell card, destroy it/i), o = foe(g, p), ts = spellsOf(o).filter(z => !z.bomb && (any || !z.watch));
     if (!ts.length) return null;
     const z = ts.find(x => x === o.field && isClaw(x.c)) || ts.find(x => x === o.field) || ts[0];
-    const now = says(c.d, /destroy a continuous spell or field spell/i), s = (isClaw(z.c) && units(o).some(fluffy) ? 5 : 2.5) - (now ? 0.8 : 0);
+    const now = any || says(c.d, /destroy a continuous spell or field spell/i), s = (isClaw(z.c) && units(o).some(fluffy) ? 5 : 2.5) - (now ? 0.8 : 0);
     return { pri: 1, score: s, run: () => cast(g, p, c, () => {
       if (now) { if (spellsOf(o).includes(z)) removeSpell(g, o, z, "Pipebomb"); }
       else { z.bomb = { by: p.i }; L(g, `  Pipebomb is placed on ${z.c.d.name}.`); }
@@ -1507,15 +1561,40 @@ Object.assign(SPELLS, {
     } } : null;
   } },
   // Wizards
-  "Abracadabra": { play(g, p, c) {
-    if (!drawOk(p, 2)) return null;
-    return { pri: 0, score: 2.6, run: () => cast(g, p, c, () => { draw(g, p, 2); discardWorst(g, p); }) };
+  "Abracadabra": { play(g, p, c) {   // a creature that isn't a fusion goes back to its owner's hand; Spellcount 3+: up to 2
+    const big = (p.sc || 0) + 1 >= 3, others = p.hand.filter(x => x !== c && oneShot(x)).length, ts = bounceTargets(g, p);
+    if (!ts.length) return null;
+    const s = ts.slice(0, big ? 2 : 1).reduce((a, x) => a + x.s, 0) - 0.6 - (!big && ts.length > 1 && others >= 2 - (p.sc || 0) ? 0.8 : 0);
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => bounceTargets(g, p).slice(0, (p.sc || 0) >= 3 ? 2 : 1).forEach(x => bounce(g, x.t))) } : null;
   } },
-  "Card Trick": { play(g, p, c) {
-    if (!drawOk(p, 2)) return null;
+  "Card Trick": { play(g, p, c) {   // take a card from the opponent's hand: into their deck, or (Spellcount 3+) their Waste Repository
+    const o = foe(g, p); if (!o.hand.length) return null;
     const big = (p.sc || 0) + 1 >= 3, others = p.hand.filter(x => x !== c && oneShot(x)).length;
-    const s = 1.8 + (big ? 2.4 : 0) - (!big && others >= 2 - (p.sc || 0) ? 0.8 : 0);
-    return { pri: 0, score: s, run: () => cast(g, p, c, () => draw(g, p, (p.sc || 0) >= 3 ? 2 : 1)) };
+    const s = 1 + Math.min(1.2, o.hand.length * 0.3) + (big ? 1.8 : 0) - (!big && others >= 2 - (p.sc || 0) ? 0.8 : 0);
+    const worth = x => isUnitKind(x.d.kind) ? defValue(x.d) * ((x.d.flux || 0) <= o.maxFlux + 1 ? 0.5 : 0.25) : 4;
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => {
+      if (!o.hand.length) return;
+      const x = o.hand.slice().sort((a, b) => worth(b) - worth(a))[0];
+      o.hand.splice(o.hand.indexOf(x), 1);
+      if ((p.sc || 0) >= 3) { toWaste(g, x); L(g, `  Card Trick: ${x.d.name} goes to ${who(g, o)}'s Waste Repository.`); }
+      else { o.deck.splice(Math.floor(g.dice() * (o.deck.length + 1)), 0, x); L(g, `  Card Trick: ${x.d.name} is shuffled into ${who(g, o)}'s deck.`); }
+    }) } : null;
+  } },
+  "Spelling Mistake": { play(g, p, c) {   // swap a creature's ATK and HP
+    let best = null;
+    for (const t of allUnits(g)) { const s = swapWorth(g, p, t); if (s != null && (!best || s > best.s)) best = { t, s }; }
+    return best && best.s > 0.6 ? { pri: best.t.ctrl === p.i ? 3 : 1, score: best.s, run: () => cast(g, p, c, () => swapStats(g, best.t)) } : null;
+  } },
+  "Wild Magic": { play(g, p, c) {
+    const choose = (p.sc || 0) + 1 >= 3, ev = [1, 2, 3, 4, 5, 6].map(r => wildWorth(g, p, r)), s = choose ? 3.6 : ev.reduce((a, b) => a + b, 0) / 6;
+    return s > 0.6 ? { pri: 0, score: s, run: () => cast(g, p, c, () => wildMagic(g, p, (p.sc || 0) >= 3, 0)) } : null;
+  } },
+  "Extra Credit": { play(g, p, c) {   // a creature you control can attack twice this turn
+    if (g.phase !== 1 || g.turnNo === 1) return null;
+    let best = null;
+    for (const u of units(p)) { if (u.extra) continue; const s = bestAttack(g, u); if (s > -Infinity && (!best || s > best.s)) best = { u, s }; }
+    const s = best ? best.s * 0.6 - 0.6 : 0;
+    return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { if (onField(g, best.u)) { best.u.extra = 1; L(g, `  ${best.u.d.name} can attack twice this turn.`); } }) } : null;
   } },
   "Pocket Fireball": { play(g, p, c) {
     const big = (p.sc || 0) + 1 >= 3, n = big ? 4 : 2, others = p.hand.filter(x => x !== c && oneShot(x)).length;
@@ -1555,9 +1634,9 @@ Object.assign(SPELLS, {
       for (const pile of [p.waste, p.hand]) { const j = pile.indexOf(best.x); if (j >= 0) { pile.splice(j, 1); p.oblivion.push(best.x); } }
     }) };
   } },
-  "Frogify": { play(g, p, c) {
+  "Polymorph": { play(g, p, c) {   // a Frog with 1 ATK and no effects; its HP stays
     let best = null;
-    for (const t of units(foe(g, p))) { if (t.d.kind === "fusion" || t.frog) continue; const s = valueOf(g, t) * 0.6 - 1; if (!best || s > best.s) best = { t, s }; }
+    for (const t of units(foe(g, p))) { if (t.d.kind === "fusion" || t.frog) continue; const s = (expAtk(g, t) - 1) * 0.6 + (t.d.fx ? 1.5 : 0) + (t.d.fx && t.d.fx.value || 0) * 0.5 - 1; if (!best || s > best.s) best = { t, s }; }
     return best && best.s > 0.5 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => frogify(g, best.t, g.turnNo + 2)) } : null;
   } },
   "Spellbook": { perm: true, needs: x => (x.wizard || 0) >= 6, score: () => 2.2, endTurn(g, p, z) {
@@ -1569,13 +1648,16 @@ Object.assign(SPELLS, {
 // The card text each effect above was written for (textHash). The editor compares it with the current text.
 const FX_TEXT = {
   "Community College of Magic": "9hklc8",
-  "Spellbook": "dgytun",
-  "Frogify": "czpdf",
+  "Spellbook": "k3pqtp",
+  "Spelling Mistake": "1ebodb3",
+  "Wild Magic": "yrjaff",
+  "Extra Credit": "ejhjeh",
+  "Polymorph": "1l4ctay",
   "Déjà Vu": "1g2fpub",
-  "Big Fireball": "1hc9rpk",
+  "Big Fireball": "1ozh2g5",
   "Pocket Fireball": "1tcpcji",
-  "Card Trick": "1px03bp",
-  "Abracadabra": "463aao",
+  "Card Trick": "106mkim",
+  "Abracadabra": "182ksqi",
   "Spellsword": "hzlbri",
   "Wizard Tower": "1fin9wd",
   "The Archmage": "11g9ta0",
@@ -1659,7 +1741,7 @@ const FX_TEXT = {
   "Energy Drink": "1eo04hn",
   "Jar of Materialism": "1frc2vt",
   "Microwave": "1xmfz69",
-  "Pipebomb": "1nqlt7y",
+  "Pipebomb": "2hmwzv",
   "Space Squid": "udsda7",
   "Unfuse": "2rr8zr",
   "Goblin General": "v3esdv",
@@ -1682,7 +1764,7 @@ const FX_TEXT = {
   "Melting Pot": "9ifnp4",
   "Twisted Dimensions": "1ys5s",
   "Shotgun Wedding": "lzqift",
-  "Claw Machine": "18u65sc",
+  "Claw Machine": "opsncc",
   "Arcade Kid": "fs5awq",
   "Plush Collector": "7vt99a",
   "Plush Catalogue": "m8v2ln",
@@ -1917,11 +1999,12 @@ function battle(g, p) {
   for (let guard = 0; guard < 10 && !g.over; guard++) {
     let best = null;
     for (const u of units(p)) {
-      if (u.attacked || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo) || lockedOut(g, u)) continue;
+      if ((u.attacked && !u.extra) || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo) || lockedOut(g, u)) continue;   // Extra Credit: a second attack
       for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t) + jitter(g, p); if (!best || s > best.s) best = { s, u, t }; } }
       if (canFace(g, u)) { const s = scoreFace(g, u) + jitter(g, p); if (!best || s > best.s) best = { s, u, t: null }; }
     }
     if (!best || best.s <= 0.2) break;
+    if (best.u.attacked) best.u.extra = 0;
     if (best.t) fight(g, best.u, best.t); else directAttack(g, best.u);
     clawCheck(g);
   }
@@ -1933,11 +2016,11 @@ function endTurn(g, p) {
   for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.endTurn) { f.endTurn(g, p, z); if (g.over) return; } }
   for (const u of units(p)) if (u.stolen && u.stolen.until !== "start") giveBack(g, u);
   for (const u of units(p)) if (u.vape) { u.vape = false; L(g, `  No vaping indoors:`); complain(g, u); }   // Gregg's Vape
-  for (const u of allUnits(g)) if (u.frog && g.turnNo >= u.frog.until) { u.hp = u.frog.hp; u.maxHp = u.frog.maxHp; u.die = u.frog.die; u.frog = null; L(g, `  ${u.d.name} turns back from a Frog.`); }
+  for (const u of allUnits(g)) if (u.frog && g.turnNo >= u.frog.until) { u.die = u.frog.die; u.frog = null; L(g, `  ${u.d.name} turns back from a Frog.`); }
   const opp = foe(g, p);   // Neighborhood Watch: one of the opponent's 2 turns is over
   for (const z of opp.zones.slice()) if (z.watch && --z.watch <= 0) { opp.zones.splice(opp.zones.indexOf(z), 1); toWaste(g, z.c); L(g, `  ${z.c.d.name} goes to the Waste Repository.`); }
   clawCheck(g);
-  for (const u of allUnits(g)) { u.tAtk = 0; u.tSpd = 0; u.negated = false; }
+  for (const u of allUnits(g)) { u.tAtk = 0; u.tSpd = 0; u.negated = false; u.extra = 0; }
   while (p.hand.length > R.handLimit) {
     const c = p.hand.slice().sort((a, b) => keepValue(g, p, a) - keepValue(g, p, b))[0];
     p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c);

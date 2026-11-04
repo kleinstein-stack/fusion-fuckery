@@ -444,20 +444,39 @@ Wizard Tower,Fusion,7,24,N/A,1,"{any 2 Arcane creatures}
 At the start of your turn: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
 Spellsword,Fusion,10,20,N/A,6,"{Battlemage + any Arcane creature}
 Whenever you play a spell: This creature gains +2 ATK until end of turn.",Wizard,Arcane / Humanoid,
-Abracadabra,Spell,N/A,N/A,N/A,,"currently useless in comparison with jar of materialism
+Abracadabra,Spell,N/A,N/A,N/A,,"Choose a creature that isn't a fusion: Return it to its owner's hand. Spellcount 3+: Choose up to 2 instead.
 
-Draw 2 cards, then discard 1 card.",Wizard,,
-Card Trick,Spell,N/A,N/A,N/A,,"currently useless in comparison with jar of materialism
+(Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
-Draw 1 card. Spellcount 3+: Draw 2 cards instead.
+...and it's gone!",Wizard,,
+Card Trick,Spell,N/A,N/A,N/A,,"Look at your opponent's hand and choose a card in it. They shuffle it into their deck. Spellcount 3+: Put it into their Waste Repository instead.
 
-(Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
+(Spellcount: the number of spells you've played this turn. A spell counts itself.)
+
+Is this your card?",Wizard,,
 Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. Spellcount 3+: Deal 4 damage instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
 Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to an enemy creature.,Wizard,,
 Déjà Vu,Spell,N/A,N/A,N/A,,"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it.",Wizard,,
 Polymorph,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK, ,it's original HP and no effects. Then it turns back, with the HP it had.",Wizard,,
+Spelling Mistake,Instant Spell,N/A,N/A,N/A,,"Swap a creature's ATK and HP, using the numbers it has right now. It stays swapped until it leaves the field. If its HP becomes 0, it's destroyed.
+
+It was supposed to be a healing spell.",Wizard,,
+Wild Magic,Spell,N/A,N/A,N/A,,"Roll a d6:
+1: Oops. Your creature with the highest ATK has 1 ATK and no effects until end of turn.
+2: Every creature on the field gets +2 ATK until end of turn.
+3: Draw 2 cards.
+4: Gain 3 flux this turn.
+5: Deal 5 damage to an enemy creature.
+6: Roll twice more and use both results.
+
+Spellcount 3+: Roll twice and choose which result to use.
+
+(Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
+Extra Credit,Spell,N/A,N/A,N/A,,"Choose a creature you control: It can attack twice this turn.
+
+Teacher's pet.",Wizard,,
 Spellbook,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: If your Spellcount is 3 or more, you may draw 1 card.
 
 (Spellcount: the number of spells you've played this turn.)",Wizard,,

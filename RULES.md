@@ -46,10 +46,10 @@ and rulebook are saved under the git tag `save-before-v4.6` and in `saves/versio
 **Fossil**, with **Stampede** on Triceratops, Brontosaurus and T-Rex (Dino Egg and Egg Incubator stay in cold storage).
 **Mundane is back** (14.6): Gregg and the neighbourhood bury the opponent in **Complaints**; Bunny, Cabbit and Bad Bunny
 Concert Tickets stay in cold storage, and Nosy Neighbor, Mall Cop Gary and Neighborhood Watch are new. **New faction:
-Wizards** (14.8), a spellslinger deck built on **Spellcount**. **Angels get Descend** (14.7): Purifier Nun, Sanctified
+Wizards** (14.8), a spellslinger deck built on **Spellcount**, where every spell does a different job. **Angels get Descend** (14.7): Purifier Nun, Sanctified
 Knight, Chapel Guard, Judicator Angel and Gabe can be materialized on the opponent's turn when an enemy attacks, and the
 attack hits them instead; Bellkeeper Monk and Sanctuary Bells make it cheaper. **Spell review:** Pipebomb is now an
-Instant that negates a spell as it's played or destroys a Continuous or Field Spell right away (10.7); Energy Drink also
+Instant that destroys a spell, either as it's played or one already in play (10.7); Energy Drink also
 gives +2 Speed; Twisted Dimensions' text now says a tie is still a coin flip (the v4.6 rule). New starter decks:
 Jurassic Junkyard, Bone Yard, Red Tape and Night School. The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
@@ -169,9 +169,10 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    the first player may respond to that, and so on. When both pass, the chain resolves **newest first**.
 6. Activated creature effects ("Once per turn: …") are only used in your Main Phases unless the card says
    otherwise. Triggered effects ("When…", "Whenever…", "At the end of…") happen whenever they trigger.
-7. **Negating a spell (Pipebomb, v4.7):** play it in response to a spell (a chain, 5). The negated spell does nothing
-   and goes to its owner's Waste Repository. It was still played, so it counts for Spellcount (14.8) and "whenever you
-   play a spell" effects.
+7. **Destroying a spell as it's played (Pipebomb, v4.7):** play it in response to a spell (a chain, 5). That spell
+   does nothing and goes to its owner's Waste Repository. It was still played, so it counts for Spellcount (14.8) and
+   "whenever you play a spell" effects. Pipebomb can also destroy a spell that's already in play: a Continuous or
+   Field Spell, or a Neighborhood Watch.
 
 ## 11. Health, damage & destruction
 
@@ -333,7 +334,7 @@ you play them early.
   you can pay. HOA President makes fines cost its opponent 1 more. Jonnhy '5 inches' pays out whenever you pay one.
 - Complaints stay when a creature changes sides (Space Squid) and go away when it leaves the field.
 - **Mall Cop Gary:** enemy creatures with a Complaint can't attack. **Neighborhood Watch** is a Spell that stays in its
-  spell zone for your opponent's next 2 turns (it isn't a Continuous Spell, so Pipebomb can't destroy it).
+  spell zone for your opponent's next 2 turns. Pipebomb can destroy it there.
 - **Purrramid** {Cat + Cat} can be made from creatures of any flux cost, an exception to the 5+ flux rule (13).
 
 ### 14.7 Descend (Angels, v4.7)
@@ -356,8 +357,23 @@ you play them early.
 - **One-shot spell:** a Spell or Instant Spell (not a Continuous or Field Spell). **The Archmage:** the first one-shot
   spell you play each turn resolves twice (costs aren't paid again). **Déjà Vu** plays a one-shot spell from your Waste
   Repository as if it were in your hand, then banishes it.
-- **Frogify:** the creature is a 1 ATK / 1 HP Frog with no effects until the end of your next turn. If it survives,
-  it turns back with the HP it had when it was frogified.
+- **Polymorph:** the creature is a Frog with 1 ATK and no effects until the end of your next turn. Its HP doesn't
+  change, and damage it takes as a Frog stays when it turns back. A Frog has exactly 1 ATK, so Complaints don't lower
+  it (they're still there when it turns back).
+- **Abracadabra:** the creature goes back to its owner's hand as a new card: its damage, Complaints and fusion stack
+  are gone, and it has to be materialized again (paying its flux). A creature you took with Space Squid goes back to
+  its owner's hand, not yours.
+- **Card Trick:** you see your opponent's whole hand, then pick one card. Below Spellcount 3 they shuffle it into
+  their deck; at Spellcount 3+ it goes to their Waste Repository.
+- **Spelling Mistake:** take the ATK and HP the creature has right now (Complaints and other changes included) and
+  swap them: the old ATK is its new HP and max HP, and the old HP is its new ATK. Effects that are still going
+  (a Complaint, +ATK until end of turn) keep applying afterwards. A creature with 0 ATK is destroyed. On a Frog, the
+  HP becomes 1 (a Frog has 1 ATK), and once it turns back its ATK is the HP it had.
+- **Wild Magic:** a 6 rolls twice more; a 6 on those rolls again too. At Spellcount 3+ you roll two dice, pick one
+  result and ignore the other. Loaded Dice can reroll any of the dice. "Oops" picks your highest-ATK creature (you
+  choose on a tie) and does nothing if you have none.
+- **Extra Credit:** the creature can make a second attack in the same Battle Phase, after its first (it's winded
+  after the first, as normal). Creatures that can't attack this turn still can't.
 
 ## 15. Advanced rules
 
@@ -418,8 +434,11 @@ the payoffs count spells: Spell Slinger burns 1 per spell, Battlemage grows), an
 Schwarz's backup, so Angels now decide every turn whether to spend their flux or hold it as a threat. In the battle sim
 the first drafts were weak (Mundane 21%, Wizards 28% against the six playtest decks): Mundane creatures got +1 ATK and
 +2 HP and the fine went from 2 to 3 flux (52–54%); Spell Slinger went from "3 damage at Spellcount 3" to 1 damage to
-the opponent for every spell, and Big Fireball can hit the opponent (51–56%). Wizard draws are optional ("may") so the
-deck doesn't run itself out. Angels with Descend win about 61% (51% with the same deck and no Descend); Fallen Grace and
+the opponent for every spell (51–56%). Wizard draws are optional ("may") so the deck doesn't run itself out. Abracadabra
+and Card Trick first drew cards and were weaker than Jar of Materialism, so the Wizard spells were redone so that each
+one does a different job (bounce, hand disruption, burn, recursion, Frogs, an ATK/HP swap, a d6 of chaos, a second
+attack). Night School wins about 55%; with a Jar of Materialism instead of a Wild Magic it would be about 62%, so Wild
+Magic is the chaos pick, not the strong one. Angels with Descend win about 61% (51% with the same deck and no Descend); Fallen Grace and
 Holy Hustle barely changed.
 
 **Stat budget.** points = ATK + HP ÷ 2 + (Speed − 4) ÷ 2 + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
