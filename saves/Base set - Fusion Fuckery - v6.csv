@@ -279,9 +279,7 @@ Jar of Materialism,Spell,N/A,N/A,N/A,,"Draw 1 card and then draw another card.
 
 Just different enough not to get sued...",,,
 Microwave,Spell,N/A,N/A,N/A,,Reheat a creature (not a fusion) from any Waste Repository and materialize it on your side of the field.,,,
-Pipebomb,Instant Spell,N/A,N/A,N/A,,"Choose one:
-- Negate a spell as your opponent plays it. It goes to their Waste Repository.
-- Destroy a Continuous Spell or Field Spell on the field.",,,
+Pipebomb,Instant Spell,N/A,N/A,N/A,,"Target 1 spell card, destroy it!",,,
 Space Squid,Spell,N/A,N/A,N/A,,"Pay PHP equal to an enemy creature's flux cost (10 for a fusion): Take control of it until the start of your next turn. Move it to an empty lane on your side; if it was winded, it isn't any more. Then return it to its owner.
 
 You can't play this card if you have no empty lane.",,,
@@ -364,7 +362,7 @@ Boss's Orders,Spell,,,,,"Move a creature to an empty lane on its controller's si
 Melting Pot,Field Spell,,,,,Fusing doesn't need creatures that cost 5 or more flux: any creatures that meet a recipe can become fusion splices. (This affects both players.),,,
 Twisted Dimensions,Field Spell,,,,,"Speed is reversed: the slower creature strikes first. An attacker gets -1 Speed for its attack instead of +1, and a tie is still a coin flip. (This affects both players.)",,,
 Shotgun Wedding,Spell,,,,,"Fuse a creature you control with a creature card from your hand, as if it were in the lane next to it. Pay the 2 flux and follow the recipe and the 5+ flux rule as normal. This is your fusion for the turn; the fusion takes your creature's lane.",,,
-Claw Machine,Field Spell,,,,,You can only materialize 'Fluffy' creatures while you control this card.,Plushy,,
+Claw Machine,Field Spell,,,,,You can only materialize 'Fluffy' creatures while this card is on the field.,Plushy,,
 Arcade Kid,Creature,1,3,1,5,"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.
 ",Plushy,Humanoid,
 Plush Collector,Creature,2,6,3,3,"Once per turn: Search your deck for a Claw Machine, show it to your opponent and put it into your hand.
@@ -425,7 +423,9 @@ Mall Cop Gary,Creature,7,16,9,2,"Enemy creatures with a Complaint can't attack.
 Once per turn: Put a Complaint on an enemy creature.
 
 (Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
-Neighborhood Watch,Spell,N/A,N/A,N/A,,"This card stays in its spell zone for your opponent's next 2 turns, then goes to your Waste Repository. Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,
+Neighborhood Watch,Spell,N/A,N/A,N/A,,"This card stays in its spell zone for your opponent's next 2 turns, then goes to your Waste Repository. 
+
+Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,
 Apprentice,Creature,1,3,1,5,Whenever you play a spell: This creature gains +1 ATK until end of turn.,Wizard,Arcane / Humanoid,
 Toad Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
 Mail-Order Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard 1 card.
@@ -444,17 +444,28 @@ Wizard Tower,Fusion,7,24,N/A,1,"{any 2 Arcane creatures}
 At the start of your turn: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
 Spellsword,Fusion,10,20,N/A,6,"{Battlemage + any Arcane creature}
 Whenever you play a spell: This creature gains +2 ATK until end of turn.",Wizard,Arcane / Humanoid,
-Abracadabra,Spell,N/A,N/A,N/A,,"Draw 2 cards, then discard 1 card.",Wizard,,
-Card Trick,Spell,N/A,N/A,N/A,,"Draw 1 card. Spellcount 3+: Draw 2 cards instead.
+Abracadabra,Spell,N/A,N/A,N/A,,"currently useless in comparison with jar of materialism
+
+Draw 2 cards, then discard 1 card.",Wizard,,
+Card Trick,Spell,N/A,N/A,N/A,,"currently useless in comparison with jar of materialism
+
+Draw 1 card. Spellcount 3+: Draw 2 cards instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
 Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. Spellcount 3+: Deal 4 damage instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
-Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to an enemy creature or your opponent.,Wizard,,
+Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to an enemy creature.,Wizard,,
 Déjà Vu,Spell,N/A,N/A,N/A,,"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it.",Wizard,,
-Frogify,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK, 1 HP and no effects. Then it turns back, with the HP it had.",Wizard,,
+Polymorph,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK, ,it's original HP and no effects. Then it turns back, with the HP it had.",Wizard,,
 Spellbook,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: If your Spellcount is 3 or more, you may draw 1 card.
 
-(Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
-Community College of Magic,Field Spell,N/A,N/A,N/A,,Whenever a player plays their 3rd spell in a turn: They may draw 1 card. (This affects both players.),Wizard,,
+(Spellcount: the number of spells you've played this turn.)",Wizard,,
+Community College of Magic,Field Spell,N/A,N/A,N/A,,"
+
+
+
+
+
+
+Whenever a player plays their 3rd spell in a turn: They may draw 1 card. (This affects both players.)",Wizard,,
