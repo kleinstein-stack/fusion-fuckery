@@ -261,7 +261,10 @@ function kill(g, u, info) {   // "destroyed": Chapel Guard survives the first ti
   destroy(g, u, info);
   return true;
 }
-const toWaste = (g, c) => g.p[c.owner].waste.push(c);
+const toWaste = (g, c) => {
+  if (c.stealTo != null) { const q = g.p[c.stealTo]; c.stealTo = null; q.deck.splice(Math.floor(g.dice() * (q.deck.length + 1)), 0, c); return; }   // Thiefling Sleight of Hand
+  g.p[c.owner].waste.push(c);
+};
 // Fusion splices (v4.5): a fusion used as a fusion splice keeps its own splices under it (card.under), so stacks nest.
 // "Fusion splices under this creature" counts every card in the stack.
 const under = list => list.flatMap(c => [c].concat(c.under ? under(c.under) : []));
@@ -796,17 +799,19 @@ function spellPlayed(g, p, c) {
   p.sc = (p.sc || 0) + 1;
   if (g.log && p.sc >= 2) L(g, `  (Spellcount ${p.sc})`);
   for (const u of units(p)) { const f = fxOf(u); if (f && f.onSpell) f.onSpell(g, u, c); if (g.over) return; }
-  if (p.sc === 3 && drawOk(p, 1)) for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.college) { L(g, `  Community College of Magic: ${who(g, p)} draws a card.`); draw(g, p, 1); }
+  if (p.sc === 3) for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.college) { L(g, `  Community College of Magic: ${who(g, p)} gains 1 flux.`); p.flux += 1; }
 }
 const drawOk = (p, n) => p.deck.length >= n + 6;   // the AI stops drawing extra cards before its deck runs out
 function countered(g, p, c) {
   if (g.countering) return false;
-  const o = foe(g, p), pb = o.hand.find(x => x.d.fx && x.d.fx.pipebomb && (says(x.d, /negate a spell/i) || (x.d.kind === "instant" && says(x.d, /spell card, destroy it/i))));
+  const o = foe(g, p), steal = o.hand.find(x => x.d.fx && x.d.fx.steal && x.d.kind === "instant");   // Thiefling Sleight of Hand first
+  const pb = steal || o.hand.find(x => x.d.fx && x.d.fx.pipebomb && (says(x.d, /negate a spell/i) || (x.d.kind === "instant" && says(x.d, /spell card, destroy it/i))));
   if (!pb || !freeZone(o)) return false;
-  const worth = (g.pendingWorth != null ? g.pendingWorth : 2) + jitter(g, o);
+  const worth = (g.pendingWorth != null ? g.pendingWorth : 2) + jitter(g, o) + (steal ? 0.5 : 0);
   if (worth < 4) return false;
   g.countering = true; cast(g, o, pb, () => {}); g.countering = false;
-  L(g, `  Pipebomb: ${c.d.name} is negated.`);
+  if (steal) { c.stealTo = o.i; L(g, `  Thiefling Sleight of Hand: ${c.d.name} does nothing and is shuffled into ${who(g, o)}'s deck.`); }
+  else L(g, `  Pipebomb: ${c.d.name} is negated.`);
   return true;
 }
 function archmageTwice(g, p) {
@@ -814,6 +819,8 @@ function archmageTwice(g, p) {
   p.once.add("The Archmage:twice"); return true;
 }
 const oneShot = c => !isUnitKind(c.d.kind) && !!(c.d.fx && c.d.fx.play);
+// "You can only play this if your Spellcount is 3 or more" (Abracadabra, Extra Credit): this spell would be at least the 3rd
+const scOk = (p, c) => !says(c.d, /only play this if your spellcount is (\d+) or more/i) || (p.sc || 0) + 1 >= num(c.d, /spellcount is (\d+) or more/i, 3);
 function spellBack(g, p, filter) {   // the best spell in p's Waste Repository back to the hand
   const list = p.waste.filter(c => !isUnitKind(c.d.kind) && c.d.fx && (!filter || filter(c)) && !p.lazarus.includes(c));
   if (!list.length) return null;
@@ -827,9 +834,9 @@ function discardWorst(g, p) {
   p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c); L(g, `  ${who(g, p)} discards ${c.d.name}.`);
   return c;
 }
-function frogify(g, u, until) {   // Polymorph: 1 ATK and no effects until the end of the caster's next turn; its HP stays
-  if (!onField(g, u) || u.frog) return;
-  u.frog = { until, die: u.die }; u.die = 0;
+function frogify(g, u, until) {   // Polymorph: 1 ATK and no effects until the end of the caster's next turn; its HP stays,
+  if (!onField(g, u) || u.frog) return;   // and when it turns back it has the HP it had before (damage taken as a Frog is gone)
+  u.frog = { until, die: u.die, hp: u.hp }; u.die = 0;
   L(g, `  ${u.d.name} is a Frog (1 ATK, no effects) until ${until > g.turnNo ? "the end of the next turn" : "end of turn"}.`);
 }
 function bounce(g, u) {   // Abracadabra: back to its owner's hand (never a fusion), as a new card
@@ -1178,6 +1185,28 @@ const SPELLS = {
   "Divine Shelter": { shelter: true },
   "Loaded Dice": { loaded: true, needs: x => x.dice >= 4 },
   "It's Free Fuse-Estate": { estate: true, needs: x => x.fusions > 0 },
+  // v4.7 audit: back from cold storage
+  "Thiefling Sleight of Hand": { steal: true },   // see countered(): the spell does nothing and goes into your deck
+  "Nuclear Waste": { perm: true, score: (g, p) => 1.2 + (units(p).length ? units(p).reduce((s, u) => s + 1.5 - valueOf(g, u) / 6, 0) / units(p).length : 0),
+    endTurn(g, p) {   // a d6 for a random creature you control: 1 destroy it, 4-6 +2 ATK and +2 HP permanently
+      const us = units(p); if (!us.length) return;
+      const u = us[Math.floor(g.dice() * us.length)]; let r = 1 + Math.floor(g.dice() * 6);
+      if (r === 1 && valueOf(g, u) > 4 && useLoadedDice(g, p)) { r = 1 + Math.floor(g.dice() * 6); L(g, `  Loaded Dice: Nuclear Waste rolls again.`); }
+      L(g, `  Nuclear Waste rolls ${r} for ${u.d.name}.`);
+      if (r === 1) kill(g, u, {});
+      else if (r >= 4) { u.pAtk += 2; u.maxHp += 2; u.hp += 2; L(g, `  ${u.d.name} gains +2 ATK and +2 HP.`); }
+    } },
+  "Crack a pack": { play(g, p, c) {   // the top 5 cards: 1 into the hand, the rest into the Waste Repository
+    const n = num(c.d, /top (\d+) cards/i, 5); if (p.deck.length < n + 6) return null;
+    const dig = p.hand.concat(units(p).map(u => u.c)).some(x => fossilOf(x.d) != null || (x.d.fx && x.d.fx.bpWaste)) ? 0.8 : 0;
+    const s = 2.6 + dig - (p.deck.length < 16 ? 1 : 0);
+    return { pri: 0, score: s, run: () => cast(g, p, c, () => {
+      const top = p.deck.splice(-Math.min(n, p.deck.length)); if (!top.length) return;
+      const keep = top.slice().sort((a, b) => keepValue(g, p, b) - keepValue(g, p, a))[0];
+      p.hand.push(keep); top.filter(x => x !== keep).forEach(x => toWaste(g, x));
+      L(g, `  Crack a pack: ${who(g, p)} keeps ${keep.d.name}; ${top.length - 1} cards go to the Waste Repository.`);
+    }) };
+  } },
   "Jar of Materialism": { play(g, p, c) {
     const cost = num(c.d, /pay (\d+) PHP/i, 0), n = num(c.d, /draw (\d+) cards/i, 2);
     if (!drawOk(p, n) || (cost && !canPay(p, cost))) return null;
@@ -1330,11 +1359,19 @@ const SPELLS = {
       () => { const j = p.hand.indexOf(x); if (j >= 0) { p.hand.splice(j, 1); g.p[x.owner].oblivion.push(x); } });
     return best && best.s > 0.5 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => { best.feed(); p.flux += n; L(g, `  Overclock feeds the reactor: +${n} flux.`); }) } : null;
   } },
-  "Blood Ledger": { perm: true, score: () => 2.5, acts: [{ id: "draw", pri: 0, ai(g, p, z) {   // pay PHP to draw, once per turn
-    const cost = num(z.c.d, /pay (\d+) PHP to draw/i, 3), n = num(z.c.d, /to draw (\d+) card/i, 1);
-    if (p.deck.length < n || !canPay(p, cost)) return null;
-    const worth = p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0;
-    return { score: worth * n - cost * phpW(g, p), run: () => { L(g, `${who(g, p)} pays ${cost} PHP to draw (Blood Ledger).`); payPHP(g, p, cost); if (!g.over) draw(g, p, n); } };
+  "Blood Ledger": { perm: true, score: () => 2.5, acts: [{ id: "draw", pri: 0, ai(g, p, z) {   // once per turn: pay PHP to search for an Unholy creature
+    const cost = num(z.c.d, /pay (\d+) PHP/i, 2);
+    if (!canPay(p, cost) || p.hand.length >= R.handLimit - 1) return null;
+    if (!says(z.c.d, /search your deck/i)) {   // older text: pay PHP to draw
+      const n = num(z.c.d, /to draw (\d+) card/i, 1); if (p.deck.length < n) return null;
+      const worth = p.hand.length <= 1 ? 3.5 : p.hand.length <= 3 ? 2.5 : p.hand.length < R.handLimit - 1 ? 1.5 : 0;
+      return { score: worth * n - cost * phpW(g, p), run: () => { L(g, `${who(g, p)} pays ${cost} PHP to draw (Blood Ledger).`); payPHP(g, p, cost); if (!g.over) draw(g, p, n); } };
+    }
+    const pick = x => x.d.kind === "creature" && hasAttr(x.d, "unholy") ? defValue(x.d) * ((x.d.flux || 0) <= p.maxFlux + 1 ? 1 : 0.4) : null;
+    const pool = p.deck.filter(x => pick(x) != null); if (!pool.length) return null;
+    const cre = p.hand.filter(x => isUnitKind(x.d.kind)).length, best = Math.max(...pool.map(pick));
+    const worth = (cre === 0 ? 3.8 : cre <= 2 ? 2.6 : 1.4) + best * 0.04;
+    return { score: worth - cost * phpW(g, p), run: () => { L(g, `${who(g, p)} pays ${cost} PHP (Blood Ledger).`); payPHP(g, p, cost); if (!g.over) tutor(g, p, pick); } };
   } }] },
   "Divine Silence": { play(g, p, c) {   // before attacking: negate the enemy whose effect is in the way of this turn's attacks
     if (g.phase !== 1 || g.turnNo === 1) return null;
@@ -1463,7 +1500,7 @@ Object.assign(FX, {
   "Cat": { value: 1, endTurn(g, u) { if (u.attacked) return; const t = bestComplaint(g, g.p[u.ctrl]); if (t) complain(g, t.u); } },
   "Gregg": {},
   "Gregg's Friend Joe": { value: 1, onAttack(g, u, t) { if (t && onField(g, t)) complain(g, t); } },
-  "Jonnhy '5 inches'": { value: 1, onFine(g, u) { const p = g.p[u.ctrl]; L(g, `  Jonnhy: +1 PHP and +1 gold.`); gainPHP(g, p, 1); gainGold(g, p, 1); } },
+  "Johnny '5 inches'": { value: 1, onFine(g, u) { const p = g.p[u.ctrl]; L(g, `  Johnny: +1 PHP and +1 gold.`); gainPHP(g, p, 1); gainGold(g, p, 1); } },
   "Gregg's Dawg": { value: 2, guardOrdinary: 1 },
   "Nosy Neighbor": { value: 2, onPlay(g, u) {
     const p = g.p[u.ctrl], a = bestComplaint(g, p); if (!a) return; complain(g, a.u);
@@ -1510,7 +1547,13 @@ Object.assign(FX, {
   "Head Librarian": { value: 2.5, onSpell(g, u) { const p = g.p[u.ctrl], k = "Head Librarian:" + u.uid; if (p.once.has(k) || !drawOk(p, 1)) return; p.once.add(k); L(g, `  Head Librarian: ${who(g, p)} draws a card.`); draw(g, p, 1); } },
   "Battlemage": { value: 1.5, aura(g, k, u) { return k === u ? g.p[u.ctrl].sc || 0 : 0; } },
   "The Archmage": { value: 3, twice: true },
-  "Wizard Tower": { value: 3, perSplice: 0.5, startTurn(g, u) { spellBack(g, g.p[u.ctrl], oneShot); } },
+  "Wizard Tower": { value: 3, perSplice: 0.5, acts: [{ id: "tower", pri: 0, free: true, ai(g, u) {   // banish a splice: a one-shot spell back
+    const p = g.p[u.ctrl]; if (!spliceCount(u) || u.stolen || p.hand.length >= R.handLimit - 1) return null;
+    const spells = p.waste.filter(c => oneShot(c) && !p.lazarus.includes(c)); if (!spells.length) return null;
+    const keep = spells.sort((a, b) => holdWorth(b) - holdWorth(a))[0];
+    const s = holdWorth(keep) + (p.hand.some(oneShot) ? 0 : 0.6) - spliceCost(u) * 0.8;
+    return s > 0.6 ? { score: s, run: () => { if (banishSplice(g, u)) spellBack(g, p, c => c === keep); } } : null;
+  } }] },
   "Spellsword": { value: 2, onSpell(g, u) { u.tAtk += 2; } },
 });
 Object.assign(SPELLS, {
@@ -1561,11 +1604,11 @@ Object.assign(SPELLS, {
     } } : null;
   } },
   // Wizards
-  "Abracadabra": { play(g, p, c) {   // a creature that isn't a fusion goes back to its owner's hand; Spellcount 3+: up to 2
-    const big = (p.sc || 0) + 1 >= 3, others = p.hand.filter(x => x !== c && oneShot(x)).length, ts = bounceTargets(g, p);
-    if (!ts.length) return null;
-    const s = ts.slice(0, big ? 2 : 1).reduce((a, x) => a + x.s, 0) - 0.6 - (!big && ts.length > 1 && others >= 2 - (p.sc || 0) ? 0.8 : 0);
-    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => bounceTargets(g, p).slice(0, (p.sc || 0) >= 3 ? 2 : 1).forEach(x => bounce(g, x.t))) } : null;
+  "Abracadabra": { play(g, p, c) {   // only at Spellcount 3+: a creature that isn't a fusion goes back to its owner's hand
+    if (!scOk(p, c)) return null;
+    const ts = bounceTargets(g, p); if (!ts.length) return null;
+    const s = ts[0].s - 0.6;
+    return s > 0.5 ? { pri: 1, score: s, run: () => cast(g, p, c, () => { const t = bounceTargets(g, p)[0]; if (t) bounce(g, t.t); }) } : null;
   } },
   "Card Trick": { play(g, p, c) {   // take a card from the opponent's hand: into their deck, or (Spellcount 3+) their Waste Repository
     const o = foe(g, p); if (!o.hand.length) return null;
@@ -1589,8 +1632,8 @@ Object.assign(SPELLS, {
     const choose = (p.sc || 0) + 1 >= 3, ev = [1, 2, 3, 4, 5, 6].map(r => wildWorth(g, p, r)), s = choose ? 3.6 : ev.reduce((a, b) => a + b, 0) / 6;
     return s > 0.6 ? { pri: 0, score: s, run: () => cast(g, p, c, () => wildMagic(g, p, (p.sc || 0) >= 3, 0)) } : null;
   } },
-  "Extra Credit": { play(g, p, c) {   // a creature you control can attack twice this turn
-    if (g.phase !== 1 || g.turnNo === 1) return null;
+  "Extra Credit": { play(g, p, c) {   // only at Spellcount 3+: a creature you control can attack twice this turn
+    if (g.phase !== 1 || g.turnNo === 1 || !scOk(p, c)) return null;
     let best = null;
     for (const u of units(p)) { if (u.extra) continue; const s = bestAttack(g, u); if (s > -Infinity && (!best || s > best.s)) best = { u, s }; }
     const s = best ? best.s * 0.6 - 0.6 : 0;
@@ -1647,19 +1690,22 @@ Object.assign(SPELLS, {
 
 // The card text each effect above was written for (textHash). The editor compares it with the current text.
 const FX_TEXT = {
-  "Community College of Magic": "9hklc8",
-  "Spellbook": "k3pqtp",
-  "Spelling Mistake": "1ebodb3",
+  "Crack a pack": "1otyca6",
+  "Thiefling Sleight of Hand": "1y85wt2",
+  "Nuclear Waste": "ml7cd9",
+  "Community College of Magic": "1gdfx4o",
+  "Spellbook": "dgytun",
+  "Spelling Mistake": "12ecaij",
   "Wild Magic": "yrjaff",
-  "Extra Credit": "ejhjeh",
-  "Polymorph": "1l4ctay",
+  "Extra Credit": "170vy9h",
+  "Polymorph": "ltxtuh",
   "Déjà Vu": "1g2fpub",
-  "Big Fireball": "1ozh2g5",
+  "Big Fireball": "i1gqu1",
   "Pocket Fireball": "1tcpcji",
   "Card Trick": "106mkim",
-  "Abracadabra": "182ksqi",
+  "Abracadabra": "1ua8xnj",
   "Spellsword": "hzlbri",
-  "Wizard Tower": "1fin9wd",
+  "Wizard Tower": "1xuvjyz",
   "The Archmage": "11g9ta0",
   "Battlemage": "12o21dh",
   "Head Librarian": "1mo9vux",
@@ -1681,7 +1727,7 @@ const FX_TEXT = {
   "Mall Cop Gary": "7chnhh",
   "Nosy Neighbor": "1uz26ag",
   "Gregg's Dawg": "sqlodm",
-  "Jonnhy '5 inches'": "9rzrnw",
+  "Johnny '5 inches'": "9rzrnw",
   "Gregg's Friend Joe": "wza2hl",
   "Gregg": "1ltg8qp",
   "Cat": "lv3nyf",
@@ -1722,12 +1768,12 @@ const FX_TEXT = {
   "Sanctuary Bells": "gw6dsi",
   "Seraphim Wall": "1xi0gg8",
   "Fallen Angel": "hg5lep",
-  "Lord Lazarus": "1r75yjy",
+  "Lord Lazarus": "18spfgv",
   "Arch Cleric": "ccpu2t",
   "Beelzechad": "1jqtco5",
   "The Meat Cathedral": "18ydeum",
   "Ergof The Dark Emperor": "1x6i86",
-  "Hop Goblin": "iw1mk2",
+  "Hop Goblin": "13so13u",
   "Divine Silence": "16r81in",
   "Divine Shelter": "103rf6k",
   "Open Vein": "1h3uaxc",
@@ -1755,16 +1801,16 @@ const FX_TEXT = {
   "Crimson Altar": "1svaf0d",
   "Seraph of Judgment": "rbzf00",
   "Goblin King": "18zcw2n",
-  "Goblin Bombardier": "17f6r2l",
+  "Goblin Bombardier": "5cjm6j",
   "Indulgence Seller": "1mjo2ok",
-  "Market Research": "79bnsq",
+  "Market Research": "146xnsx",
   "Overclock": "omv5k",
-  "Blood Ledger": "1vrh362",
+  "Blood Ledger": "tz8u8v",
   "Boss's Orders": "18lwpa2",
   "Melting Pot": "9ifnp4",
   "Twisted Dimensions": "1ys5s",
   "Shotgun Wedding": "lzqift",
-  "Claw Machine": "opsncc",
+  "Claw Machine": "18u65sc",
   "Arcade Kid": "fs5awq",
   "Plush Collector": "7vt99a",
   "Plush Catalogue": "m8v2ln",
@@ -1964,11 +2010,11 @@ function mainPhase(g, p) {
       else if (f.play && freeZone(p)) add(f.play(g, p, c));
     }
     for (const u of units(p)) {
-      const f = fxOf(u); if (!f || !f.acts || u.complaints) continue;   // a Complaint stops "once per turn" effects
-      for (const a of f.acts) {
+      const f = fxOf(u); if (!f || !f.acts) continue;
+      for (const a of f.acts) {   // a Complaint stops "once per turn" effects; a "free" act (Wizard Tower) isn't once per turn
         const key = u.d.name + ":" + a.id;
-        if (p.once.has(key)) continue;
-        const o = a.ai(g, u); if (o) { o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
+        if (!a.free && (u.complaints || p.once.has(key))) continue;
+        const o = a.ai(g, u); if (o) { if (!a.free) o.key = key; if (o.pri === undefined) o.pri = a.pri; add(o); }
       }
     }
     add(fossilOption(g, p));
@@ -2016,7 +2062,7 @@ function endTurn(g, p) {
   for (const z of spellsOf(p)) { const f = z.c.d.fx; if (f && f.endTurn) { f.endTurn(g, p, z); if (g.over) return; } }
   for (const u of units(p)) if (u.stolen && u.stolen.until !== "start") giveBack(g, u);
   for (const u of units(p)) if (u.vape) { u.vape = false; L(g, `  No vaping indoors:`); complain(g, u); }   // Gregg's Vape
-  for (const u of allUnits(g)) if (u.frog && g.turnNo >= u.frog.until) { u.die = u.frog.die; u.frog = null; L(g, `  ${u.d.name} turns back from a Frog.`); }
+  for (const u of allUnits(g)) if (u.frog && g.turnNo >= u.frog.until) { u.die = u.frog.die; u.hp = Math.min(u.maxHp, u.frog.hp); u.frog = null; L(g, `  ${u.d.name} turns back from a Frog (${u.hp} HP).`); }
   const opp = foe(g, p);   // Neighborhood Watch: one of the opponent's 2 turns is over
   for (const z of opp.zones.slice()) if (z.watch && --z.watch <= 0) { opp.zones.splice(opp.zones.indexOf(z), 1); toWaste(g, z.c); L(g, `  ${z.c.d.name} goes to the Waste Repository.`); }
   clawCheck(g);
@@ -2231,5 +2277,5 @@ if (typeof importScripts === "function" && typeof window === "undefined") {   //
     catch (err) { self.postMessage({ type: "error", message: String(err && err.stack || err) }); }
   };
 }
-return { R, RULEBOOK, withRules, FX, SPELLS, FX_TEXT, textHash, rngFrom, prep, randomDeck, deckFromList, playGame, record, runMany, coverage };
+return { R, RULEBOOK, withRules, FX, SPELLS, FX_TEXT, textHash, rngFrom, prep, randomDeck, deckFromList, playGame, record, runMany, coverage, recipeFits, pitOk };
 })();

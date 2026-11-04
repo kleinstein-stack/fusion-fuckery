@@ -50,7 +50,13 @@ Wizards** (14.8), a spellslinger deck built on **Spellcount**, where every spell
 Knight, Chapel Guard, Judicator Angel and Gabe can be materialized on the opponent's turn when an enemy attacks, and the
 attack hits them instead; Bellkeeper Monk and Sanctuary Bells make it cheaper. **Spell review:** Pipebomb is now an
 Instant that destroys a spell, either as it's played or one already in play (10.7); Energy Drink also
-gives +2 Speed; Twisted Dimensions' text now says a tie is still a coin flip (the v4.6 rule). New starter decks:
+gives +2 Speed; Twisted Dimensions' text now says a tie is still a coin flip (the v4.6 rule). **Card audit:**
+Abracadabra and Extra Credit can only be played at Spellcount 3+; a Polymorph Frog turns back with the HP it had
+before; Wild Magic is gone; Wizard Tower banishes a fusion splice to return a spell (it used to return one every
+turn); Blood Ledger searches your deck for an Unholy creature (it used to draw); Big Fireball hits any creature but not
+players; Community College of Magic gives 1 flux (it used to give a card); Lord Lazarus comes back with 2 Speed
+(half of 4); Jonnhy '5 inches' is now Johnny '5 inches'. Nuclear Waste, Thiefling Sleight of Hand and Crack a pack
+are back from cold storage with new text (10.8). New starter decks:
 Jurassic Junkyard, Bone Yard, Red Tape and Night School. The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
 
@@ -173,6 +179,12 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    does nothing and goes to its owner's Waste Repository. It was still played, so it counts for Spellcount (14.8) and
    "whenever you play a spell" effects. Pipebomb can also destroy a spell that's already in play: a Continuous or
    Field Spell, or a Neighborhood Watch.
+8. **Stealing a spell as it's played (Thiefling Sleight of Hand, v4.7):** like Pipebomb, play it in response to a
+   spell your opponent plays. That spell does nothing and is shuffled into your deck instead of going to their Waste
+   Repository. You draw and play it like your own card, but it's still theirs: when it leaves play it goes to their
+   Waste Repository, and you give it back after the game. **Nuclear Waste** rolls for one of your creatures at random
+   (a destroyed creature's "when destroyed" effects trigger); **Crack a pack** is a pick of 1 from the top 5 cards of
+   your deck, and the other 4 go to your Waste Repository.
 
 ## 11. Health, damage & destruction
 
@@ -331,7 +343,7 @@ you play them early.
   **"once per turn" effects don't work**. Complaints stack. Card text: "(Complaint: the creature has -2 ATK for each
   one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)"
 - **Fines:** in your Main Phase you may pay **3 flux** to remove one Complaint from a creature you control, as often as
-  you can pay. HOA President makes fines cost its opponent 1 more. Jonnhy '5 inches' pays out whenever you pay one.
+  you can pay. HOA President makes fines cost its opponent 1 more. Johnny '5 inches' pays out whenever you pay one.
 - Complaints stay when a creature changes sides (Space Squid) and go away when it leaves the field.
 - **Mall Cop Gary:** enemy creatures with a Complaint can't attack. **Neighborhood Watch** is a Spell that stays in its
   spell zone for your opponent's next 2 turns. Pipebomb can destroy it there.
@@ -357,23 +369,27 @@ you play them early.
 - **One-shot spell:** a Spell or Instant Spell (not a Continuous or Field Spell). **The Archmage:** the first one-shot
   spell you play each turn resolves twice (costs aren't paid again). **Déjà Vu** plays a one-shot spell from your Waste
   Repository as if it were in your hand, then banishes it.
+- **Spellcount 3+ only (Abracadabra, Extra Credit):** you can only play the card if it would be at least your 3rd
+  spell this turn (it counts itself). A spell Déjà Vu plays counts too, so Déjà Vu as your 2nd spell can play one.
 - **Polymorph:** the creature is a Frog with 1 ATK and no effects until the end of your next turn. Its HP doesn't
-  change, and damage it takes as a Frog stays when it turns back. A Frog has exactly 1 ATK, so Complaints don't lower
-  it (they're still there when it turns back).
-- **Abracadabra:** the creature goes back to its owner's hand as a new card: its damage, Complaints and fusion stack
+  change. When it turns back it has the HP it had before Polymorph, so damage it took as a Frog is gone (a Frog that's
+  destroyed stays destroyed). A Frog has exactly 1 ATK, so Complaints don't lower it (they're still there when it
+  turns back).
+- **Abracadabra (Spellcount 3+ only):** the creature goes back to its owner's hand as a new card: its damage, Complaints and fusion stack
   are gone, and it has to be materialized again (paying its flux). A creature you took with Space Squid goes back to
   its owner's hand, not yours.
 - **Card Trick:** you see your opponent's whole hand, then pick one card. Below Spellcount 3 they shuffle it into
   their deck; at Spellcount 3+ it goes to their Waste Repository.
 - **Spelling Mistake:** take the ATK and HP the creature has right now (Complaints and other changes included) and
   swap them: the old ATK is its new HP and max HP, and the old HP is its new ATK. Effects that are still going
-  (a Complaint, +ATK until end of turn) keep applying afterwards. A creature with 0 ATK is destroyed. On a Frog, the
-  HP becomes 1 (a Frog has 1 ATK), and once it turns back its ATK is the HP it had.
-- **Wild Magic:** a 6 rolls twice more; a 6 on those rolls again too. At Spellcount 3+ you roll two dice, pick one
-  result and ignore the other. Loaded Dice can reroll any of the dice. "Oops" picks your highest-ATK creature (you
-  choose on a tie) and does nothing if you have none.
-- **Extra Credit:** the creature can make a second attack in the same Battle Phase, after its first (it's winded
+  (a Complaint, +ATK until end of turn) keep applying afterwards. A creature with 0 ATK is destroyed. On a Frog, its
+  HP becomes 1 (a Frog has 1 ATK); when it turns back, its ATK is the HP it had as a Frog and its HP goes back to
+  what it had before Polymorph.
+- **Extra Credit (Spellcount 3+ only):** the creature can make a second attack in the same Battle Phase, after its first (it's winded
   after the first, as normal). Creatures that can't attack this turn still can't.
+- **Wizard Tower:** banish a fusion splice from under it to return a one-shot spell from your Waste Repository to
+  your hand. It isn't once per turn, so you can do it once for each splice, and Complaints don't stop it.
+- **Community College of Magic:** whoever plays their 3rd spell in a turn gains 1 flux for that turn (both players).
 
 ## 15. Advanced rules
 
@@ -436,9 +452,9 @@ the first drafts were weak (Mundane 21%, Wizards 28% against the six playtest de
 +2 HP and the fine went from 2 to 3 flux (52–54%); Spell Slinger went from "3 damage at Spellcount 3" to 1 damage to
 the opponent for every spell (51–56%). Wizard draws are optional ("may") so the deck doesn't run itself out. Abracadabra
 and Card Trick first drew cards and were weaker than Jar of Materialism, so the Wizard spells were redone so that each
-one does a different job (bounce, hand disruption, burn, recursion, Frogs, an ATK/HP swap, a d6 of chaos, a second
-attack). Night School wins about 55%; with a Jar of Materialism instead of a Wild Magic it would be about 62%, so Wild
-Magic is the chaos pick, not the strong one. Angels with Descend win about 61% (51% with the same deck and no Descend); Fallen Grace and
+one does a different job (bounce, hand disruption, burn, recursion, Frogs, an ATK/HP swap, a second attack); Wild
+Magic, the d6 of chaos, was cut in the card audit. In a 1,000,000-game round robin of 200 decks (14 starters, 166
+themed decks and 20 "meta" decks tuned only to win), Night School won 47% and Wizard decks 42% on average. Angels with Descend win about 61% (51% with the same deck and no Descend); Fallen Grace and
 Holy Hustle barely changed.
 
 **Stat budget.** points = ATK + HP ÷ 2 + (Speed − 4) ÷ 2 + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
