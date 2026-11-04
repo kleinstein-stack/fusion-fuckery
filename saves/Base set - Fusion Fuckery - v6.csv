@@ -10,7 +10,7 @@ Bull Run,Continuous Spell,N/A,N/A,N/A,,"The first time you gain gold each turn: 
 
 While you have 5 or more gold in your pool, your 'Greedy' creatures gain +1 ATK.",Goblin,,
 Goblin Bank,Continuous Spell,N/A,N/A,N/A,,"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.",Goblin,,
-Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,At the end of your turn: a random 'Mutant' creature mutates. ,Mutant,,yes
+Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,At the end of your turn: a random 'Mutant' creature mutates. ,Mutant,,
 Cherub,Creature,1,2,1,6,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 When materialized: Restore 2 HP to another creature.",Angel,Holy / Humanoid / Winged,
@@ -250,7 +250,7 @@ Tax Evasion,Instant Spell,N/A,N/A,N/A,,"When an enemy creature attacks an 'Ordin
 Thiefling Sleight of Hand,Instant Spell/Thiefling,N/A,N/A,N/A,,"When your opponent casts a spell, grab that spell card from your opponent and shuffle it in your deck.
 
 (Instant Spell)
-",,,yes
+",,,
 Loaded Dice,Instant Spell,,,,,"Choose a coin flip or die roll, yours or your opponent's. Flip or roll it again and use the second result.",,,
 Blood Frenzy,Spell,,,,,Choose an 'Unholy' creature you control: It gains +4 ATK and +2 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,
 Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next 'Unholy' creature you materialize this turn costs 2 less flux.,Blood Demon,,
@@ -273,7 +273,7 @@ Forced Evolution,Spell,,,,,"Choose a creature. It restores +2 HP, then mutates."
 Host Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK and 3 HP permanently.,Parasite,,yes
 Infection Burst,Spell,N/A,N/A,N/A,,Infest a target creature with a 'Parasite' creature from your hand or Waste Repository.,Parasite,,yes
 And for my next trick...,Spell,N/A,N/A,N/A,,"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don't have any coins left. After stealing their coin, add this card to their deck and shuffel.",,,yes
-Crack a pack,Spell,N/A,N/A,N/A,,"Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository. ",,,yes
+Crack a pack,Spell,N/A,N/A,N/A,,"Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository. ",,,
 Energy Drink,Spell,N/A,N/A,N/A,,Choose a creature you control: Restore half its max HP (rounded down). It gains +2 Speed until end of turn.,,,
 Jar of Materialism,Spell,N/A,N/A,N/A,,"Draw 1 card and then draw another card.
 
