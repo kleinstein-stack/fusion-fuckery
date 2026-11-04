@@ -8,7 +8,8 @@
 var BattleSim = (function () {
 "use strict";
 
-const R = { php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
+const R = { speedNormal: 4, speedScale: 0.5, coinTie: true,   // v4.6: Speed 1-8 and a coin flip on a speed tie
+  php: 30, hand: 5, fluxStart: 3, fluxMax: 10, secondFlux: 1, lanes: 3, fuseMin: 5, fuseFlux: 2,
   handLimit: 8, zones: 3, emptyDeck: 5, turnLimit: 40,   // turnLimit: turns per player before the game is a draw
   early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
   redraw: true,   // v4.3: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
@@ -108,13 +109,13 @@ const fluffy = x => hasAttr(x.d, "fluffy");
 const isClaw = c => !!(c.d.fx && c.d.fx.claw);
 const hasClaw = p => !!(p.field && isClaw(p.field.c));
 function clawCheck(g) {
-  for (const p of g.p) if (!hasClaw(p)) for (const u of units(p)) if (fluffy(u) && onField(g, u)) {
+  for (const p of g.p) if (!hasClaw(p)) for (const u of units(p)) if (fluffy(u) && onField(g, u) && says(u.d, /destroyed if you stop controlling/i)) {
     L(g, `  ${who(g, p)} has no Claw Machine, so ${u.d.name} is destroyed.`); destroy(g, u, {}); if (g.over) return;
   }
 }
 // Claw Machine: a Fluffy creature may attack the player directly past the creature in front of it (which hits back),
 // unless the opponent controls a Fluffy creature
-const bypass = (g, u) => fluffy(u) && hasClaw(g.p[u.ctrl]) && !units(foe(g, g.p[u.ctrl])).some(fluffy);
+const bypass = (g, u) => fluffy(u) && hasClaw(g.p[u.ctrl]) && says(g.p[u.ctrl].field.c.d, /attack your opponent directly/i) && !units(foe(g, g.p[u.ctrl])).some(fluffy);
 const canFace = (g, u) => !foe(g, g.p[u.ctrl]).lanes[u.lane] || bypass(g, u);
 function tutor(g, p, pick) {   // search the deck: pick(card) -> a score, or null if it can't be taken. Shuffles after.
   let best = null;
@@ -124,11 +125,19 @@ function tutor(g, p, pick) {   // search the deck: pick(card) -> a score, or nul
   L(g, `  ${who(g, p)} searches the deck for ${best.c.d.name}.`);
   return best.c;
 }
-// Does the attacker strike before e? The attacker gets +1 Speed and wins ties. Twisted Dimensions reverses speed:
-// the slower creature strikes first and the attacker gets -1 Speed instead (it still wins ties).
-const attFirst = (g, att, e) => fieldFx(g, "trick") ? speedOf(att) - 1 <= speedOf(e) : speedOf(att) + 1 >= speedOf(e);
-function valueOf(g, u) { const f = fxOf(u); return expAtk(g, u) + Math.max(0, u.hp) / 2 + (speedOf(u) - 2) + (f && f.value || 0); }
-const defValue = d => d.atk + dieAvg(d.die) + d.hp / 2 + (d.spd - 2) + (d.fx && d.fx.value || 0);
+// Does the attacker strike before e? The attacker gets +1 Speed. Twisted Dimensions reverses speed: the slower creature
+// strikes first and the attacker gets -1 Speed instead. A tie is a coin flip (v4.6; before that the attacker won ties).
+// real: an actual fight flips the coin; the AI's previews count a tie as the defender striking first.
+function attFirst(g, att, e, real) {
+  const trick = fieldFx(g, "trick"), a = speedOf(att) + (trick ? -1 : 1), b = speedOf(e), d = trick ? b - a : a - b;
+  if (d !== 0) return d > 0;
+  if (!R.coinTie) return true;
+  if (!real) return false;
+  const first = g.dice() < 0.5; L(g, `  Speed tie: the coin says ${first ? att.d.name : e.d.name} strikes first.`); return first;
+}
+const spdWorth = s => (s - R.speedNormal) * R.speedScale;
+function valueOf(g, u) { const f = fxOf(u); return expAtk(g, u) + Math.max(0, u.hp) / 2 + spdWorth(speedOf(u)) + (f && f.value || 0); }
+const defValue = d => d.atk + dieAvg(d.die) + d.hp / 2 + spdWorth(d.spd) + (d.fx && d.fx.value || 0);
 // how much the AI cares about 1 PHP / 1 gold right now
 function phpW(g, p) {   // the same curve the attacker uses for damage to the other player (scoreFace)
   const threat = units(foe(g, p)).reduce((s, u) => s + expAtk(g, u), 0);
@@ -286,6 +295,7 @@ function destroy(g, u, info) {
   if (fluffy(u) && hasClaw(p) && says(p.field.c.d, /fluffy' creatures? you control is destroyed: draw/i) && !p.once.has("Claw Machine:draw")) {
     p.once.add("Claw Machine:draw"); L(g, `  Claw Machine: ${who(g, p)} draws a card.`); draw(g, p, 1);
   }
+  if (fluffy(u)) for (const k of units(p)) { const kf = fxOf(k); if (kf && kf.fluffyDraw && k !== u && says(k.d, /fluffy' creature you control dies: draw/i)) { L(g, `  ${k.d.name}: ${who(g, p)} draws a card.`); draw(g, p, 1); } }
   for (const k of allUnits(g)) { const kf = fxOf(k); if (kf && kf.onAnyDeath) kf.onAnyDeath(g, k, u); }
 }
 function banishUnit(g, u) {
@@ -422,12 +432,12 @@ function unfuse(g, by, u) {
     });
   }
 }
-function steal(g, p, u) {   // Space Squid: until the end of this turn
+function steal(g, p, u, until) {   // Space Squid: until the end of this turn, or (v4.6) the start of your next turn
   const o = g.p[u.ctrl], free = emptyLanes(p);
   if (!free.length || !onField(g, u)) return;
   const lane = free.includes(u.lane) ? u.lane : free[0];
   o.lanes[u.lane] = null;
-  u.stolen = { home: u.lane }; u.ctrl = p.i; u.lane = lane; u.attacked = false;
+  u.stolen = { home: u.lane, until: until || "end" }; u.ctrl = p.i; u.lane = lane; u.attacked = false; u.winded = false;
   p.lanes[lane] = u;
   L(g, `  ${who(g, p)} takes control of ${u.d.name} for the turn.`);
 }
@@ -586,7 +596,7 @@ function fight(g, att, def, intercepted) {
   shelterResponse(g, o, att, def, ctx);
   const back = canHitBack(def);
   if (!back) L(g, `  ${def.d.name} is winded and can't hit back.`);
-  const first = !back || attFirst(g, att, def), a = first ? att : def, b = first ? def : att;
+  const first = !back || attFirst(g, att, def, true), a = first ? att : def, b = first ? def : att;
   strike(g, a, b, { shelter: ctx.shelter, attack: a === att });
   if (onField(g, a) && onField(g, b) && (b === att || back)) strike(g, b, a, { shelter: ctx.shelter, attack: b === att });
 }
@@ -598,8 +608,8 @@ function directAttack(g, att) {
   if (g.over || !onField(g, att)) return;
   const blocker = interceptChoice(g, att, true);
   if (blocker) { L(g, `  ${blocker.d.name} steps in front of it.`); return fight(g, att, blocker, true); }
-  const { backs, late } = hitBacks(g, att);
-  for (const e of backs) if (!attFirst(g, att, e)) strike(g, e, att, {});
+  const { backs, late } = hitBacks(g, att), early = new Set(backs.filter(e => !attFirst(g, att, e, true)));
+  for (const e of backs) if (early.has(e)) strike(g, e, att, {});
   if (onField(g, att) && !g.over) {
     let n = atkOf(g, att), nat = 0;
     if (att.die) { nat = rollDie(g, att); n += nat; }
@@ -611,7 +621,7 @@ function directAttack(g, att) {
       if (af && af.onCombatDamage) af.onCombatDamage(g, att, n);
     }
   }
-  for (const e of backs) if (attFirst(g, att, e) && onField(g, att) && onField(g, e)) strike(g, e, att, {});
+  for (const e of backs) if (!early.has(e) && onField(g, att) && onField(g, e)) strike(g, e, att, {});
   for (const e of late) if (onField(g, att) && onField(g, e)) { L(g, `  ${e.d.name} is winded, so it hits back last.`); strike(g, e, att, {}); }
 }
 
@@ -779,13 +789,18 @@ const FX = {
     },
     onLosePHP(g, u) { u.tAtk += 1; },
     onKill(g, u) { L(g, `  Beelzechad deals 2 damage to each enemy creature.`); units(foe(g, g.p[u.ctrl])).forEach(t => damage(g, t, 2, {})); } },
-  "The Meat Cathedral": { value: 4, perSplice: 0.6, sacValue: () => 2, onSacrifice(g, u) { u.pAtk += 2; }, acts: [{ id: "feast", pri: 3, ai(g, u) {
-    const p = g.p[u.ctrl], spare = wasteSpare(p), useWaste = spare.length >= 2;
+  "The Meat Cathedral": { value: 4, perSplice: 0.6,   // +2 ATK on sacrifices (older text) or when its own banish takes a creature (v4.5 text)
+    sacValue: (g, u) => says(u.d, /whenever you sacrifice a creature/i) ? 2 : 0,
+    onSacrifice(g, u) { if (says(u.d, /whenever you sacrifice a creature/i)) u.pAtk += 2; }, acts: [{ id: "feast", pri: 3, ai(g, u) {
+    const p = g.p[u.ctrl], grow = says(u.d, /whenever you banish creature/i);
+    const spare = grow ? wasteSpare(p).sort((a, b) => isUnitKind(b.d.kind) - isUnitKind(a.d.kind)) : wasteSpare(p), useWaste = spare.length >= 2;
     if (!useWaste && (!spliceCount(u) || u.stolen)) return null;
-    const k = num(u.d, /restore (\d+) HP to a creature or gain/i, 5), t = bestHeal(g, p, k), hs = t ? t.s : 0, ps = k * phpW(g, p), s = Math.max(hs, ps) - (useWaste ? 0.6 : spliceCost(u));
+    const k = num(u.d, /restore (\d+) HP to a creature or gain/i, 5), t = bestHeal(g, p, k), hs = t ? t.s : 0, ps = k * phpW(g, p), s = Math.max(hs, ps) - (useWaste ? 0.6 : spliceCost(u)) + (grow && (!useWaste || spare.slice(0, 2).some(c => isUnitKind(c.d.kind))) ? 1.2 : 0);
     return s > 0.3 ? { score: s, run: () => {
+      const ate = useWaste ? spare.slice(0, 2).some(c => isUnitKind(c.d.kind)) : true;
       if (useWaste) banishFromWaste(g, p, spare.slice(0, 2)); else if (!banishSplice(g, u)) return;
       if (hs >= ps) restoreHP(g, p, t.u, k); else { L(g, `  The Meat Cathedral: +${k} PHP.`); gainPHP(g, p, k); }
+      if (grow && ate && onField(g, u)) u.pAtk += num(u.d, /gains \+(\d+) ATK permanently/i, 2);
     } } : null;
   } }] },
   "Ergof The Dark Emperor": { value: 5, perSplice: 1.5, acts: [{ id: "destroy", pri: 1, ai(g, u) {
@@ -818,15 +833,16 @@ const FX = {
     aura(g, k, u) { return hasAttr(u.d, "greedy") ? Math.floor(g.p[k.ctrl].gold / 5) : 0; } },
   "Goblin Bombardier": { value: 4, perSplice: 0.8, goldSink: true, acts: [{ id: "bomb", pri: 1, ai(g, u) {
     const p = g.p[u.ctrl], o = foe(g, p); let best = null;
-    const worth = (t, x) => { let s = damageWorth(g, p, t, x); for (const l of NB[t.lane]) if (o.lanes[l]) s += damageWorth(g, p, o.lanes[l], Math.floor(x / 2)); return s; };
+    const m = String(u.d.text || "").match(/deal (\d+) damage to an enemy creature and (\d+) to/i), fixed = m ? [+m[1], +m[2]] : null;   // v4.6: a splice for a fixed hit
+    const worth = (t, x, side) => { let s = damageWorth(g, p, t, x); for (const l of NB[t.lane]) if (o.lanes[l]) s += damageWorth(g, p, o.lanes[l], side != null ? side : Math.floor(x / 2)); return s; };
     for (const t of units(o)) {
-      for (let x = 1; x <= p.gold; x++) { const s = worth(t, x) - x * goldW(g, p) * 0.6; if (!best || s > best.s) best = { t, x, s, splice: false }; }
-      if (spliceCount(u) && !u.stolen) { const s = worth(t, 4) - spliceCost(u); if (!best || s > best.s) best = { t, x: 4, s, splice: true }; }
+      if (!fixed) for (let x = 1; x <= p.gold; x++) { const s = worth(t, x) - x * goldW(g, p) * 0.6; if (!best || s > best.s) best = { t, x, s, splice: false }; }
+      if (spliceCount(u) && !u.stolen) { const s = worth(t, fixed ? fixed[0] : 4, fixed && fixed[1]) - spliceCost(u); if (!best || s > best.s) best = { t, x: fixed ? fixed[0] : 4, s, splice: true }; }
     }
     return best && best.s > 1 ? { score: best.s, run: () => {
       const side = NB[best.t.lane].map(l => o.lanes[l]).filter(Boolean);
       if (best.splice) { if (!banishSplice(g, u)) return; } else { p.gold -= best.x; L(g, `${who(g, p)} pays ${best.x} gold (Goblin Bombardier).`); }
-      damage(g, best.t, best.x, {}); side.forEach(t => damage(g, t, Math.floor(best.x / 2), {}));
+      damage(g, best.t, best.x, {}); side.forEach(t => damage(g, t, fixed && best.splice ? fixed[1] : Math.floor(best.x / 2), {}));
     } } : null;
   } }] },
   "Indulgence Seller": { value: 3, perSplice: 0.8, goldSink: true, acts: [{ id: "sell", pri: 3, ai(g, u) {
@@ -859,7 +875,7 @@ Object.assign(FX, {
     const inHand = p.hand.some(isClaw), s = !hasClaw(p) && !inHand ? 3 : inHand ? 0.2 : 0.9;   // a spare one against Pipebomb
     return { score: s, run: () => tutor(g, p, clawPick) };
   } }] },
-  "Plush Cherub": FX["Cherub"], "Plush Blood Imp": FX["Blood Imp"], "Plush Sanctified Knight": FX["Sanctified Knight"],
+  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Sanctified Knight": FX["Sanctified Knight"],
   "Plush Judicator Angel": FX["Judicator Angel"], "Plush Vein Ripper": {},
   "Plush Goblin": { value: 1, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); } },
   "Plush Dark Duchess": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
@@ -942,7 +958,8 @@ const SPELLS = {
       const s = after - before - keepWorth(g, u) + sacrificeBonus(g, p) - 0.8;
       if (!best || s > best.s) best = { u, s };
     }
-    return best && best.s > 0.5 ? { pri: 3, score: best.s, run: () => cast(g, p, c, () => { best.u.tAtk += 4; best.u.tSpd += 1; best.u.frenzy = true; L(g, `  ${best.u.d.name} gets +4 ATK and +1 Speed.`); }) } : null;
+    const sp = num(c.d, /\+(\d+) Speed/i, 1);
+    return best && best.s > 0.5 ? { pri: 3, score: best.s, run: () => cast(g, p, c, () => { best.u.tAtk += 4; best.u.tSpd += sp; best.u.frenzy = true; L(g, `  ${best.u.d.name} gets +4 ATK and +${sp} Speed.`); }) } : null;
   } },
   "Blood Pact Summoning Circle": { needs: x => x.unholy >= 4, play(g, p, c) {
     if (g.phase !== 1 || p.pact || !canPay(p, 4) || !p.hand.some(x => x.d.kind === "creature" && hasAttr(x.d, "unholy"))) return null;
@@ -999,16 +1016,21 @@ const SPELLS = {
   } },
   "Space Squid": { play(g, p, c) {
     if (g.phase !== 1 || g.turnNo === 1 || !emptyLanes(p).length) return null;
-    const o = foe(g, p);
+    const o = foe(g, p), paid = says(c.d, /pay PHP equal to/i), until = says(c.d, /start of your next turn/i) ? "start" : "end";
+    const cost = t => paid ? (t.d.kind === "fusion" ? num(c.d, /(\d+) for a fusion/i, 10) : t.d.flux || 0) : 0;
     const outlet = units(p).some(u => fxOf(u) && fxOf(u).bpWaste && !p.once.has(u.d.name + ":eat")) || p.hand.some(x => x.d.name === "Blood Frenzy");
     let best = null;
     for (const t of units(o)) {
-      let s = valueOf(g, t) * (outlet ? 1.1 : 0.35);
+      const k = cost(t); if (k && !canPay(p, k)) continue;
+      let s = valueOf(g, t) * (outlet ? 1.1 : until === "start" ? 0.6 : 0.35) - k * phpW(g, p);
       for (const u of units(p)) if (u.lane === t.lane && !u.attacked) s += expAtk(g, u) * 0.4;
-      if (!best || s > best.s) best = { t, s };
+      if (!best || s > best.s) best = { t, s, k };
     }
     if (!best || best.s - 1.5 <= 0.5) return null;
-    return { pri: best.s >= 8 ? 1 : 3, score: best.s - 1.5, run: () => cast(g, p, c, () => steal(g, p, best.t)) };
+    return { pri: best.s >= 8 ? 1 : 3, score: best.s - 1.5, run: () => cast(g, p, c, () => {
+      if (best.k) { L(g, `  ${who(g, p)} pays ${best.k} PHP for Space Squid.`); payPHP(g, p, best.k); if (g.over) return; }
+      steal(g, p, best.t, until);
+    }) };
   } },
   "Unfuse": { play(g, p, c) {
     let best = null;
@@ -1114,40 +1136,40 @@ const FX_TEXT = {
   "Ritual Pit": "1y1hlbr",
   "Bull Run": "wo0nar",
   "Goblin Bank": "2h6mga",
-  "Cherub": "160t25m",
-  "Acolyte Adam": "jmu3li",
-  "Sanctified Knight": "6doxi9",
-  "Judicator Angel": "1akkkfs",
+  "Cherub": "1i4xkro",
+  "Acolyte Adam": "1gn0xd8",
+  "Sanctified Knight": "kxmoya",
+  "Judicator Angel": "1s5f5uq",
   "Chapel Guard": "1rr35fj",
-  "Purifier Nun": "1vt86vl",
-  "Bellkeeper Monk": "1fdt87x",
-  "Beelzechud": "vxhv0k",
-  "Carrion The Dark Duchess": "162n1oe",
-  "Nomed The Dark Viscount": "kz10p3",
-  "Renroc The Dark Marquis": "1yqlgwa",
-  "Blood Priest": "bl85kl",
-  "Blood Imp": "m8o3k0",
-  "Vein Ripper": "10k62iz",
-  "Salem": "1xbc774",
-  "Hemogoblin": "ryel57",
+  "Purifier Nun": "1vnz049",
+  "Bellkeeper Monk": "1puh9sl",
+  "Beelzechud": "169aojl",
+  "Carrion The Dark Duchess": "ywk7kl",
+  "Nomed The Dark Viscount": "ntpdy7",
+  "Renroc The Dark Marquis": "1vm6v6c",
+  "Blood Priest": "1eg1uiq",
+  "Blood Imp": "1shj6kh",
+  "Vein Ripper": "8rzk2y",
+  "Salem": "1q5hw2w",
+  "Hemogoblin": "1mc553j",
   "Goblin": "1vi286c",
   "Penny Stock Goblin": "17185i0",
   "Sanctuary Bells": "1x70bw",
-  "Seraphim Wall": "11sz8ci",
-  "Fallen Angel": "1bnxukr",
-  "Lord Lazarus": "s26g4x",
-  "Arch Cleric": "1stpgub",
-  "Beelzechad": "137aqi9",
-  "The Meat Cathedral": "1wnvz6c",
-  "Ergof The Dark Emperor": "5je1g9",
-  "Hop Goblin": "14zn8rm",
+  "Seraphim Wall": "1xi0gg8",
+  "Fallen Angel": "hg5lep",
+  "Lord Lazarus": "1r75yjy",
+  "Arch Cleric": "ccpu2t",
+  "Beelzechad": "1jqtco5",
+  "The Meat Cathedral": "18ydeum",
+  "Ergof The Dark Emperor": "1x6i86",
+  "Hop Goblin": "iw1mk2",
   "Divine Silence": "16r81in",
   "Divine Shelter": "103rf6k",
   "Open Vein": "1h3uaxc",
   "Sacrificial Lamb": "14qq9lo",
   "Market Crash": "7o36jn",
   "Loaded Dice": "kide18",
-  "Blood Frenzy": "j4iw80",
+  "Blood Frenzy": "88e35t",
   "Blood Pact Summoning Circle": "1jpgxtw",
   "Goblin Shuffle": "1au5pap",
   "Goblin Stock Broker": "1qrqb09",
@@ -1155,21 +1177,21 @@ const FX_TEXT = {
   "Jar of Materialism": "1frc2vt",
   "Microwave": "1xmfz69",
   "Pipebomb": "v0icxo",
-  "Space Squid": "o208j4",
+  "Space Squid": "udsda7",
   "Unfuse": "2rr8zr",
-  "Goblin General": "8qmmvx",
+  "Goblin General": "v3esdv",
   "Gob-omber": "1o9ssaa",
-  "Goblin Miner": "dyc7gj",
-  "Scrooger": "1fxt3o0",
-  "Gabe": "scrh2r",
+  "Goblin Miner": "d8v9",
+  "Scrooger": "ld1tn1",
+  "Gabe": "23e116",
   "Goblin Pit Boss": "11mmduo",
-  "Mountain Orc": "1tb89cv",
+  "Mountain Orc": "1y9qf3n",
   "It's Free Fuse-Estate": "15ldyzt",
   "Crimson Altar": "1svaf0d",
-  "Seraph of Judgment": "17hohne",
-  "Goblin King": "1gnko0t",
-  "Goblin Bombardier": "8mrue2",
-  "Indulgence Seller": "ldfco8",
+  "Seraph of Judgment": "rbzf00",
+  "Goblin King": "18zcw2n",
+  "Goblin Bombardier": "17f6r2l",
+  "Indulgence Seller": "1mjo2ok",
   "Market Research": "79bnsq",
   "Overclock": "omv5k",
   "Blood Ledger": "1vrh362",
@@ -1177,20 +1199,20 @@ const FX_TEXT = {
   "Melting Pot": "9ifnp4",
   "Twisted Dimensions": "1gcqmai",
   "Shotgun Wedding": "lzqift",
-  "Claw Machine": "gm5re3",
-  "Arcade Kid": "1eyswx1",
-  "Plush Collector": "1xib0ej",
+  "Claw Machine": "18u65sc",
+  "Arcade Kid": "fs5awq",
+  "Plush Collector": "7vt99a",
   "Plush Catalogue": "m8v2ln",
   "Needle and Thread": "10111wp",
-  "Plush Cherub": "1kyu47t",
-  "Plush Blood Imp": "fmy7gt",
-  "Plush Goblin": "1y7wq9e",
-  "Plush Vein Ripper": "1lqltp1",
-  "Plush Sanctified Knight": "1z2y5w",
-  "Plush Judicator Angel": "18xzc53",
-  "Plush Dark Duchess": "bcc52v",
-  "Patchwork Plush": "40pmdj",
-  "Mega Plush": "sw3s1l",
+  "Plush Cherub": "16zn475",
+  "Plush Blood Imp": "1jq1dnd",
+  "Plush Goblin": "1aamqke",
+  "Plush Vein Ripper": "5h7gkh",
+  "Plush Sanctified Knight": "sxbdhc",
+  "Plush Judicator Angel": "1c3jdc3",
+  "Plush Dark Duchess": "11ssl6r",
+  "Patchwork Plush": "wvgafv",
+  "Mega Plush": "4jejkb",
 };
 
 /* ---------------- the AI ---------------- */
@@ -1421,7 +1443,7 @@ function endTurn(g, p) {
   for (const u of units(p)) { const f = fxOf(u); if (f && f.endTurn) f.endTurn(g, u); if (g.over) return; }
   for (const u of units(p)) if (u.frenzy) { sacrifice(g, p, u); if (g.over) return; }
   for (const q of g.p) if (q.field && q.field.c.d.fx && q.field.c.d.fx.endEachTurn) q.field.c.d.fx.endEachTurn(g, q);
-  for (const u of units(p)) if (u.stolen) giveBack(g, u);
+  for (const u of units(p)) if (u.stolen && u.stolen.until !== "start") giveBack(g, u);
   clawCheck(g);
   for (const u of allUnits(g)) { u.tAtk = 0; u.tSpd = 0; u.negated = false; }
   while (p.hand.length > R.handLimit) {
@@ -1441,6 +1463,7 @@ function playTurn(g) {
   p.flux = p.maxFlux + (first && g.first !== p.i ? R.secondFlux : 0);
   L(g, `— Turn ${g.turnNo}: ${who(g, p)} · ${p.php} PHP vs ${o.php} · ${p.flux} flux${p.gold ? ` · ${p.gold} gold` : ""} —`);
   if (g.log) L(g, `  Hand: ${p.hand.map(c => c.d.name).join(", ") || "empty"}.`);
+  for (const u of units(p)) if (u.stolen && u.stolen.until === "start") giveBack(g, u);   // Space Squid (v4.6) ends now
   if (R.reactor) { reactorChoice(g, p, first); if (g.over) return; }
   for (const u of units(p)) { if (u.radHp) { u.hp = Math.min(u.hp, u.maxHp); u.radHp = 0; } u.radAtk = 0; u.attacked = false; u.winded = false; }
   for (const q of g.p) for (const z of spellsOf(q).slice()) if (z.bomb && z.bomb.by === p.i) removeSpell(g, q, z, "Pipebomb");

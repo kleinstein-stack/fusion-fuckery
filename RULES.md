@@ -1,10 +1,9 @@
-# Fusion Fuckery: Rulebook v4.5 (gameplay v2)
+# Fusion Fuckery: Rulebook v4.6 (gameplay v2)
 
 Decided on 2026-10-19. This replaces the Rulebook v2.1 (*The Blocking Update*) wherever the two disagree; everything
 v2.1 says that isn't covered here still applies. The Dino, Mutant, Parasite, Bleed and Equipment rules are only in
 v2.1, because those cards are in cold storage. The player-facing version with diagrams is
-`Fusion Fuckery Rulebook v4.5 (editable).docx` (opens in Google Docs; `Fusion Fuckery Rulebook v4.4.pdf` is the last
-PDF). The card editor's checks and simulators use these numbers
+`Fusion Fuckery Rulebook v4.6 (editable).docx` (opens in Google Docs) and `Fusion Fuckery Rulebook v4.6.pdf`. The card editor's checks and simulators use these numbers
 (`PLAY` in `tools/editor-template.html`, `R` in `tools/battle-sim.js`).
 
 **v4.3 (2026-10-21):** 40 starting PHP (was 30), a free redraw for an opening hand with 0 or 1 creatures, and creatures
@@ -31,6 +30,17 @@ or how much skill matters (a careful player still beats a sloppy copy of itself 
 rewrites needed three fixes (Arch Cleric, The Meat Cathedral, Seraph of Judgment) to keep any fusion from being
 "too strong". The v4.4 cards, decks and rulebook are saved under the git tag `save-before-v4.5` and in
 `saves/versions/` ("SAVE before v4.5 rules").
+
+**v4.6 (2026-11-03): after the first playtest.** Speed now runs **1–8** (4 is normal) instead of 1–4, so creatures differ
+more and the attacker's +1 no longer decides most fights; a **speed tie is a coin flip** (it used to go to the attacker).
+Every creature and fusion got a new Speed; Blood Frenzy and Hemogoblin give +2 Speed (was +1) to keep their size.
+**Space Squid** now costs PHP equal to the creature's flux cost (10 for a fusion), lasts until the start of your next
+turn and un-winds the creature; you can't play it without an empty lane. **Claw Machine** only lets you materialize
+Fluffy creatures (no discount, no slipping past blockers, no card draw), and Fluffy creatures stay when it leaves;
+**Plush Cherub** now draws a card whenever another of your Fluffy creatures dies. **Goblin Bombardier** banishes a
+fusion splice for 6 damage and 2 to the creatures next to the target. **The Meat Cathedral** was too strong: 7/20
+(was 8/24), 3 HP or 3 PHP (was 4) and +1 ATK (was +2). Goblins and gold were confirmed balanced. The v4.5 cards, decks
+and rulebook are saved under the git tag `save-before-v4.6` and in `saves/versions/` ("SAVE before v4.6 rules").
 
 ## 1. The Golden Rules
 
@@ -189,17 +199,18 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    lanes next to it hit it back with their ATK, unless they're winded (7).
 4. **Response window:** after the attack is declared, the defending player, then the attacking player, may play
    Instants. "When this creature attacks" effects trigger when the attack is declared.
-5. **Speed decides who hits first.** Speed runs 1–4; 2 is normal. **The attacker gets +1 Speed** for its attack
-   (attacker's advantage). The faster creature deals its damage first; if they're still tied, the attacker goes
-   first. If the first hit destroys the other creature, it doesn't hit back. On a direct attack, enemies faster
-   than the attacker (counting its +1) hit it before it reaches the player; slower ones hit it after.
-   **Twisted Dimensions** (field spell, both players) reverses speed: the slower creature strikes first, the attacker
-   gets −1 Speed instead of +1, and ties still go to the attacker.
+5. **Speed decides who hits first.** Speed runs **1–8**; 4 is normal. **The attacker gets +1 Speed** for its attack
+   (attacker's advantage). The faster creature deals its damage first; if they're still tied, **flip a coin** (v4.6).
+   If the first hit destroys the other creature, it doesn't hit back. On a direct attack, enemies faster than the
+   attacker (counting its +1) hit it before it reaches the player; slower ones hit it after; tied ones flip a coin.
+   **Twisted Dimensions** (field spell, both players) reverses speed: the slower creature strikes first and the
+   attacker gets −1 Speed instead of +1. Ties are still a coin flip.
 6. Damage dealt in combat stays (11).
 7. **Winded:** a creature that attacks is **winded** until the start of your next turn, and so is a fusion the turn
    it's made (13). A winded creature **can't hit back when it's attacked**. It still stands in its lane, so an enemy
    in front of it still can't attack you directly, and its effects still work. Attacking is a choice: the creature
-   that hits now can't defend itself on your opponent's turn.
+   that hits now can't defend itself on your opponent's turn. **Turn a winded creature sideways** to show it, and
+   stand it back up at the start of your next turn.
    **Direct attacks (v4.5):** a winded creature in a lane next to an attacker that hits you directly **still hits it
    back**, but always **last**, after the attacker has hit you and after the other creatures hitting back, whatever
    its speed.
@@ -240,6 +251,10 @@ Fusions are the end goal: each one is stronger than an Ultra.
   fusion's damage is **split evenly** between them, half each for the usual two (the bigger one takes an odd point),
   but it never takes one below 1 HP: a 2/30 fusion made of a 10 HP and a 7 HP creature comes back as 1/10 and 1/7.
   If the fusion was winded, they're winded. They've arrived, so they can't attack this turn.
+- **Space Squid (v4.6):** pay PHP equal to the enemy creature's printed flux cost (10 for a fusion) and move it to an
+  empty lane on your side until the start of your next turn; if it was winded, it isn't any more. Then it goes back to
+  its owner's old lane, or another empty one (with no empty lane, to its owner's Waste Repository). Without an empty
+  lane of your own you can't play Space Squid.
 - **Space Squid and fusing:** a creature you've taken control of can be one of your fusion splices. It stays under your
   fusion until that fusion leaves the field, and then it goes to its owner's Waste Repository (or its owner's side of
   the field, if the fusion is unfused).
@@ -271,13 +286,11 @@ you play them early.
 
 ### 14.4 Fluffy & the Claw Machine (Plushies)
 - **Fluffy** creatures (plushies) can only be materialized, by any means, while you control a **Claw Machine** (Field
-  Spell). If you stop controlling one (it's destroyed, replaced, or the plushy changes sides), your Fluffy creatures
-  are **destroyed** at once. Card text: "Fluffy (you can only materialize this creature while you control a Claw
-  Machine, and it's destroyed if you stop controlling one)."
-- **Claw Machine:** your Fluffy creatures cost 1 less flux; they can attack your opponent directly even when an enemy
-  creature is in front of them, unless your opponent controls a Fluffy creature (the one in front doesn't hit back;
-  the ones in the lanes next to it do, as on any direct attack); once per turn, when one of your Fluffy creatures is
-  destroyed, draw a card.
+  Spell). Card text: "(you can only materialize this creature while you control a Claw Machine)."
+- **Claw Machine (v4.6)** does only that. Losing it doesn't hurt the plushies already on the field; you just can't
+  materialize more until you have one again. (Until v4.6 it also gave a discount, let plushies slip past blockers and
+  drew a card when one died, and plushies were destroyed without it.)
+- **Plush Cherub (v4.6):** whenever another Fluffy creature you control dies, draw a card.
 - Plush cards are plush versions of existing creatures: they keep the original's attributes (so they fit its
   faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy; they search for the Claw
   Machine. Plush Catalogue searches for any card with "Plush" in its name, including more Plush Catalogues.
@@ -309,8 +322,8 @@ you play them early.
 | Flux | starts 3, +1 a turn, max 10. Second player +1 on their first turn |
 | Reactor Phase | +1 max flux and refill; or also Feed (a card to Oblivion: +1 flux this turn); or Skip (no +1, draw 1) |
 | Lanes / spell zones / field spells | 3 / 3 / 1 per player |
-| Speed | 1–4, 2 is normal. The attacker gets +1, faster strikes first, the attacker wins ties |
-| Winded | A creature that attacked, or a fusion just made, can't hit back when attacked until your next turn. On a direct attack it still hits back, last |
+| Speed | 1–8, 4 is normal. The attacker gets +1, faster strikes first, a tie is a coin flip |
+| Winded | Turn it sideways. A creature that attacked, or a fusion just made, can't hit back when attacked until your next turn. On a direct attack it still hits back, last |
 | Fusing | once per turn, 2 flux, two 5+ flux creatures (or fusions) in lanes next to each other. The fusion keeps their damage and is winded |
 | Unfuse | the splices come back at full HP and split the fusion's damage, never below 1 HP |
 | Empty deck | lose 5 PHP for each draw you can't make |
@@ -326,12 +339,12 @@ of **fusion splices**.
 **Plushies (v4.5)** are modelled on Yu-Gi-Oh!'s Toons: one Field Spell holds the whole deck up (the risk), searching
 makes it consistent (Arcade Kid, Plush Collector, Plush Catalogue), and evasive direct attacks make it annoying to
 play against. Pipebomb and Space Squid are the natural counters. Plush versions use their originals' stats; the
-Claw Machine discount and evasion pay for the dependency. Patchwork Plush scales with the Fluffy creatures in your
+Claw Machine discount and evasion paid for the dependency until v4.6, when the playtest cut the Claw Machine down to an enabler. Patchwork Plush scales with the Fluffy creatures in your
 Waste Repository, so losing plushies feeds it. In the battle sim (4,000-game runs) Plushy decks won 46–50% and the
 Plushy starter deck 49–52% against random decks. First drafts were much weaker (22%): the plushies had lower stats than
 the originals and the creature in front hit them back when they slipped past.
 
-**Stat budget.** points = ATK + HP ÷ 2 + (Speed − 2) + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
+**Stat budget.** points = ATK + HP ÷ 2 + (Speed − 4) ÷ 2 + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
 **28 for fusions**. Two 5-flux creatures are worth 22, so a fusion pays them back plus the fuse.
 
 - **Blood Price creatures** used to aim 1–2 points under budget. Since v4.4 they aim for the full budget: in the

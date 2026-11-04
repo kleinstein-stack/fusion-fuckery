@@ -13,7 +13,7 @@ $json = '"' + [System.Web.HttpUtility]::JavaScriptStringEncode($csv) + '"'
 # Built-in copy of the saved decks (starter decks etc.), used when the helper / GitHub can't provide them
 $decksFile = "$root\saves\decks.json"
 $decks = if (Test-Path $decksFile) { [IO.File]::ReadAllText($decksFile, $utf8).Trim().Replace("</", "<\/") } else { '{"decks":[]}' }
-$t = $t.Replace("__IMG_CREATURE__", (b64 "creature.png")).Replace("__IMG_FUSION__", (b64 "fusion.png")).Replace("__IMG_SPELL__", (b64 "spell.png")).Replace("__SYM_INSTANT__", (b64 "sym-instant.png")).Replace("__SYM_FIELD__", (b64 "sym-field.png")).Replace("__SYM_CONTINUOUS__", (b64 "sym-continuous.png")).Replace("__CSV_DATA__", $json).Replace("__DECKS_DATA__", $decks)
+$t = $t.Replace("__IMG_CREATURE__", (b64 "creature.png")).Replace("__IMG_FUSION__", (b64 "fusion.png")).Replace("__IMG_SPELL__", (b64 "spell.png")).Replace("__SYM_INSTANT__", (b64 "sym-instant.png")).Replace("__SYM_FIELD__", (b64 "sym-field.png")).Replace("__SYM_CONTINUOUS__", (b64 "sym-continuous.png")).Replace("__IMG_BADGE_GOLD__", (b64 "badge-gold.png")).Replace("__CSV_DATA__", $json).Replace("__DECKS_DATA__", $decks)
 # The battle simulator goes in last, so the placeholders above can't match inside it
 $engine = [IO.File]::ReadAllText("$tools\battle-sim.js", $utf8).Replace("</script", "<\/script")
 $t = $t.Replace("__BATTLE_ENGINE__", $engine)

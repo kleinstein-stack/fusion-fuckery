@@ -86,9 +86,9 @@
   .sym { position: absolute; left: 662px; top: 20px; width: 62px; height: 62px; }
   .card .f-flux { position: absolute; left: 626px; top: 26px; width: 42px; height: 44px; line-height: 44px; font-size: 33px; font-weight: 500; text-align: right; }
   .card div.f-flux { white-space: nowrap; }
-  /* gold flux badge = this creature costs enough to fuse (PLAY.fuseMinFlux+). Multiply keeps the badge outline and DNA icon. */
-  .card .flux-gold { position: absolute; left: 627px; top: 27px; width: 87px; height: 41px; border-radius: 21px; display: none; pointer-events: none;
-    background: linear-gradient(135deg, #ffe680 0%, #f5bf2a 45%, #d08f0c 100%); mix-blend-mode: multiply; }
+  /* gold flux badge = this creature costs enough to fuse (PLAY.fuseMinFlux+): a full-card overlay (templates/badge-gold.png) */
+  .card .flux-gold { position: absolute; left: 0; top: 0; width: 744px; height: 1039px; display: none; pointer-events: none;
+    background: url("__IMG_BADGE_GOLD__") no-repeat 0 0 / 100% 100%; }
   .card.can-fuse .flux-gold { display: block; }
 
   .art {
@@ -1344,7 +1344,7 @@ const RULES = { main: 30, fusion: 10, copies: 3 };
 /* Gameplay v2: flux starts at 3 and caps at 10, max 3 creatures (one per lane), fusions only between
    creatures costing 5+ flux in adjacent lanes. Cost tiers, aimed at a 2 : 3 : 2 : 1 spread per faction;
    Ultras aim for about 20 stat points, fusions for 28 (the end goal). */
-const PLAY = { fluxStart: 3, fluxMax: 10, lanes: 3, fuseMinFlux: 5, fuseParts: 2, speedMin: 1, speedMax: 4, speedNormal: 2,
+const PLAY = { fluxStart: 3, fluxMax: 10, lanes: 3, fuseMinFlux: 5, fuseParts: 2, speedMin: 1, speedMax: 8, speedNormal: 4,
   startPHP: 30, openingHand: 5, drawPerTurn: 1, secondPlayerFlux: 1,   // first player skips their first draw; spells are free
   freeRedraw: true, attackOnArrival: false,   // v4.3: redraw a hand with 0-1 creatures once; nothing attacks the turn it arrives
   reactorFeedSkip: true, winded: true,   // v4.4: Reactor Phase Feed (card to Oblivion, +1 flux) or Skip (no +1 max, draw 1); attackers can't hit back
@@ -1369,7 +1369,7 @@ function budgetOf(c) {
   const f = fluxOf(c), fusion = isFusionCard(c);
   if (!fusion && f === null) return null;
   const spd = speedOf(c) ?? PLAY.speedNormal;
-  const pts = atk + hp / 2 + (spd - PLAY.speedNormal) * (atk >= 8 ? 2 : 1);
+  const pts = atk + hp / 2 + (spd - PLAY.speedNormal) / 2 * (atk >= 8 ? 2 : 1);   // v4.6: Speed 1-8, so each point counts half
   const target = fusion ? PLAY.fusionBudget : 2 * f + 1;
   return { pts, target, room: target - pts, slack: !fusion && f <= 3 ? 1 : 0 };
 }
