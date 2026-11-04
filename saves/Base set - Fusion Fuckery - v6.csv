@@ -415,6 +415,31 @@ Pteranodon,Creature,4,7,6,7,"Fossil 3 (you may materialize this creature from yo
 When materialized from your Waste Repository: Return another 'Prehistoric' creature from your Waste Repository to your hand.",Dino,Prehistoric / Beast / Winged,
 Necrosaurus,Fusion,9,22,N/A,4,"{any Prehistoric creature + any Unholy creature}
 This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repository.",Dino / Blood Demon,Prehistoric / Unholy / Heavy,
+Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
+This fusion can be made from creatures of any flux cost.
+",,Beast / Heavy,
+Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
+Whenever you play a spell: You may pay 1 PHP to deal 1 damage to an enemy creature for each fusion splice under this creature.
+",Wizard / Blood Demon,Arcane / Unholy / Humanoid,
+The Flock,Fusion,8,18,N/A,7,"{any 2 Winged creatures}
+",,Winged,
+Fossil Fuel Baron,Fusion,7,22,N/A,3,"{any Prehistoric creature + any Greedy creature}
+Whenever a card is banished from your Waste Repository: Gain 1 gold.
+
+Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently.
+
+
+Turns out dinosaurs are worth a fortune. Just not alive.",Dino / Goblin,Prehistoric / Greedy / Beast,
+Absolute Unit,Fusion,12,34,N/A,1,"{any 2 Heavy fusions}
+This creature has +1 ATK for each fusion splice under it.
+
+
+
+
+
+
+
+In awe at the size of this lad.",,Heavy,
 Nosy Neighbor,Creature,5,11,6,3,"When materialized: Put a Complaint on up to 2 enemy creatures.
 
 (Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
