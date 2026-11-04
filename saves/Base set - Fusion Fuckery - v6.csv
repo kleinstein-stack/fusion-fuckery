@@ -422,7 +422,8 @@ Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
 Whenever you play a spell: You may pay 1 PHP to deal 1 damage to an enemy creature for each fusion splice under this creature.
 ",Wizard / Blood Demon,Arcane / Unholy / Humanoid,
 The Flock,Fusion,8,18,N/A,7,"{any 2 Winged creatures}
-",,Winged,
+
+Once per turn: banish a fusion splice underneath this card, if you do: materialize a winged creature from your waste repository. ",,Winged,
 Fossil Fuel Baron,Fusion,7,22,N/A,3,"{any Prehistoric creature + any Greedy creature}
 Whenever a card is banished from your Waste Repository: Gain 1 gold.
 
