@@ -441,7 +441,7 @@ The Archmage,Creature,6,15,9,4,"The first one-shot spell (Spell or Instant Spell
 
 He learned it all from a 14 hour video essay.",Wizard,Arcane / Humanoid / Noble,
 Wizard Tower,Fusion,7,24,N/A,1,"{any 2 Arcane creatures}
-At the start of your turn: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
+Discard a fusion splice underneath this fusion: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
 Spellsword,Fusion,10,20,N/A,6,"{Battlemage + any Arcane creature}
 Whenever you play a spell: This creature gains +2 ATK until end of turn.",Wizard,Arcane / Humanoid,
 Abracadabra,Spell,N/A,N/A,N/A,,"You can only cast this spell if your spell count is +3: Choose a creature that isn't a fusion: Return it to its owner's hand.
