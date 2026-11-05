@@ -13,6 +13,7 @@ const CONFIG = {
   CARD_FIELD: 'entry.711793173',   // the form's "Which card is this art for?" question, from its pre-filled link
   REPO: 'https://raw.githubusercontent.com/kleinstein-stack/fusion-fuckery/main/',
   CACHE_SECONDS: 600,              // how long card data from GitHub is reused before it's fetched again
+  CLAIM_DAYS: 30,                  // a claim with no art drops back to "Needs art" after this many days (0 = never)
 };
 
 function doGet() {
@@ -102,39 +103,53 @@ function responseSheet_() {
     .some(h => /^which card/i.test(h.trim()))) || sheets[0];
 }
 
-/** Per card: the submission the board shows. Approved finished art wins, then an approved sketch, then one in review. */
+/** Per card: the submission the board shows. Approved finished art wins, then an approved sketch, then an approved
+ *  claim, then the newest one still in review. */
 function getSubmissions_() {
-  const values = responseSheet_().getDataRange().getDisplayValues();
-  return pickSubmissions_(values, shareForBoard_);
+  const range = responseSheet_().getDataRange();
+  return pickSubmissions_(range.getDisplayValues(), range.getValues(), shareForBoard_, new Date());
 }
 
-function pickSubmissions_(values, share) {
+/** What a row is: "final" art, a "sketch", or a "claim" with no art yet. Reads the "What are you sending?" question,
+ *  or the older "Is this the finished art?" one. */
+function kindOf_(answer) {
+  const a = (answer || '').trim();
+  if (/claim/i.test(a)) return 'claim';
+  if (/^(yes|finished|final)/i.test(a)) return 'final';
+  return 'sketch';
+}
+
+function pickSubmissions_(values, raw, share, now) {
   if (values.length < 2) return {};
   const head = values[0].map(h => h.trim().toLowerCase()), find = re => head.findIndex(h => re.test(h));
-  const c = { time: find(/^timestamp/), card: find(/^which card/), file: find(/^upload your art/), fin: find(/finished art/),
-    credit: find(/^name to credit/), link: find(/where can people find/), ok: find(/^approved/) };
+  const c = { time: find(/^timestamp/), card: find(/^which card/), file: find(/^upload your art/),
+    kind: find(/^what are you sending|finished art/), credit: find(/^name to credit/), link: find(/where can people find/),
+    ok: find(/^approved/) };
   const byCard = {};
   for (let i = values.length - 1; i >= 1; i--) {   // the newest row first
     const r = values[i], card = (r[c.card] || '').trim();
     if (!card) continue;
     const ok = c.ok >= 0 ? (r[c.ok] || '').trim().toLowerCase() : '';
     if (/^(no|n|rejected|reject)$/.test(ok)) continue;
-    const id = ((r[c.file] || '').match(/[-\w]{25,}/) || [])[0] || null;
+    const kind = kindOf_(c.kind >= 0 ? r[c.kind] : '');
+    const when = raw && raw[i] && c.time >= 0 && raw[i][c.time] instanceof Date ? raw[i][c.time] : null;
+    if (kind === 'claim' && CONFIG.CLAIM_DAYS > 0 && when && now - when > CONFIG.CLAIM_DAYS * 864e5) continue;   // an old claim lapses
+    const id = kind === 'claim' ? null : ((r[c.file] || '').match(/[-\w]{25,}/) || [])[0] || null;
     const link = c.link >= 0 ? (r[c.link] || '').trim() : '';
     (byCard[card] = byCard[card] || []).push({
-      approved: ok === 'yes' || ok === 'y', final: /^yes/i.test((r[c.fin] || '').trim()), id,
+      approved: ok === 'yes' || ok === 'y', kind, id,
       credit: c.credit >= 0 ? (r[c.credit] || '').trim().slice(0, 80) : '', link: /^https?:\/\/\S+$/i.test(link) ? link : '',
       date: c.time >= 0 ? (r[c.time] || '').split(' ')[0] : '',
     });
   }
   const out = {};
   Object.keys(byCard).forEach(card => {
-    const list = byCard[card];
-    const pick = list.find(e => e.approved && e.final) || list.find(e => e.approved) || list[0];
-    const status = pick.approved ? (pick.final ? 'done' : 'progress') : 'review';
+    const list = byCard[card], ok = k => list.find(e => e.approved && e.kind === k);
+    const pick = ok('final') || ok('sketch') || ok('claim') || list[0];
+    const status = pick.approved ? (pick.kind === 'final' ? 'done' : 'progress') : 'review';
     let img = null;
     if (pick.approved && pick.id && share(pick.id)) img = 'https://drive.google.com/thumbnail?id=' + pick.id + '&sz=w1200';
-    out[card] = { status, credit: pick.approved ? pick.credit : '', link: pick.approved ? pick.link : '', img, date: pick.date };
+    out[card] = { status, kind: pick.kind, credit: pick.approved ? pick.credit : '', link: pick.approved ? pick.link : '', img, date: pick.date };
   });
   return out;
 }

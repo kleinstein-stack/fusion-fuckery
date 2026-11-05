@@ -26,6 +26,7 @@
   --accent: #3cc4d8; --accent-ink: #0b1216; --done: #4fd68b; --done-bg: #183626; --todo: #f2b04b; --todo-bg: #3a2b12;
   --wip: #8fa8ff; --wip-bg: #1f2747; --slot: #171921; --slot-line: #4c5166; --shade: rgba(4, 5, 9, .84); color-scheme: dark } }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* the filters hide tiles, which otherwise keep their display: grid */
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
 .wrap { max-width: 1320px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px)); }
@@ -107,7 +108,7 @@ figure { margin: 0; min-width: 0; }
     <div>
       <p class="eyebrow">Fusion Fuckery</p>
       <h1>Art Board</h1>
-      <p class="lede">Every card in play as it looks now, with its stats, card text and art brief. A blank card still needs art: press <b>Submit art</b> to send yours. Once art for a card is approved, it shows here and the card is done.</p>
+      <p class="lede">Every card in play as it looks now, with its stats, card text and art brief. A blank card still needs art: press <b>Submit or claim</b> to send your art, or to claim the card while you work on it. Once art for a card is approved, it shows here and the card is done.</p>
     </div>
     <div class="progress" aria-live="polite">
       <div class="big"><span id="doneCount">0</span> <small>of <span id="totalCount">0</span> cards have art</small></div>
@@ -195,13 +196,14 @@ function tile(c) {
     f.append(art); slot.append(f, el("span", st === "done" ? "stamp" : "stamp sketch", st === "done" ? "Art done" : "Sketch"));
   } else {
     const b = el("div", "blank"), w = el("div", "window"); b.append(el("div", "bar-name"));
-    if (st === "review") w.append(el("span", null, "Art submitted, waiting for review"));
-    else { w.append(el("span", null, "Blank card")); const a = el("a", "btn", "Submit art"); a.href = formLink(c); a.target = "_blank"; a.rel = "noopener"; w.append(a); }
+    if (st === "review") w.append(el("span", null, sub.kind === "claim" ? "Claimed, waiting for review" : "Art submitted, waiting for review"));
+    else if (st === "progress") w.append(el("span", null, (sub.kind === "claim" ? "Claimed by " : "Sketch by ") + (sub.credit || "an artist") + ", art coming"));
+    else { w.append(el("span", null, "Blank card")); const a = el("a", "btn", "Submit or claim"); a.href = formLink(c); a.target = "_blank"; a.rel = "noopener"; w.append(a); }
     const lines = el("div", "lines"); lines.append(el("i"), el("i"), el("i")); b.append(w, lines); slot.append(b);
   }
   fin.append(slot, meta);
   if (sub && sub.credit) {
-    const by = el("span", null, (st === "done" ? "Art by " : "Sketch by ") + sub.credit);
+    const by = el("span", null, (st === "done" ? "Art by " : sub.kind === "claim" ? "Claimed by " : "Sketch by ") + sub.credit);
     meta.append(by);
     if (sub.link) { const a = el("a", null, sub.link.replace(/^https?:\/\//, "").slice(0, 60)); a.href = sub.link; a.target = "_blank"; a.rel = "noopener nofollow"; meta.append(a); }
   }
