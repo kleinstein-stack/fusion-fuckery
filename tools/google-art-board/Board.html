@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fusion Fuckery Art Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* A collector's binder: faction sections of card tiles. Each tile pairs the card as it looks now with a card-shaped
+   slot (63 x 88 mm) that stays a blank card until approved art is in. */
+:root {
+  --bg: #e9ecf2; --surface: #ffffff; --ink: #191b24; --muted: #596075; --line: #d3d8e3;
+  --accent: #087f92; --accent-ink: #ffffff; --done: #17864a; --done-bg: #dff3e7; --todo: #a35f00; --todo-bg: #fbecd2;
+  --wip: #3b5bcc; --wip-bg: #e3e9fb; --slot: #f4f6fa; --slot-line: #aab1c3; --shade: rgba(16, 18, 28, .78);
+  --f-angel: #f2cf5b; --f-blood-demon: #d23a3a; --f-dino: #3fae5a; --f-goblin: #9ccc3c; --f-mundane: #9aa3ad;
+  --f-plushy: #f48fc4; --f-wizard: #7b6cf0; --f-neutral: #8a90a2;
+  --display: "Bowlby One", "Arial Black", Impact, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #13141b; --surface: #1c1e28; --ink: #eceef6; --muted: #a0a6b9; --line: #2f3242;
+  --accent: #3cc4d8; --accent-ink: #0b1216; --done: #4fd68b; --done-bg: #183626; --todo: #f2b04b; --todo-bg: #3a2b12;
+  --wip: #8fa8ff; --wip-bg: #1f2747; --slot: #171921; --slot-line: #4c5166; --shade: rgba(4, 5, 9, .84); color-scheme: dark } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px)); }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 380px); gap: 24px 40px; align-items: end; }
+.eyebrow { font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 6vw, 58px); line-height: .95; margin: 0; text-wrap: balance; }
+.lede { margin: 12px 0 0; max-width: 62ch; color: var(--muted); }
+.progress { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+.big { font-family: var(--display); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+.big small { font-family: var(--body); font-weight: 700; font-size: 14px; color: var(--muted); }
+.bar { height: 10px; border-radius: 99px; background: var(--todo-bg); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--done); border-radius: 99px; transition: width .4s ease; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; color: var(--muted); }
+.tools { position: sticky; top: 0; z-index: 5; margin-top: 26px; background: var(--bg); padding-block: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 7px 12px; font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.search { flex: 1 1 220px; min-width: 0; max-width: 360px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; }
+.jump { display: flex; flex-wrap: wrap; gap: 6px; }
+.jump button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px 4px 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--fc); flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+.state { margin: 40px 0; text-align: center; color: var(--muted); }
+section.fac { margin-top: 34px; }
+.fac-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; margin-bottom: 16px; border-bottom: 3px solid var(--fc); }
+.fac-head h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0; line-height: 1.1; }
+.fac-head .count { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.tile-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.tile h3 { margin: 0; font-size: 17px; line-height: 1.25; text-wrap: balance; }
+.type { display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.chip { flex: none; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+.chip.needs { background: var(--todo-bg); color: var(--todo); }
+.chip.review, .chip.progress { background: var(--wip-bg); color: var(--wip); }
+.chip.done { background: var(--done-bg); color: var(--done); }
+.stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.stat { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--slot); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.stat b { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+.attrs { margin: 0; font-size: 12px; color: var(--muted); }
+.info { display: grid; gap: 6px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: start; }
+.cap { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 5px; }
+figure { margin: 0; min-width: 0; }
+.card-img { width: 100%; height: auto; aspect-ratio: 63 / 88; border-radius: 10px; display: block; background: var(--slot); cursor: zoom-in; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.linkish { display: inline-block; margin-top: 6px; border: 0; background: none; padding: 0; font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.linkish.off { color: var(--muted); text-decoration: none; font-weight: 400; cursor: default; }
+.slot { position: relative; aspect-ratio: 63 / 88; max-width: 100%; border-radius: 10px; overflow: hidden; }
+.blank { height: 100%; border: 2px dashed var(--slot-line); border-radius: 10px; background: var(--slot); display: grid; grid-template-rows: auto 1fr auto; padding: 8px; gap: 6px; }
+.blank .bar-name { height: 9%; border-radius: 4px; background: var(--fc); opacity: .55; }
+.blank .window { border: 1.5px solid var(--slot-line); border-radius: 6px; display: grid; place-items: center; align-content: center; gap: 8px; padding: 8px; text-align: center; }
+.blank .window span { font-size: 12px; color: var(--muted); }
+.blank .lines { display: grid; gap: 5px; padding-bottom: 4px; }
+.blank .lines i { height: 5px; border-radius: 3px; background: var(--slot-line); opacity: .45; }
+.blank .lines i:nth-child(2) { width: 82%; } .blank .lines i:nth-child(3) { width: 60%; }
+.btn { display: inline-block; border: 0; border-radius: 8px; padding: 6px 11px; font-weight: 700; font-size: 13px; background: var(--accent); color: var(--accent-ink); text-decoration: none; cursor: pointer; }
+.final { height: 100%; background: var(--shade); display: grid; place-items: center; }
+.final img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; display: block; }
+.stamp { position: absolute; top: 8px; left: 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--done); color: var(--surface); padding: 3px 8px; border-radius: 6px; }
+.stamp.sketch { background: var(--wip); }
+.meta { font-size: 12px; color: var(--muted); margin-top: 6px; display: grid; gap: 4px; overflow-wrap: anywhere; }
+.meta a { color: var(--accent); }
+.block { display: grid; }
+.brief { margin: 0; white-space: pre-line; font-size: 14px; overflow-wrap: anywhere; }
+.cardtext { margin: 0; white-space: pre-line; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; background: var(--slot); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.empty { color: var(--muted); font-style: italic; }
+.lightbox { position: fixed; inset: 0; z-index: 20; background: var(--shade); display: grid; place-items: center; padding: 16px; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 110px); border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.lightbox p { color: #fff; margin: 10px 0 0; font-weight: 700; text-align: center; }
+.lb-inner { display: grid; justify-items: center; gap: 10px; max-width: 100%; }
+@media (max-width: 760px) { .top { grid-template-columns: minmax(0, 1fr); } .tools { position: static; } }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Fusion Fuckery</p>
+      <h1>Art Board</h1>
+      <p class="lede">Every card in play as it looks now, with its stats, card text and art brief. A blank card still needs art: press <b>Submit art</b> to send yours. Once art for a card is approved, it shows here and the card is done.</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="big"><span id="doneCount">0</span> <small>of <span id="totalCount">0</span> cards have art</small></div>
+      <div class="bar" role="img" id="barLabel" aria-label="0 cards have art"><i id="barFill"></i></div>
+      <div class="legend">
+        <span><span class="chip needs">Needs art</span> art wanted</span>
+        <span><span class="chip progress">In progress</span> someone's on it</span>
+        <span><span class="chip done">Art done</span> no new art needed</span>
+      </div>
+    </div>
+  </header>
+  <div class="tools" role="toolbar" aria-label="Filter cards">
+    <div class="seg" id="seg">
+      <button type="button" data-f="needs" aria-pressed="false">Needs art <span></span></button>
+      <button type="button" data-f="progress" aria-pressed="false">In progress <span></span></button>
+      <button type="button" data-f="done" aria-pressed="false">Art done <span></span></button>
+      <button type="button" data-f="all" aria-pressed="true">All <span></span></button>
+    </div>
+    <input class="search" id="q" type="search" placeholder="Search names, briefs or card text" aria-label="Search names, briefs or card text">
+    <div class="jump" id="jump"></div>
+  </div>
+  <main id="sections"><p class="state" id="loading">Loading the cards…</p></main>
+  <p class="state" id="none" hidden>No cards match. Clear the search or pick another filter.</p>
+</div>
+<script>
+const FC = { "Angel": "--f-angel", "Blood Demon": "--f-blood-demon", "Dino": "--f-dino", "Goblin": "--f-goblin", "Mundane": "--f-mundane", "Plushy": "--f-plushy", "Wizard": "--f-wizard", "Neutral": "--f-neutral" };
+const S = { filter: "all", q: "" }, tiles = [], sections = [];
+let B = null;
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const TYPE = t => /fusion/i.test(t) ? "Fusion" : /creature/i.test(t) ? "Creature" : t === "Spell" ? "Spell" : t.replace(/ Spell$/, "") + " spell";
+const statusOf = c => (B.art[c.n] && B.art[c.n].status) || "needs";
+const group = st => st === "review" ? "progress" : st;
+const formLink = c => B.formUrl + "?usp=pp_url&" + B.cardField + "=" + encodeURIComponent(c.n);
+const rawUrl = path => B.repo + path.split("/").map(encodeURIComponent).join("/");
+
+function render(data) {
+  B = data; $("loading").remove();
+  const order = ["Angel", "Blood Demon", "Dino", "Goblin", "Mundane", "Plushy", "Wizard", "Neutral"];
+  const groups = {};
+  B.cards.forEach(c => (groups[c.g] = groups[c.g] || []).push(c));
+  const names = Object.keys(groups).sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99) || a.localeCompare(b));
+  for (const g of names) {
+    const cards = groups[g].sort((a, b) => a.k - b.k || a.n.localeCompare(b.n));
+    const fc = `var(${FC[g] || "--f-neutral"})`;
+    const sec = el("section", "fac"); sec.style.setProperty("--fc", fc);
+    const head = el("div", "fac-head"), cnt = el("span", "count"); head.append(el("h2", null, g), cnt);
+    const grid = el("div", "grid"); sec.append(head, grid); $("sections").append(sec);
+    sections.push({ sec, cnt, cards });
+    const jb = el("button"); jb.type = "button"; jb.style.setProperty("--fc", fc); jb.append(el("span", "dot"), document.createTextNode(g));
+    jb.addEventListener("click", () => sec.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
+    $("jump").append(jb);
+    cards.forEach(c => grid.append(tile(c)));
+  }
+  $("totalCount").textContent = B.cards.length;
+  refresh();
+}
+
+function tile(c) {
+  const st = statusOf(c), sub = B.art[c.n] || null;
+  const t = el("article", "tile"); t.style.setProperty("--fc", `var(${FC[c.g] || "--f-neutral"})`);
+  const head = el("div", "tile-head"), nm = el("div");
+  nm.append(el("h3", null, c.n), el("span", "type", [TYPE(c.t), c.f || "No faction"].join(" · ")));
+  const label = { needs: "Needs art", review: "In review", progress: "In progress", done: "Art done ✓" }[st];
+  head.append(nm, el("span", "chip " + st, label));
+  const info = el("div", "info");
+  if (c.k < 2) {
+    const row = el("div", "stats");
+    [["ATK", c.a], ["HP", c.hp], ["Flux", c.k === 1 ? c.fl : ""], ["Speed", c.sp]].forEach(([k, v]) => { if (v && v !== "N/A") { const p = el("span", "stat"); p.append(el("b", null, k), document.createTextNode(" " + v)); row.append(p); } });
+    if (row.childNodes.length) info.append(row);
+  }
+  if (c.at) info.append(el("p", "attrs", c.at));
+  const pair = el("div", "pair");
+  const pv = el("figure"); pv.append(el("p", "cap", "Current card"));
+  const img = new Image(); img.className = "card-img"; img.src = B.repo + "art/previews/" + c.s + ".jpg"; img.alt = `${c.n} as it looks now`; img.loading = "lazy"; img.width = 520; img.height = 726;
+  img.addEventListener("click", () => lightbox(img.src, `${c.n}: current card`)); pv.append(img);
+  if (c.p) { const b = el("button", "linkish", "Placeholder art only"); b.type = "button"; b.addEventListener("click", () => lightbox(rawUrl(c.p), `${c.n}: placeholder art`)); pv.append(b); }
+  else pv.append(el("span", "linkish off", "No placeholder art"));
+  const fin = el("figure"); fin.append(el("p", "cap", "Final art"));
+  const slot = el("div", "slot"), meta = el("div", "meta");
+  if (sub && sub.img) {
+    const f = el("div", "final"), art = new Image(); art.src = sub.img; art.alt = `Art for ${c.n}`; art.loading = "lazy";
+    art.addEventListener("click", () => lightbox(sub.img, `${c.n}: ${st === "done" ? "final art" : "sketch"}`));
+    art.addEventListener("error", () => f.replaceChildren(el("span", "linkish off", "The art can't be shown right now.")));
+    f.append(art); slot.append(f, el("span", st === "done" ? "stamp" : "stamp sketch", st === "done" ? "Art done" : "Sketch"));
+  } else {
+    const b = el("div", "blank"), w = el("div", "window"); b.append(el("div", "bar-name"));
+    if (st === "review") w.append(el("span", null, "Art submitted, waiting for review"));
+    else { w.append(el("span", null, "Blank card")); const a = el("a", "btn", "Submit art"); a.href = formLink(c); a.target = "_blank"; a.rel = "noopener"; w.append(a); }
+    const lines = el("div", "lines"); lines.append(el("i"), el("i"), el("i")); b.append(w, lines); slot.append(b);
+  }
+  fin.append(slot, meta);
+  if (sub && sub.credit) {
+    const by = el("span", null, (st === "done" ? "Art by " : "Sketch by ") + sub.credit);
+    meta.append(by);
+    if (sub.link) { const a = el("a", null, sub.link.replace(/^https?:\/\//, "").slice(0, 60)); a.href = sub.link; a.target = "_blank"; a.rel = "noopener nofollow"; meta.append(a); }
+  }
+  if (st === "review" || st === "progress") { const a = el("a", "linkish", "Submit art anyway"); a.href = formLink(c); a.target = "_blank"; a.rel = "noopener"; meta.append(a); }
+  pair.append(pv, fin);
+  const brief = el("div", "block"); brief.append(el("p", "cap", "Art brief"), el("p", c.d ? "brief" : "brief empty", c.d || "No art brief yet."));
+  const text = el("div", "block"); text.append(el("p", "cap", "Card text"), el("p", c.x ? "cardtext" : "cardtext empty", c.x || "No card text."));
+  t.append(head, info, pair, brief, text);
+  tiles.push({ t, c, st: group(st), hay: [c.n, c.d, c.x, c.t, c.f, c.at].join(" ").toLowerCase() });
+  return t;
+}
+
+function refresh() {
+  const n = { needs: 0, progress: 0, done: 0 };
+  tiles.forEach(x => n[x.st]++);
+  $("doneCount").textContent = n.done; $("barFill").style.width = (tiles.length ? n.done / tiles.length * 100 : 0) + "%";
+  $("barLabel").setAttribute("aria-label", `${n.done} of ${tiles.length} cards have art`);
+  for (const b of $("seg").querySelectorAll("button")) { b.setAttribute("aria-pressed", String(b.dataset.f === S.filter)); b.querySelector("span").textContent = b.dataset.f === "all" ? tiles.length : n[b.dataset.f]; }
+  let shown = 0;
+  for (const s of sections) {
+    let vis = 0, done = 0;
+    for (const x of tiles) if (s.cards.includes(x.c)) {
+      if (x.st === "done") done++;
+      const ok = (S.filter === "all" || S.filter === x.st) && (!S.q || x.hay.includes(S.q));
+      x.t.hidden = !ok; if (ok) vis++;
+    }
+    s.cnt.textContent = `${done} of ${s.cards.length} have art`; s.sec.hidden = !vis; shown += vis;
+  }
+  $("none").hidden = shown > 0;
+}
+$("seg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || !B) return; S.filter = b.dataset.f; refresh(); });
+$("q").addEventListener("input", e => { S.q = e.target.value.trim().toLowerCase(); if (B) refresh(); });
+
+function lightbox(src, label) {
+  const lb = el("div", "lightbox"); lb.setAttribute("role", "dialog"); lb.setAttribute("aria-modal", "true"); lb.setAttribute("aria-label", label);
+  const inner = el("div", "lb-inner"), img = new Image(); img.src = src; img.alt = label;
+  const close = el("button", "btn", "Close"); close.type = "button";
+  inner.append(img, el("p", null, label), close); lb.append(inner); document.body.append(lb);
+  const done = () => { lb.remove(); document.removeEventListener("keydown", key); };
+  const key = e => { if (e.key === "Escape") done(); };
+  lb.addEventListener("click", e => { if (e.target === lb || e.target === close) done(); });
+  document.addEventListener("keydown", key); close.focus();
+}
+function fail(err) { $("loading").textContent = "The board couldn't load: " + ((err && err.message) || err) + " Reload the page to try again."; }
+
+if (window.google && google.script && google.script.run) google.script.run.withSuccessHandler(render).withFailureHandler(fail).getBoard();
+else if (window.BOARD_TEST) window.BOARD_TEST.then(render, fail);   // local testing only
+</script>
+</body>
+</html>
