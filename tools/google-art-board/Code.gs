@@ -107,7 +107,37 @@ function responseSheet_() {
  *  claim, then the newest one still in review. */
 function getSubmissions_() {
   const range = responseSheet_().getDataRange();
-  return pickSubmissions_(range.getDisplayValues(), range.getValues(), shareForBoard_, new Date());
+  return pickSubmissions_(range.getDisplayValues(), range.getValues(), shareForBoard_, new Date(), fileIdOf_);
+}
+
+/** The Drive file in an "Upload your art!" cell: a Drive link (what the form writes), or the file's name for art
+ *  added to the Sheet by hand ("FF_NuclearWaste", with or without its extension). */
+function fileIdOf_(cell) {
+  const first = (cell || '').split(',')[0].trim();
+  if (!first) return null;
+  const m = first.match(/[?&]id=([-\w]{25,})/) || first.match(/\/d\/([-\w]{25,})/);
+  if (m) return m[1];
+  if (/^https?:/i.test(first)) return null;
+  return fileIdByName_(first);
+}
+
+function fileIdByName_(name) {
+  const cache = CacheService.getScriptCache(), key = 'name:' + name;
+  const hit = cache.get(key);
+  if (hit) return hit === '-' ? null : hit;
+  let best = null;
+  try {
+    const q = 'title contains "' + name.replace(/["\\]/g, '\\$&') + '" and trashed = false and mimeType contains "image/"';
+    const files = DriveApp.searchFiles(q);
+    while (files.hasNext()) {
+      const f = files.next(), full = f.getName();
+      if (full !== name && full.replace(/\.[^.]+$/, '') !== name) continue;   // the whole name, not just part of it
+      if (!best || f.getLastUpdated() > best.getLastUpdated()) best = f;     // the newest if there are copies
+    }
+  } catch (e) {}
+  const id = best ? best.getId() : null;
+  cache.put(key, id || '-', id ? 21600 : 300);   // a name that isn't found yet is tried again in 5 minutes
+  return id;
 }
 
 /** What a row is: "final" art, a "sketch", or a "claim" with no art yet. Reads the "What are you sending?" question,
@@ -119,7 +149,7 @@ function kindOf_(answer) {
   return 'sketch';
 }
 
-function pickSubmissions_(values, raw, share, now) {
+function pickSubmissions_(values, raw, share, now, resolve) {
   if (values.length < 2) return {};
   const head = values[0].map(h => h.trim().toLowerCase()), find = re => head.findIndex(h => re.test(h));
   const c = { time: find(/^timestamp/), card: find(/^which card/), file: find(/^upload your art/),
@@ -134,10 +164,10 @@ function pickSubmissions_(values, raw, share, now) {
     const kind = kindOf_(c.kind >= 0 ? r[c.kind] : '');
     const when = raw && raw[i] && c.time >= 0 && raw[i][c.time] instanceof Date ? raw[i][c.time] : null;
     if (kind === 'claim' && CONFIG.CLAIM_DAYS > 0 && when && now - when > CONFIG.CLAIM_DAYS * 864e5) continue;   // an old claim lapses
-    const id = kind === 'claim' ? null : ((r[c.file] || '').match(/[-\w]{25,}/) || [])[0] || null;
+    const file = kind === 'claim' || c.file < 0 ? '' : r[c.file] || '';
     const link = c.link >= 0 ? (r[c.link] || '').trim() : '';
     (byCard[card] = byCard[card] || []).push({
-      approved: ok === 'yes' || ok === 'y', kind, id,
+      approved: ok === 'yes' || ok === 'y', kind, file,
       credit: c.credit >= 0 ? (r[c.credit] || '').trim().slice(0, 80) : '', link: /^https?:\/\/\S+$/i.test(link) ? link : '',
       date: c.time >= 0 ? (r[c.time] || '').split(' ')[0] : '',
     });
@@ -148,7 +178,8 @@ function pickSubmissions_(values, raw, share, now) {
     const pick = ok('final') || ok('sketch') || ok('claim') || list[0];
     const status = pick.approved ? (pick.kind === 'final' ? 'done' : 'progress') : 'review';
     let img = null;
-    if (pick.approved && pick.id && share(pick.id)) img = 'https://drive.google.com/thumbnail?id=' + pick.id + '&sz=w1200';
+    const id = pick.approved && pick.file ? resolve(pick.file) : null;   // only approved art is looked up and shared
+    if (id && share(id)) img = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1200';
     out[card] = { status, kind: pick.kind, credit: pick.approved ? pick.credit : '', link: pick.approved ? pick.link : '', img, date: pick.date };
   });
   return out;

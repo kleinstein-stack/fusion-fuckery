@@ -182,10 +182,10 @@ function tile(c) {
   }
   if (c.at) info.append(el("p", "attrs", c.at));
   const pair = el("div", "pair");
-  const pv = el("figure"); pv.append(el("p", "cap", "Current card"));
-  const img = new Image(); img.className = "card-img"; img.src = B.repo + "art/previews/" + c.s + ".jpg"; img.alt = `${c.n} as it looks now`; img.loading = "lazy"; img.width = 520; img.height = 726;
-  img.addEventListener("click", () => lightbox(img.src, `${c.n}: current card`)); pv.append(img);
-  if (c.p) { const b = el("button", "linkish", "Placeholder art only"); b.type = "button"; b.addEventListener("click", () => lightbox(rawUrl(c.p), `${c.n}: placeholder art`)); pv.append(b); }
+  const pv = el("figure"); pv.append(el("p", "cap", "Placeholder art"));
+  const img = new Image(); img.className = "card-img"; img.src = B.repo + "art/previews/" + c.s + ".jpg"; img.alt = `${c.n} with its placeholder art`; img.loading = "lazy"; img.width = 520; img.height = 726;
+  img.addEventListener("click", () => lightbox(img.src, `${c.n}: placeholder art`)); pv.append(img);
+  if (c.p) { const b = el("button", "linkish", "Art only, without the card"); b.type = "button"; b.addEventListener("click", () => lightbox(rawUrl(c.p), `${c.n}: placeholder art`)); pv.append(b); }
   else pv.append(el("span", "linkish off", "No placeholder art"));
   const fin = el("figure"); fin.append(el("p", "cap", "Final art"));
   const slot = el("div", "slot"), meta = el("div", "meta");
@@ -198,6 +198,7 @@ function tile(c) {
     const b = el("div", "blank"), w = el("div", "window"); b.append(el("div", "bar-name"));
     if (st === "review") w.append(el("span", null, sub.kind === "claim" ? "Claimed, waiting for review" : "Art submitted, waiting for review"));
     else if (st === "progress") w.append(el("span", null, (sub.kind === "claim" ? "Claimed by " : "Sketch by ") + (sub.credit || "an artist") + ", art coming"));
+    else if (st === "done") w.append(el("span", null, "Art done. The image isn't available yet."));   // approved, but no file was uploaded
     else { w.append(el("span", null, "Blank card")); const a = el("a", "btn", "Submit or claim"); a.href = formLink(c); a.target = "_blank"; a.rel = "noopener"; w.append(a); }
     const lines = el("div", "lines"); lines.append(el("i"), el("i"), el("i")); b.append(w, lines); slot.append(b);
   }
