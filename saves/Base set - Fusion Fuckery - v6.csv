@@ -325,7 +325,7 @@ Mountain Orc,Creature,5+d20,12,9,2,"Natural 20: This attack also hits the creatu
 It's Free Fuse-Estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux.
 
 (Fusing: once per turn, 2 creatures you control in lanes next to each other that each cost 5 or more flux become the fusion splices of a fusion from your Fusion Deck whose recipe they meet. The fusion takes one of their lanes.)",,,
-Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one of the fusion splices instead of paying the 2 flux.,Blood Demon,,
+Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one a fusion splices instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,8,"{Judicator Angel + any Holy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
@@ -395,7 +395,7 @@ Plush Dark Duchess,Creature,3,10,5,3,"(you can only materialize this creature wh
 At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Unholy / Humanoid / Noble / Fluffy,
 Patchwork Plush,Creature,3,14,8,1,"(you can only materialize this creature while you control a Claw Machine).
 
-This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0), and has +1 ATK for each of them.
+This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0).
 
 
 ",Plushy,Fluffy / Amorphous,
