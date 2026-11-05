@@ -82,6 +82,23 @@ function SafeCsvName([string]$n) {
 }
 function NewestVersion { Get-ChildItem $versions -Filter *.csv -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 }
 function ReadText($path) { [IO.File]::ReadAllText($path, $utf8) }
+# A query value, decoded as UTF-8. HttpListener's QueryString reads %C3%A9 (an accented e) as two characters, so
+# accented card names arrived garbled and new art was saved under the garbled name.
+function Q($req, [string]$key) {
+  foreach ($pair in $req.Url.Query.TrimStart('?').Split('&')) {
+    $kv = $pair.Split([char[]]'=', 2)
+    if ([Uri]::UnescapeDataString($kv[0].Replace('+', ' ')) -ceq $key) {
+      if ($kv.Count -gt 1) { return [Uri]::UnescapeDataString($kv[1].Replace('+', ' ')) } else { return '' }
+    }
+  }
+  return $null
+}
+# A card name as a plain-letter file name: accents dropped (Deja Vu keeps its letters), only letters, digits, - _ and spaces.
+function AsciiName([string]$n) {
+  $d = $n.Normalize([Text.NormalizationForm]::FormD)
+  $plain = -join ($d.ToCharArray() | Where-Object { [Globalization.CharUnicodeInfo]::GetUnicodeCategory($_) -ne 'NonSpacingMark' })
+  return ($plain -replace '[^A-Za-z0-9_\- ]', '').Trim()
+}
 function WriteVersion([string]$base, [datetime]$when, [string]$text) {
   $name = "$base $($when.ToString('yyyy-MM-dd HH-mm-ss')).csv"; $i = 2
   while (Test-Path -LiteralPath (Join-Path $versions $name)) { $name = "$base $($when.ToString('yyyy-MM-dd HH-mm-ss'))-$i.csv"; $i++ }
@@ -111,7 +128,7 @@ while ($listener.IsListening) {
     }
 
     if ($path -eq '/api/save' -and $req.HttpMethod -eq 'POST') {
-      $name = $req.QueryString['name']
+      $name = (Q $req 'name')
       $name = if ($name) { SafeCsvName $name } else { $defaultName }
       $text = (New-Object IO.StreamReader($req.InputStream, $utf8)).ReadToEnd()
       $target = Join-Path $saves $name
@@ -135,7 +152,7 @@ while ($listener.IsListening) {
     }
 
     if ($path -eq '/api/version') {
-      $p = Join-Path $versions (SafeCsvName $req.QueryString['name'])
+      $p = Join-Path $versions (SafeCsvName (Q $req 'name'))
       if (-not (Test-Path -LiteralPath $p)) { SendText $ctx 404 'text/plain' 'not found'; continue }
       Send $ctx 200 'text/csv; charset=utf-8' ([IO.File]::ReadAllBytes($p)); continue
     }
@@ -148,7 +165,7 @@ while ($listener.IsListening) {
         (ConvertFrom-Json (ReadText $mapFile)).PSObject.Properties | ForEach-Object { $map[$_.Name] = [string]$_.Value }
       }
       $saveMap = { [IO.File]::WriteAllText($mapFile, (ConvertTo-Json -InputObject $map -Compress), $utf8) }
-      $card = $req.QueryString['name']
+      $card = (Q $req 'name')
 
       if ($path -eq '/api/art-map') { SendJson $ctx $map; continue }
       if (-not $card) { throw 'missing card name' }
@@ -157,7 +174,7 @@ while ($listener.IsListening) {
         $ms = New-Object IO.MemoryStream; $req.InputStream.CopyTo($ms); $bytes = $ms.ToArray()
         if ($bytes.Length -lt 100 -or $bytes.Length -gt 20MB) { throw 'bad image size' }
         $ext = switch ($req.ContentType) { 'image/png' { '.png' } 'image/webp' { '.webp' } default { '.jpg' } }
-        $safe = ($card -replace '[^\w\- ]', '').Trim(); if (-not $safe) { $safe = 'card' }
+        $safe = AsciiName $card; if (-not $safe) { $safe = 'card' }
         if ($safe.Length -gt 60) { $safe = $safe.Substring(0, 60) }
         $dir = Join-Path $root 'art\custom'; New-Item -ItemType Directory -Force $dir | Out-Null
         $file = "$safe $((Get-Date).ToString('yyyy-MM-dd HH-mm-ss'))$ext"   # new name each time: old art is kept
@@ -167,7 +184,7 @@ while ($listener.IsListening) {
         SendJson $ctx @{ ok = $true; path = $map[$card]; sync = $sync }; continue
       }
       if ($path -eq '/api/art-link' -and $req.HttpMethod -eq 'POST') {   # keep art when a card is renamed
-        $p = $req.QueryString['path']
+        $p = (Q $req 'path')
         if (-not $p -or $p -notmatch '^art/' -or $p -match '\.\.') { throw 'bad art path' }
         $map[$card] = $p; & $saveMap; [void](GitPush "Keep art for renamed $card"); SendJson $ctx @{ ok = $true }; continue
       }

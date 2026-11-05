@@ -55,8 +55,9 @@ Abracadabra and Extra Credit can only be played at Spellcount 3+; a Polymorph Fr
 before; Wild Magic is gone; Wizard Tower banishes a fusion splice to return a spell (it used to return one every
 turn); Blood Ledger searches your deck for an Unholy creature (it used to draw); Big Fireball hits any creature but not
 players; Community College of Magic gives 1 flux (it used to give a card); Lord Lazarus comes back with 2 Speed
-(half of 4); Jonnhy '5 inches' is now Johnny '5 inches'. Nuclear Waste, Thiefling Sleight of Hand and Crack a pack
-are back from cold storage with new text (10.8). New starter decks:
+(half of 4); Jonnhy '5 inches' is now Johnny '5 inches'. Nuclear Waste is back from cold storage with new text (10.8)
+and Crack a pack with its own. **Five new fusions** have attribute recipes, so creatures from different factions can
+fuse (13): Chimera, Blood Mage, The Flock, Fossil Fuel Baron and Absolute Unit. New starter decks:
 Jurassic Junkyard, Bone Yard, Red Tape and Night School. The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
 
@@ -179,12 +180,8 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    does nothing and goes to its owner's Waste Repository. It was still played, so it counts for Spellcount (14.8) and
    "whenever you play a spell" effects. Pipebomb can also destroy a spell that's already in play: a Continuous or
    Field Spell, or a Neighborhood Watch.
-8. **Stealing a spell as it's played (Thiefling Sleight of Hand, v4.7):** like Pipebomb, play it in response to a
-   spell your opponent plays. That spell does nothing and is shuffled into your deck instead of going to their Waste
-   Repository. You draw and play it like your own card, but it's still theirs: when it leaves play it goes to their
-   Waste Repository, and you give it back after the game. **Nuclear Waste** rolls for one of your creatures at random
-   (a destroyed creature's "when destroyed" effects trigger); **Crack a pack** is a pick of 1 from the top 5 cards of
-   your deck, and the other 4 go to your Waste Repository.
+8. **Nuclear Waste (v4.7)** rolls for one of your creatures at random at the end of your turn. A creature it destroys
+   was destroyed, so its "when destroyed" effects trigger.
 
 ## 11. Health, damage & destruction
 
@@ -270,6 +267,12 @@ Fusions are the end goal: each one is stronger than an Ultra.
   The usual recipe, 5+ flux and 2 flux rules apply, and it's your fusion for the turn.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
   Fusions have attributes too, so they can fill attribute parts.
+- **Cross-faction fusions (v4.7):** recipes that only ask for attributes, so different factions can fuse together.
+  **Chimera** {any 2 Beast creatures} can be made from creatures of any flux cost, like Purrramid. **Blood Mage**
+  {any Arcane creature + any Unholy creature}. **The Flock** {any 2 Winged creatures}. **Fossil Fuel Baron** {any
+  Prehistoric creature + any Greedy creature} gains 1 gold for every card banished from your Waste Repository (a
+  Fossil cost, Night School Professor, Salem…). **Absolute Unit** {any 2 Heavy fusions} needs two fusions next to
+  each other; every card in both stacks becomes its fusion splice.
 - **Nothing else carries over:** a fusion only has the effect printed on its own card. Its fusion splices' effects
   and stat changes don't carry over (only their damage does).
 - **When a fusion is destroyed**, the fusion card and every card under it go to their owners' Waste Repositories.

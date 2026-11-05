@@ -86,7 +86,7 @@ The angels have a chain of command: acolytes and knights at the bottom, Gabe at 
 
 ## Plushies (draft)
 
-*A starting point written by Claude so the faction fits the world. Change anything.*
+*A starting point so the faction fits the world. Change anything.*
 
 - **The idea:** plush versions of everyone above, won from claw machines in arcades. The meltdowns made some of them come alive: they're still the characters they're based on, just stuffed, squeaky and very hard to keep down.
 - **Look:** felt and fleece versions of the originals, with visible stitching, button eyes, tags and prize-machine price stickers. Same outfits and props as the real ones, made of fabric (Plush Vein Ripper's barrel is a felt pouch).

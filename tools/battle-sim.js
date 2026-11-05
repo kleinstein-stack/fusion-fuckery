@@ -349,7 +349,10 @@ function fossilOption(g, p) {
   return b && b.s > 1 ? { pri: 2, score: b.s, run: () => fossilRaise(g, p, b.c, b.x) } : null;
 }
 const ankyOf = (g, u) => { const f = fxOf(u); return f && f.reduceFirst && u.ankyTurn !== g.turnNo ? f.reduceFirst : 0; };
-function banishFromWaste(g, p, list) { for (const c of list) { const i = p.waste.indexOf(c); if (i >= 0) { p.waste.splice(i, 1); p.oblivion.push(c); } } }
+function banishFromWaste(g, p, list) {
+  let n = 0; for (const c of list) { const i = p.waste.indexOf(c); if (i >= 0) { p.waste.splice(i, 1); p.oblivion.push(c); n++; } }
+  if (n) for (const u of units(p)) { const f = fxOf(u); if (f && f.onWasteBanish) f.onWasteBanish(g, u, n); }   // Fossil Fuel Baron
+}
 function sacrifice(g, p, u) {
   if (!onField(g, u)) return;
   L(g, `${who(g, p)} sacrifices ${u.d.name}.`);
@@ -1463,6 +1466,22 @@ Object.assign(FX, {
     return s > 1 ? { score: s, run: () => { if (banishSplice(g, u)) fossilRaise(g, p, b.c, 0); } } : null;
   } }] },
   "Necrosaurus": { value: 2, aura(g, k, u) { return k === u ? g.p[u.ctrl].waste.filter(prehistoric).length : 0; } },
+  // v4.7: cross-faction fusions with attribute recipes
+  "Chimera": { value: 1, perSplice: 1, aura(g, k, u) { return k === u ? spliceCount(u) : 0; } },   // any 2 Beasts, any flux cost
+  "Absolute Unit": { value: 1, perSplice: 1, aura(g, k, u) { return k === u ? spliceCount(u) : 0; } },   // any 2 Heavy fusions
+  "Blood Mage": { value: 2.5, perSplice: 0.6, onSpell(g, u) {   // pay 1 PHP: 1 damage per fusion splice to an enemy creature
+    const p = g.p[u.ctrl], n = spliceCount(u); if (!n || !canPay(p, 1)) return;
+    let best = null; for (const t of units(foe(g, p))) { const s = damageWorth(g, p, t, n); if (!best || s > best.s) best = { t, s }; }
+    if (!best || best.s <= phpW(g, p) + 0.3) return;
+    L(g, `  Blood Mage: ${who(g, p)} pays 1 PHP.`); payPHP(g, p, 1); if (!g.over && onField(g, best.t)) damage(g, best.t, n, {});
+  } },
+  "The Flock": { value: 2, perSplice: 0.8, onAttack(g, u) {   // 1 damage to the opponent per fusion splice
+    const p = g.p[u.ctrl], o = foe(g, p), n = spliceCount(u); if (!n) return;
+    L(g, `  The Flock: ${n} damage to ${who(g, o)}.`); p.st.face += n; losePHP(g, o, n);
+  } },
+  "Fossil Fuel Baron": { value: 2, goldSink: true, acts: [investAct(1)], onWasteBanish(g, u, n) {   // 1 gold per card banished from your Waste Repository
+    L(g, `  Fossil Fuel Baron: +${n} gold.`); gainGold(g, g.p[u.ctrl], n);
+  } },
 });
 Object.assign(SPELLS, {
   "Archaeologist": { needs: x => (x.dino || 0) >= 6, play(g, p, c) {   // mill 4, then dig one up for its Fossil cost
@@ -1690,6 +1709,11 @@ Object.assign(SPELLS, {
 
 // The card text each effect above was written for (textHash). The editor compares it with the current text.
 const FX_TEXT = {
+  "Absolute Unit": "1pxmb2k",
+  "Fossil Fuel Baron": "1n3f7ro",
+  "The Flock": "aqsqq",
+  "Blood Mage": "dvt03w",
+  "Chimera": "y0h1ps",
   "Crack a pack": "1otyca6",
   "Thiefling Sleight of Hand": "1y85wt2",
   "Nuclear Waste": "ml7cd9",
