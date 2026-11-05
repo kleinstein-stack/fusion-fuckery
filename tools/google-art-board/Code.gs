@@ -13,7 +13,7 @@ const CONFIG = {
   CARD_FIELD: 'entry.711793173',   // the form's "Which card is this art for?" question, from its pre-filled link
   REPO: 'https://raw.githubusercontent.com/kleinstein-stack/fusion-fuckery/main/',
   CACHE_SECONDS: 600,              // how long card data from GitHub is reused before it's fetched again
-  CLAIM_DAYS: 30,                  // a claim with no art drops back to "Needs art" after this many days (0 = never)
+  CLAIM_DAYS: 5,                   // a claim with no art drops back to "Needs art" after this many days (0 = never)
 };
 
 function doGet() {
