@@ -57,7 +57,8 @@ turn); Blood Ledger searches your deck for an Unholy creature (it used to draw);
 players; Community College of Magic gives 1 flux (it used to give a card); Lord Lazarus comes back with 2 Speed
 (half of 4); Jonnhy '5 inches' is now Johnny '5 inches'. Nuclear Waste is back from cold storage with new text (10.8)
 and Crack a pack with its own. **Five new fusions** have attribute recipes, so creatures from different factions can
-fuse (13): Chimera, Blood Mage, The Flock, Fossil Fuel Baron and Absolute Unit. New starter decks:
+fuse (13): Chimera, Blood Mage, The Flock, Fossil Fuel Baron and Absolute Unit. Night School Professor now destroys a
+Frog to cast Frog Bolt (14.8), and Chimera is Winged and a triple fusion (13). New starter decks:
 Jurassic Junkyard, Bone Yard, Red Tape and Night School. The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
 
@@ -268,7 +269,9 @@ Fusions are the end goal: each one is stronger than an Ultra.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
   Fusions have attributes too, so they can fill attribute parts.
 - **Cross-faction fusions (v4.7):** recipes that only ask for attributes, so different factions can fuse together.
-  **Chimera** {any 2 Beast creatures} can be made from creatures of any flux cost, like Purrramid. **Blood Mage**
+  **Chimera** {any 3 Beast creatures} is a **triple fusion**: three Beasts, one in each of your lanes and of any
+  flux cost, fuse into it for the usual 2 flux. It takes the middle lane and frees the other two; damage from all three
+  carries over, and Unfuse brings all three back where there's room. **Blood Mage**
   {any Arcane creature + any Unholy creature}. **The Flock** {any 2 Winged creatures}. **Fossil Fuel Baron** {any
   Prehistoric creature + any Greedy creature} gains 1 gold for every card banished from your Waste Repository (a
   Fossil cost, Night School Professor, Salem…). **Absolute Unit** {any 2 Heavy fusions} needs two fusions next to
@@ -378,6 +381,12 @@ you play them early.
   change. When it turns back it has the HP it had before Polymorph, so damage it took as a Frog is gone (a Frog that's
   destroyed stays destroyed). A Frog has exactly 1 ATK, so Complaints don't lower it (they're still there when it
   turns back).
+- **Frogs and Night School Professor:** a Frog is a creature turned into one by Polymorph (on either side) or a Toad
+  Familiar. Once per turn, Night School Professor destroys one to cast Frog Bolt: 5 damage to an enemy creature.
+  Destroying an enemy Frog destroys that creature for good, and a Toad Familiar destroyed this way still returns a
+  spell to your hand. Frog Bolt counts as a spell you played (Spellcount, Spell Slinger, Battlemage and other
+  "whenever you play a spell" effects), but it isn't a card: Pipebomb can't stop it and The Archmage doesn't make
+  it resolve twice. Complaints stop it, like any "once per turn" effect.
 - **Abracadabra (Spellcount 3+ only):** the creature goes back to its owner's hand as a new card: its damage, Complaints and fusion stack
   are gone, and it has to be materialized again (paying its flux). A creature you took with Space Squid goes back to
   its owner's hand, not yours.

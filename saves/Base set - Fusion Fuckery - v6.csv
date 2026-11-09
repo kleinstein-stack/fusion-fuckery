@@ -325,7 +325,7 @@ Mountain Orc,Creature,5+d20,12,9,2,"Natural 20: This attack also hits the creatu
 It's Free Fuse-Estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux.
 
 (Fusing: once per turn, 2 creatures you control in lanes next to each other that each cost 5 or more flux become the fusion splices of a fusion from your Fusion Deck whose recipe they meet. The fusion takes one of their lanes.)",,,
-Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one a fusion splices instead of paying the 2 flux.,Blood Demon,,
+Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one of the fusion splices instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,8,"{Judicator Angel + any Holy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
@@ -416,14 +416,12 @@ When materialized from your Waste Repository: Return another 'Prehistoric' creat
 Necrosaurus,Fusion,9,22,N/A,4,"{any Prehistoric creature + any Unholy creature}
 This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repository.",Dino / Blood Demon,Prehistoric / Unholy / Heavy,
 Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
-This fusion can be made from creatures of any flux cost.
-",,Beast / Heavy,
+Triple fusion: made from three Beasts, one in each of your lanes, of any flux cost. It takes the middle lane.",,Beast / Heavy / Winged,
 Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
 Whenever you play a spell: You may pay 1 PHP to deal 1 damage to an enemy creature for each fusion splice under this creature.
 ",Wizard / Blood Demon,Arcane / Unholy / Humanoid,
 The Flock,Fusion,8,18,N/A,7,"{any 2 Winged creatures}
-
-Once per turn: banish a fusion splice underneath this card, if you do: materialize a winged creature from your waste repository. ",,Winged,
+Once per turn: Banish a fusion splice from under this creature to materialize a 'Winged' creature from your Waste Repository.",,Winged,
 Fossil Fuel Baron,Fusion,7,22,N/A,3,"{any Prehistoric creature + any Greedy creature}
 Whenever a card is banished from your Waste Repository: Gain 1 gold.
 
@@ -458,7 +456,11 @@ Mail-Order Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard
 
 Certified (pending).",Wizard,Arcane / Humanoid,
 Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,
-Night School Professor,Creature,3,8,4,3,Once per turn: Banish 2 cards from your Waste Repository to return a spell from it to your hand.,Wizard,Arcane / Humanoid,
+Night School Professor,Creature,3,8,4,3,"Once per turn: Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played.
+
+(Frogs: creatures turned into Frogs by Polymorph, and Toad Familiar.)
+
+Tonight's lesson: practical dissection.",Wizard,Arcane / Humanoid,
 Head Librarian,Creature,3,9,5,3,"The first time you play a spell each turn: You may draw 1 card.
 
 Shhh.",Wizard,Arcane / Humanoid,

@@ -751,7 +751,7 @@ function taxResponse(g, o, att, def, ctx) {   // Tax Evasion: up to 5 less comba
   const r = previewFight(g, att, def), v = valueOf(g, def);
   if ((r.dDies && v >= 4) || r.dLoss >= 4) cast(g, o, c, () => { ctx.tax = { u: def, left: num(c.d, /prevent up to (\d+)/i, 5) }; complain(g, att); });
 }
-const anyCost = d => says(d, /made from creatures of any flux cost/i);
+const anyCost = d => says(d, /any flux cost/i);   // Purrramid, Chimera
 // Angels: Descend. When an enemy creature attacks, materialize a Descend creature from your hand with the flux you have
 // left (it isn't refilled until your Reactor Phase); the attack hits it instead.
 const descendOf = c => c.d.kind === "creature" && says(c.d, /Descend \(/);
@@ -837,6 +837,7 @@ function discardWorst(g, p) {
   p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c); L(g, `  ${who(g, p)} discards ${c.d.name}.`);
   return c;
 }
+const isFrog = u => !!u.frog || u.d.name === "Toad Familiar";   // Night School Professor's Frogs (v4.7)
 function frogify(g, u, until) {   // Polymorph: 1 ATK and no effects until the end of the caster's next turn; its HP stays,
   if (!onField(g, u) || u.frog) return;   // and when it turns back it has the HP it had before (damage taken as a Frog is gone)
   u.frog = { until, die: u.die, hp: u.hp }; u.die = 0;
@@ -1160,7 +1161,7 @@ Object.assign(FX, {
     const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0];
     p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  Plush Dark Duchess returns ${c.d.name} to the hand.`);
   } },
-  "Patchwork Plush": { value: 2, patchwork: true, aura(g, k, u) { return k === u ? g.p[u.ctrl].waste.filter(fluffy).length : 0; } },
+  "Patchwork Plush": { value: 2, patchwork: true, aura(g, k, u) { return k === u && says(u.d, /has \+1 ATK for each/i) ? g.p[u.ctrl].waste.filter(fluffy).length : 0; } },   // the ATK bonus only while its text has it
   "Mega Plush": { value: 4, perSplice: 1, clawGuard: true, aura(g, k, u) { return k !== u && fluffy(u) ? spliceCount(k) : 0; } },
 });
 
@@ -1467,7 +1468,7 @@ Object.assign(FX, {
   } }] },
   "Necrosaurus": { value: 2, aura(g, k, u) { return k === u ? g.p[u.ctrl].waste.filter(prehistoric).length : 0; } },
   // v4.7: cross-faction fusions with attribute recipes
-  "Chimera": { value: 1, perSplice: 1, aura(g, k, u) { return k === u ? spliceCount(u) : 0; } },   // any 2 Beasts, any flux cost
+  "Chimera": { value: 1, perSplice: 1, aura(g, k, u) { return k === u && says(u.d, /\+1 ATK for each fusion splice/i) ? spliceCount(u) : 0; } },   // any flux cost; +1 ATK per splice only while its text says so
   "Absolute Unit": { value: 1, perSplice: 1, aura(g, k, u) { return k === u ? spliceCount(u) : 0; } },   // any 2 Heavy fusions
   "Blood Mage": { value: 2.5, perSplice: 0.6, onSpell(g, u) {   // pay 1 PHP: 1 damage per fusion splice to an enemy creature
     const p = g.p[u.ctrl], n = spliceCount(u); if (!n || !canPay(p, 1)) return;
@@ -1475,10 +1476,21 @@ Object.assign(FX, {
     if (!best || best.s <= phpW(g, p) + 0.3) return;
     L(g, `  Blood Mage: ${who(g, p)} pays 1 PHP.`); payPHP(g, p, 1); if (!g.over && onField(g, best.t)) damage(g, best.t, n, {});
   } },
-  "The Flock": { value: 2, perSplice: 0.8, onAttack(g, u) {   // 1 damage to the opponent per fusion splice
+  "The Flock": { value: 2, perSplice: 0.8, onAttack(g, u) {   // older text: 1 damage to the opponent per fusion splice
+    if (!says(u.d, /when this creature attacks: deal/i)) return;
     const p = g.p[u.ctrl], o = foe(g, p), n = spliceCount(u); if (!n) return;
     L(g, `  The Flock: ${n} damage to ${who(g, o)}.`); p.st.face += n; losePHP(g, o, n);
-  } },
+  }, acts: [{ id: "flock", pri: 2, ai(g, u) {   // once per turn: banish a fusion splice to bring back a Winged creature
+    const p = g.p[u.ctrl]; if (!says(u.d, /materialize a '?winged'? creature/i) || !spliceCount(u) || u.stolen || !emptyLanes(p).length) return null;
+    const list = p.waste.filter(c => c.d.kind === "creature" && hasAttr(c.d, "winged") && !p.lazarus.includes(c) && !(fluffy(c) && !hasClaw(p)));
+    if (!list.length) return null;
+    const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0], s = defValue(c.d) * 0.45 - spliceCost(u);
+    return s > 0.5 ? { score: s, run: () => {
+      if (!banishSplice(g, u)) return;
+      const i = p.waste.indexOf(c), lane = chooseLane(g, p, c.d); if (i < 0 || lane == null) return;
+      p.waste.splice(i, 1); materialize(g, p, c, lane, "waste");
+    } } : null;
+  } }] },
   "Fossil Fuel Baron": { value: 2, goldSink: true, acts: [investAct(1)], onWasteBanish(g, u, n) {   // 1 gold per card banished from your Waste Repository
     L(g, `  Fossil Fuel Baron: +${n} gold.`); gainGold(g, g.p[u.ctrl], n);
   } },
@@ -1555,13 +1567,32 @@ Object.assign(FX, {
     let best = null; for (const t of units(foe(g, p))) { const s = damageWorth(g, p, t, 3); if (!best || s > best.s) best = { t, s }; }
     if (best) { L(g, `  Spell Slinger deals 3 damage to ${best.t.d.name}.`); damage(g, best.t, 3, {}); }
   } },
-  "Night School Professor": { value: 1.5, acts: [{ id: "class", pri: 0, ai(g, u) {
-    const p = g.p[u.ctrl], spells = p.waste.filter(oneShot); if (!spells.length || p.waste.length < 3) return null;
-    return { score: 2, run: () => {
-      const keep = spells.sort((a, b) => holdWorth(b) - holdWorth(a))[0];
-      const fuel = p.waste.filter(c => c !== keep && !p.lazarus.includes(c)).sort((a, b) => (oneShot(a) ? 1 : 0) - (oneShot(b) ? 1 : 0) || defValue(a.d) - defValue(b.d)).slice(0, 2);
-      if (fuel.length < 2) return; banishFromWaste(g, p, fuel); spellBack(g, p, c => c === keep);
-    } };
+  "Night School Professor": { value: 1.5, frogCaster: true, acts: [{ id: "class", pri: 0, ai(g, u) {
+    const p = g.p[u.ctrl];
+    if (!says(u.d, /destroy a frog/i)) {   // older text: banish 2 Waste Repository cards to return a spell
+      const spells = p.waste.filter(oneShot); if (!spells.length || p.waste.length < 3) return null;
+      return { score: 2, run: () => {
+        const keep = spells.sort((a, b) => holdWorth(b) - holdWorth(a))[0];
+        const fuel = p.waste.filter(c => c !== keep && !p.lazarus.includes(c)).sort((a, b) => (oneShot(a) ? 1 : 0) - (oneShot(b) ? 1 : 0) || defValue(a.d) - defValue(b.d)).slice(0, 2);
+        if (fuel.length < 2) return; banishFromWaste(g, p, fuel); spellBack(g, p, c => c === keep);
+      } };
+    }
+    // v4.7: destroy a Frog on the field (a Polymorph Frog on either side, or a Toad Familiar) to cast Frog Bolt
+    const n = num(u.d, /deal (\d+) damage/i, 5), o = foe(g, p);
+    let best = null;
+    for (const f of allUnits(g).filter(isFrog)) {
+      const lose = f.ctrl === p.i ? -keepWorth(g, f) + (f.d.name === "Toad Familiar" && p.waste.some(oneShot) ? 2 : 0)
+        : Math.max(killWorth(g, p, f), defValue(f.d) * 0.6);   // an enemy Frog is a real creature again soon
+      for (const t of units(o)) { if (t === f) continue; const s = lose + damageWorth(g, p, t, n) + 0.5; if (!best || s > best.s) best = { f, t, s }; }
+      if (!units(o).some(t => t !== f)) { const s = lose + 0.5; if (!best || s > best.s) best = { f, t: null, s }; }
+    }
+    return best && best.s > 1 ? { score: best.s, run: () => {
+      if (!onField(g, best.f)) return;
+      L(g, `${who(g, p)}: Night School Professor destroys the Frog ${best.f.d.name} and casts Frog Bolt.`);
+      kill(g, best.f, {}); if (g.over) return;
+      spellPlayed(g, p, { d: { name: "Frog Bolt", kind: "spell", factions: [] }, owner: p.i }); if (g.over) return;   // counts as a spell you played
+      if (best.t && onField(g, best.t)) damage(g, best.t, n, {});
+    } } : null;
   } }] },
   "Head Librarian": { value: 2.5, onSpell(g, u) { const p = g.p[u.ctrl], k = "Head Librarian:" + u.uid; if (p.once.has(k) || !drawOk(p, 1)) return; p.once.add(k); L(g, `  Head Librarian: ${who(g, p)} draws a card.`); draw(g, p, 1); } },
   "Battlemage": { value: 1.5, aura(g, k, u) { return k === u ? g.p[u.ctrl].sc || 0 : 0; } },
@@ -1698,7 +1729,8 @@ Object.assign(SPELLS, {
   } },
   "Polymorph": { play(g, p, c) {   // a Frog with 1 ATK and no effects; its HP stays
     let best = null;
-    for (const t of units(foe(g, p))) { if (t.d.kind === "fusion" || t.frog) continue; const s = (expAtk(g, t) - 1) * 0.6 + (t.d.fx ? 1.5 : 0) + (t.d.fx && t.d.fx.value || 0) * 0.5 - 1; if (!best || s > best.s) best = { t, s }; }
+    const prof = units(p).some(u => fxOf(u) && fxOf(u).frogCaster && !p.once.has(u.d.name + ":class"));   // a Frog to destroy for Frog Bolt
+    for (const t of units(foe(g, p))) { if (t.d.kind === "fusion" || t.frog) continue; const s = (expAtk(g, t) - 1) * 0.6 + (t.d.fx ? 1.5 : 0) + (t.d.fx && t.d.fx.value || 0) * 0.5 - 1 + (prof ? killWorth(g, p, t) * 0.6 : 0); if (!best || s > best.s) best = { t, s }; }
     return best && best.s > 0.5 ? { pri: 1, score: best.s, run: () => cast(g, p, c, () => frogify(g, best.t, g.turnNo + 2)) } : null;
   } },
   "Spellbook": { perm: true, needs: x => (x.wizard || 0) >= 6, score: () => 2.2, endTurn(g, p, z) {
@@ -1711,9 +1743,9 @@ Object.assign(SPELLS, {
 const FX_TEXT = {
   "Absolute Unit": "1pxmb2k",
   "Fossil Fuel Baron": "1n3f7ro",
-  "The Flock": "aqsqq",
-  "Blood Mage": "dvt03w",
-  "Chimera": "y0h1ps",
+  "The Flock": "1pecfaw",
+  "Blood Mage": "xf6vpr",
+  "Chimera": "1hqqcjr",
   "Crack a pack": "1otyca6",
   "Thiefling Sleight of Hand": "1y85wt2",
   "Nuclear Waste": "ml7cd9",
@@ -1733,7 +1765,7 @@ const FX_TEXT = {
   "The Archmage": "11g9ta0",
   "Battlemage": "12o21dh",
   "Head Librarian": "1mo9vux",
-  "Night School Professor": "1qlkzrz",
+  "Night School Professor": "1myyrzo",
   "Spell Slinger": "1mjllps",
   "Mail-Order Wizard": "1evmc4m",
   "Toad Familiar": "1ui173g",
@@ -1846,7 +1878,7 @@ const FX_TEXT = {
   "Plush Sanctified Knight": "sxbdhc",
   "Plush Judicator Angel": "1c3jdc3",
   "Plush Dark Duchess": "11ssl6r",
-  "Patchwork Plush": "wvgafv",
+  "Patchwork Plush": "1m6hvk9",
   "Mega Plush": "4jejkb",
 };
 
@@ -1932,7 +1964,44 @@ function fusionOpts(g, p) {
         out.push({ gain: gain - keepWorth(g, v) + sacrificeBonus(g, p), flux: 0, lanes: 2, run: () => fuse(g, p, a, b, fc, { kind: "altar", victim: v, pit: usesPit }) });
     }
   }
+  // v4.7 triple fusion (Chimera): a three-part recipe takes the creatures in all three lanes; the fusion takes the middle one
+  if (p.lanes.every(unit)) {
+    const trio = p.lanes.slice(), seen3 = new Set();
+    for (const fc of p.fdeck) {
+      if (seen3.has(fc.d.name) || recipeSize(fc.d.recipe) !== 3) continue;
+      seen3.add(fc.d.name);
+      if (!recipeFits(fc.d.recipe, trio.map(x => x.d)) || !(anyCost(fc.d) || trio.every(x => big(x.d)))) continue;
+      const carried = R.carryDamage ? trio.reduce((s, x) => s + fuseDamage(x), 0) : 0;
+      if (carried >= fc.d.hp) continue;
+      const n = 3 + trio.reduce((s, x) => s + spliceCount(x), 0);
+      const gain = defValue(fc.d) + (fc.d.fx && fc.d.fx.perSplice || 0) * (n - 2) - carried / 2 - trio.reduce((s, x) => s + keepWorth(g, x), 0) + 1;
+      if (p.flux >= R.fuseFlux) out.push({ gain, flux: R.fuseFlux, lanes: 2, run: () => fuseTrio(g, p, trio, fc, { kind: "flux" }) });
+      if (estate) out.push({ gain: gain - 0.8, flux: 0, lanes: 2, run: () => fuseTrio(g, p, trio, fc, { kind: "estate", card: estate }) });
+    }
+  }
   return out;
+}
+const recipeSize = rec => rec && rec.parts ? rec.parts.reduce((s, x) => s + x.count, 0) : 0;
+// Chimera (v4.7): three creatures, one in each lane, become one fusion in the middle lane; the other two lanes are free.
+function fuseTrio(g, p, parts, fc, pay) {
+  if (p.fused || p.fdeck.indexOf(fc) < 0 || !parts.every(x => onField(g, x))) return;
+  if (pay.kind === "flux") p.flux -= R.fuseFlux;
+  else if (pay.kind === "estate") { const i = p.hand.indexOf(pay.card); if (i < 0) return; p.hand.splice(i, 1); if (pay.card.owner === p.i) p.st.played.add(pay.card.d.ix); L(g, `${who(g, p)} casts ${pay.card.d.name}.`); toWaste(g, pay.card); spellPlayed(g, p, pay.card); if (g.over || !parts.every(x => onField(g, x))) return; }
+  const carried = R.carryDamage ? parts.reduce((s, x) => s + fuseDamage(x), 0) : 0;
+  parts.forEach(x => { p.lanes[x.lane] = null; });
+  p.fdeck.splice(p.fdeck.indexOf(fc), 1);
+  const u = makeUnit(g, p, fc, 1, false);
+  u.splices = parts.map(x => { x.c.under = x.splices.length ? x.splices : null; return x.c; });
+  if (R.fuseWinded) u.winded = true;
+  p.lanes[1] = u; p.fused = true; p.st.fused.add(fc.d.ix);
+  if (!p.st.firstFuse) p.st.firstFuse = g.turnNo;
+  L(g, `${who(g, p)} fuses ${parts.map(x => x.d.name).join(" + ")} into ${fc.d.name}${pay.kind === "estate" ? " for free (It's Free Fuse-Estate)" : ""}.`);
+  if (carried) {
+    u.hp -= carried;
+    L(g, `  ${fc.d.name} keeps the ${carried} damage its fusion splices had (${Math.max(0, u.hp)}/${u.maxHp}).`);
+    if (u.hp <= 0) { kill(g, u, {}); return; }
+  }
+  const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
 }
 function bestPlan(g, p) {   // which fusion (if any) and which hand creatures make the most of this turn's flux and lanes
   const crea = handCreatureOpts(g, p), empty = emptyLanes(p).length;
