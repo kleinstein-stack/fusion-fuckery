@@ -2560,8 +2560,11 @@ document.getElementById("anaBody").addEventListener("click", e => { const a = e.
 
 /* ---------------- render view: index.html#render=<card name> ----------------
    Shows just that card at print size (744 x 1039 px) on its own, for tools/export-cards.ps1 to screenshot.
+   #render=<card name>&placeholder draws it with its placeholder art (saves/placeholder-art.json), for the art board.
    The rest of the page stays in the DOM (hidden) so loading and saving code keeps working. */
-const RENDER_CARD = (() => { const m = location.hash.match(/^#render=(.+)$/); return m ? decodeURIComponent(m[1]) : ""; })();
+const RENDER_HASH = location.hash.match(/^#render=([^&]+)(&placeholder)?$/);
+const RENDER_CARD = RENDER_HASH ? decodeURIComponent(RENDER_HASH[1]) : "";
+const RENDER_PLACEHOLDER = !!(RENDER_HASH && RENDER_HASH[2]);
 function showRenderCard() {
   document.body.classList.add("render-mode");
   let root = document.getElementById("renderRoot");
@@ -2576,9 +2579,10 @@ function showRenderCard() {
   root.dataset.ready = "yes";
 }
 if (RENDER_CARD) {   // without the helper, still use the custom art chosen in the editor
-  fetch("saves/art-overrides.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(m => {
-    ART_OVERRIDES = { ...m, ...ART_OVERRIDES }; showRenderCard();
-  }).catch(() => {});
+  const json = path => fetch(path, { cache: "no-store" }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  Promise.all([json("saves/art-overrides.json"), RENDER_PLACEHOLDER ? json("saves/placeholder-art.json") : {}]).then(([m, ph]) => {
+    ART_OVERRIDES = { ...m, ...ART_OVERRIDES, ...ph }; showRenderCard();
+  });
 }
 
 load(EMBEDDED_CSV, EMBEDDED_NAME, null);

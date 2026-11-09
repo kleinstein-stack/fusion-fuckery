@@ -7,8 +7,9 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $tmp = Join-Path $env:TEMP 'fusion-fuckery-previews'
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
-if ($Only) { & (Join-Path $PSScriptRoot 'export-cards.ps1') -OutDir $tmp -Only $Only }
-else { & (Join-Path $PSScriptRoot 'export-cards.ps1') -OutDir $tmp }
+# the board's left-hand preview always shows the placeholder art (saves\placeholder-art.json), even once finished art is in
+if ($Only) { & (Join-Path $PSScriptRoot 'export-cards.ps1') -OutDir $tmp -Only $Only -Placeholder }
+else { & (Join-Path $PSScriptRoot 'export-cards.ps1') -OutDir $tmp -Placeholder }
 
 Add-Type -AssemblyName System.Drawing
 $jpeg = [Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object MimeType -eq 'image/jpeg'

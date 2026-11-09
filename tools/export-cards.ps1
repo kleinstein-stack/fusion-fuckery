@@ -3,7 +3,8 @@
 #   tools\export-cards.ps1                    -> exports\cards\<Card name>.jpg
 #   tools\export-cards.ps1 -OutDir D:\cards   -> another folder
 #   tools\export-cards.ps1 -Only Cherub, Orc  -> just those cards
-param([string]$OutDir, [string[]]$Only, [int]$Port = 8799, [int]$Quality = 92)
+#   tools\export-cards.ps1 -Placeholder       -> with the placeholder art in saves\placeholder-art.json (art board)
+param([string]$OutDir, [string[]]$Only, [int]$Port = 8799, [int]$Quality = 92, [switch]$Placeholder)
 $ErrorActionPreference = 'Stop'
 $tools = $PSScriptRoot
 $root  = Split-Path $tools -Parent
@@ -65,7 +66,7 @@ try {
   $png = Join-Path $env:TEMP 'fusion-fuckery-card.png'
   $done = 0
   foreach ($name in $names) {
-    $url = "http://localhost:$Port/index.html#render=" + [Uri]::EscapeDataString($name)
+    $url = "http://localhost:$Port/index.html#render=" + [Uri]::EscapeDataString($name) + $(if ($Placeholder) { '&placeholder' } else { '' })
     if (Test-Path $png) { Remove-Item $png }
     $args = @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1', '--window-size=744,1039',
               '--virtual-time-budget=8000', '--no-first-run', "`"--user-data-dir=$profileDir`"", "`"--screenshot=$png`"", "`"$url`"")

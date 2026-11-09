@@ -68,6 +68,8 @@ function artMap_() {
   const js = fetchText_('art/art.js'), m = js.match(/window\.CARD_ART\s*=\s*(\{[\s\S]*\})/);
   const map = m ? JSON.parse(m[1]) : {};
   try { Object.assign(map, JSON.parse(fetchText_('saves/art-overrides.json'))); } catch (e) {}
+  // a card whose finished art is in the editor keeps showing its placeholder art here
+  try { Object.assign(map, JSON.parse(fetchText_('saves/placeholder-art.json'))); } catch (e) {}
   return map;
 }
 
@@ -167,20 +169,30 @@ function pickSubmissions_(values, raw, share, now, resolve) {
     const file = kind === 'claim' || c.file < 0 ? '' : r[c.file] || '';
     const link = c.link >= 0 ? (r[c.link] || '').trim() : '';
     (byCard[card] = byCard[card] || []).push({
-      approved: ok === 'yes' || ok === 'y', kind, file,
+      approved: ok === 'yes' || ok === 'y', alt: ok === 'alt' && kind !== 'claim', kind, file,
       credit: c.credit >= 0 ? (r[c.credit] || '').trim().slice(0, 80) : '', link: /^https?:\/\/\S+$/i.test(link) ? link : '',
       date: c.time >= 0 ? (r[c.time] || '').split(' ')[0] : '',
     });
   }
+  const imgOf = e => {   // only approved art (yes or alt) is looked up and shared
+    const id = e.file ? resolve(e.file) : null;
+    return id && share(id) ? 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1200' : null;
+  };
   const out = {};
   Object.keys(byCard).forEach(card => {
-    const list = byCard[card], ok = k => list.find(e => e.approved && e.kind === k);
+    const all = byCard[card], list = all.filter(e => !e.alt), ok = k => list.find(e => e.approved && e.kind === k);
+    // alternative versions ("alt" in Approved), oldest first, each with its own image and credit
+    const alts = all.filter(e => e.alt).reverse().map(e => ({ img: imgOf(e), credit: e.credit, link: e.link })).filter(a => a.img);
+    if (!ok('final') && alts.length) {   // only alternative versions approved: the first one shows as the card's art
+      out[card] = { status: 'done', kind: 'final', credit: alts[0].credit, link: alts[0].link, img: alts[0].img, alts: alts.slice(1), date: '' };
+      return;
+    }
     const pick = ok('final') || ok('sketch') || ok('claim') || list[0];
+    if (!pick) return;
     const status = pick.approved ? (pick.kind === 'final' ? 'done' : 'progress') : 'review';
-    let img = null;
-    const id = pick.approved && pick.file ? resolve(pick.file) : null;   // only approved art is looked up and shared
-    if (id && share(id)) img = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1200';
-    out[card] = { status, kind: pick.kind, credit: pick.approved ? pick.credit : '', link: pick.approved ? pick.link : '', img, date: pick.date };
+    const img = pick.approved ? imgOf(pick) : null;
+    out[card] = { status, kind: pick.kind, credit: pick.approved ? pick.credit : '', link: pick.approved ? pick.link : '', img,
+      alts: status === 'done' ? alts : [], date: pick.date };
   });
   return out;
 }

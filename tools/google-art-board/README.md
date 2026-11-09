@@ -39,9 +39,14 @@ Form; the board shows each card's current look, stats, card text and art brief, 
   and type `yes` or `no` in Approved. The board shows it on the next reload.
 - **"Is this the finished art?"** Approved finished art marks the card **Art done**. An approved sketch marks it
   **In progress**. Unapproved submissions show **In review**, without a name or image.
+- **Alternative versions:** type `alt` in Approved instead of `yes`. The card keeps its main art, and a
+  **Next version** button on the board steps through the others (Spell Slinger's cloak colours, for example).
+- **Finished art going into the editor:** the board's left-hand preview always shows the placeholder art. Before you
+  put a card's finished art into the editor, add its current art path to `saves/placeholder-art.json`
+  (`"Card name": "art/…"`), so the board keeps showing the placeholder.
 - **Cards changed?** Card text, stats, briefs and placeholder art update by themselves once they're on GitHub.
-  The rendered card previews don't: run `tools\art-previews.ps1`, and the editor's next save (or a push) uploads
-  them.
+  The rendered card previews don't: run `tools\art-previews.ps1` (or `-Only "Card A,Card B"`), and the editor's
+  next save (or a push) uploads them.
 - **Changed the form?** If you rename the card question or rebuild the form, update `FORM_URL` and `CARD_FIELD` at
   the top of `Code.gs` from a new pre-filled link, then Deploy > Manage deployments > edit > Version: New version.
 - **Changed the code?** Paste it in again, then Deploy > Manage deployments > edit (pencil) > Version: **New

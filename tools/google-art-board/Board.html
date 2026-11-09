@@ -189,11 +189,27 @@ function tile(c) {
   else pv.append(el("span", "linkish off", "No placeholder art"));
   const fin = el("figure"); fin.append(el("p", "cap", "Final art"));
   const slot = el("div", "slot"), meta = el("div", "meta");
-  if (sub && sub.img) {
-    const f = el("div", "final"), art = new Image(); art.src = sub.img; art.alt = `Art for ${c.n}`; art.loading = "lazy";
-    art.addEventListener("click", () => lightbox(sub.img, `${c.n}: ${st === "done" ? "final art" : "sketch"}`));
+  // the finished art, then any alternative versions; a button steps through them
+  const versions = sub && sub.img ? [{ img: sub.img, credit: sub.credit, link: sub.link, alt: false }].concat((sub.alts || []).map(a => ({ ...a, alt: true }))) : [];
+  let vi = 0;
+  const credits = el("div", "meta");
+  const showVersion = () => {
+    const v = versions[vi], f = el("div", "final"), art = new Image(); art.src = v.img; art.alt = `${v.alt ? "Alternative art" : "Art"} for ${c.n}`; art.loading = "lazy";
+    art.addEventListener("click", () => lightbox(v.img, `${c.n}: ${st !== "done" ? "sketch" : v.alt ? "alternative art" : "final art"}`));
     art.addEventListener("error", () => f.replaceChildren(el("span", "linkish off", "The art can't be shown right now.")));
-    f.append(art); slot.append(f, el("span", st === "done" ? "stamp" : "stamp sketch", st === "done" ? "Art done" : "Sketch"));
+    f.append(art);
+    slot.replaceChildren(f, el("span", st === "done" ? "stamp" : "stamp sketch", st !== "done" ? "Sketch" : v.alt ? "Alt art" : "Art done"));
+    credits.replaceChildren();
+    if (v.credit) credits.append(el("span", null, (st === "done" ? (v.alt ? "Alt art by " : "Art by ") : "Sketch by ") + v.credit));
+    if (v.link) { const a = el("a", null, v.link.replace(/^https?:\/\//, "").slice(0, 60)); a.href = v.link; a.target = "_blank"; a.rel = "noopener nofollow"; credits.append(a); }
+    if (versions.length > 1) { nextBtn.textContent = `Next version (${vi + 1} of ${versions.length})`; }
+  };
+  const nextBtn = el("button", "linkish"); nextBtn.type = "button";
+  nextBtn.addEventListener("click", () => { vi = (vi + 1) % versions.length; showVersion(); });
+  if (versions.length) {
+    showVersion();
+    meta.append(credits);
+    if (versions.length > 1) meta.append(nextBtn);
   } else {
     const b = el("div", "blank"), w = el("div", "window"); b.append(el("div", "bar-name"));
     if (st === "review") w.append(el("span", null, sub.kind === "claim" ? "Claimed, waiting for review" : "Art submitted, waiting for review"));
@@ -203,7 +219,7 @@ function tile(c) {
     const lines = el("div", "lines"); lines.append(el("i"), el("i"), el("i")); b.append(w, lines); slot.append(b);
   }
   fin.append(slot, meta);
-  if (sub && sub.credit) {
+  if (sub && sub.credit && !versions.length) {   // a claim, or approved art without an image yet
     const by = el("span", null, (st === "done" ? "Art by " : sub.kind === "claim" ? "Claimed by " : "Sketch by ") + sub.credit);
     meta.append(by);
     if (sub.link) { const a = el("a", null, sub.link.replace(/^https?:\/\//, "").slice(0, 60)); a.href = sub.link; a.target = "_blank"; a.rel = "noopener nofollow"; meta.append(a); }
