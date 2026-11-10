@@ -14,6 +14,7 @@ const CONFIG = {
   REPO: 'https://raw.githubusercontent.com/kleinstein-stack/fusion-fuckery/main/',
   CACHE_SECONDS: 600,              // how long card data from GitHub is reused before it's fetched again
   CLAIM_DAYS: 5,                   // a claim with no art drops back to "Needs art" after this many days (0 = never)
+  BRIEF_URL: '',                   // the artist brief (Google Doc), linked in the board's intro; empty = no link
 };
 
 function doGet() {
@@ -25,7 +26,17 @@ function doGet() {
 
 /** Everything the page shows, in one call from the page. */
 function getBoard() {
-  return { cards: getCards_(), art: getSubmissions_(), formUrl: CONFIG.FORM_URL, cardField: CONFIG.CARD_FIELD, repo: CONFIG.REPO };
+  return { cards: getCards_(), art: getSubmissions_(), formUrl: CONFIG.FORM_URL, cardField: CONFIG.CARD_FIELD, repo: CONFIG.REPO, briefUrl: CONFIG.BRIEF_URL,
+    priority: priorityMap_() };
+}
+
+/** Cards to draw first (saves/art-priority.json in the repo: card name -> why), shown in the board's Priority tab. */
+function priorityMap_() {
+  try {
+    const m = JSON.parse(fetchText_('saves/art-priority.json')), out = {};
+    Object.keys(m).forEach(k => { out[k.trim()] = String(m[k] || '').slice(0, 200); });
+    return out;
+  } catch (e) { return {}; }
 }
 
 // ---- cards from GitHub ----

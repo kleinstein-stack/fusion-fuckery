@@ -15,6 +15,7 @@
   --bg: #e9ecf2; --surface: #ffffff; --ink: #191b24; --muted: #596075; --line: #d3d8e3;
   --accent: #087f92; --accent-ink: #ffffff; --done: #17864a; --done-bg: #dff3e7; --todo: #a35f00; --todo-bg: #fbecd2;
   --wip: #3b5bcc; --wip-bg: #e3e9fb; --slot: #f4f6fa; --slot-line: #aab1c3; --shade: rgba(16, 18, 28, .78);
+  --prio: #b4233c; --prio-bg: #fbe3e7;
   --f-angel: #f2cf5b; --f-blood-demon: #d23a3a; --f-dino: #3fae5a; --f-goblin: #9ccc3c; --f-mundane: #9aa3ad;
   --f-plushy: #f48fc4; --f-wizard: #7b6cf0; --f-neutral: #8a90a2;
   --display: "Bowlby One", "Arial Black", Impact, sans-serif;
@@ -24,7 +25,8 @@
 @media (prefers-color-scheme: dark) { :root {
   --bg: #13141b; --surface: #1c1e28; --ink: #eceef6; --muted: #a0a6b9; --line: #2f3242;
   --accent: #3cc4d8; --accent-ink: #0b1216; --done: #4fd68b; --done-bg: #183626; --todo: #f2b04b; --todo-bg: #3a2b12;
-  --wip: #8fa8ff; --wip-bg: #1f2747; --slot: #171921; --slot-line: #4c5166; --shade: rgba(4, 5, 9, .84); color-scheme: dark } }
+  --wip: #8fa8ff; --wip-bg: #1f2747; --slot: #171921; --slot-line: #4c5166; --shade: rgba(4, 5, 9, .84);
+  --prio: #ff8fa3; --prio-bg: #3d1a22; color-scheme: dark } }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }   /* the filters hide tiles, which otherwise keep their display: grid */
 html { -webkit-text-size-adjust: 100%; }
@@ -36,6 +38,7 @@ button, input { font: inherit; color: inherit; }
 .eyebrow { font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
 h1 { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 6vw, 58px); line-height: .95; margin: 0; text-wrap: balance; }
 .lede { margin: 12px 0 0; max-width: 62ch; color: var(--muted); }
+.lede a { color: var(--accent); font-weight: 700; }
 .progress { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
 .big { font-family: var(--display); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
 .big small { font-family: var(--body); font-weight: 700; font-size: 14px; color: var(--muted); }
@@ -64,6 +67,9 @@ section.fac { margin-top: 34px; }
 .chip.needs { background: var(--todo-bg); color: var(--todo); }
 .chip.review, .chip.progress { background: var(--wip-bg); color: var(--wip); }
 .chip.done { background: var(--done-bg); color: var(--done); }
+.chip.prio { background: var(--prio-bg); color: var(--prio); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; flex: none; }
+.prio-note { margin: 0; font-size: 13px; font-weight: 700; color: var(--prio); }
 .stats { display: flex; flex-wrap: wrap; gap: 6px; }
 .stat { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--slot); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .stat b { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
@@ -108,7 +114,7 @@ figure { margin: 0; min-width: 0; }
     <div>
       <p class="eyebrow">Fusion Fuckery</p>
       <h1>Art Board</h1>
-      <p class="lede">Every card in play as it looks now, with its stats, card text and art brief. A blank card still needs art: press <b>Submit or claim</b> to send your art, or to claim the card while you work on it. Once art for a card is approved, it shows here and the card is done.</p>
+      <p class="lede">Every card in play as it looks now, with its stats, card text and art brief. A blank card still needs art: press <b>Submit or claim</b> to send your art, or to claim the card while you work on it. Once art for a card is approved, it shows here and the card is done.<span id="briefLine" hidden> Before you start, read the <a id="briefLink" target="_blank" rel="noopener">artist brief</a>: it covers art style, sizes, credit and the terms.</span></p>
     </div>
     <div class="progress" aria-live="polite">
       <div class="big"><span id="doneCount">0</span> <small>of <span id="totalCount">0</span> cards have art</small></div>
@@ -117,11 +123,13 @@ figure { margin: 0; min-width: 0; }
         <span><span class="chip needs">Needs art</span> art wanted</span>
         <span><span class="chip progress">In progress</span> someone's on it</span>
         <span><span class="chip done">Art done</span> no new art needed</span>
+        <span><span class="chip prio">Priority</span> draw these first</span>
       </div>
     </div>
   </header>
   <div class="tools" role="toolbar" aria-label="Filter cards">
     <div class="seg" id="seg">
+      <button type="button" data-f="priority" aria-pressed="false">Priority <span></span></button>
       <button type="button" data-f="needs" aria-pressed="false">Needs art <span></span></button>
       <button type="button" data-f="progress" aria-pressed="false">In progress <span></span></button>
       <button type="button" data-f="done" aria-pressed="false">Art done <span></span></button>
@@ -147,6 +155,7 @@ const rawUrl = path => B.repo + path.split("/").map(encodeURIComponent).join("/"
 
 function render(data) {
   B = data; $("loading").remove();
+  if (/^https:\/\/\S+$/.test(B.briefUrl || "")) { $("briefLink").href = B.briefUrl; $("briefLine").hidden = false; }
   const order = ["Angel", "Blood Demon", "Dino", "Goblin", "Mundane", "Plushy", "Wizard", "Neutral"];
   const groups = {};
   B.cards.forEach(c => (groups[c.g] = groups[c.g] || []).push(c));
@@ -173,8 +182,13 @@ function tile(c) {
   const head = el("div", "tile-head"), nm = el("div");
   nm.append(el("h3", null, c.n), el("span", "type", [TYPE(c.t), c.f || "No faction"].join(" · ")));
   const label = { needs: "Needs art", review: "In review", progress: "In progress", done: "Art done ✓" }[st];
-  head.append(nm, el("span", "chip " + st, label));
+  const prio = B.priority && B.priority[c.n];
+  const chips = el("div", "chips");
+  if (prio) chips.append(el("span", "chip prio", "Priority"));
+  chips.append(el("span", "chip " + st, label));
+  head.append(nm, chips);
   const info = el("div", "info");
+  if (prio) info.append(el("p", "prio-note", prio));
   if (c.k < 2) {
     const row = el("div", "stats");
     [["ATK", c.a], ["HP", c.hp], ["Flux", c.k === 1 ? c.fl : ""], ["Speed", c.sp]].forEach(([k, v]) => { if (v && v !== "N/A") { const p = el("span", "stat"); p.append(el("b", null, k), document.createTextNode(" " + v)); row.append(p); } });
@@ -229,13 +243,13 @@ function tile(c) {
   const brief = el("div", "block"); brief.append(el("p", "cap", "Art brief"), el("p", c.d ? "brief" : "brief empty", c.d || "No art brief yet."));
   const text = el("div", "block"); text.append(el("p", "cap", "Card text"), el("p", c.x ? "cardtext" : "cardtext empty", c.x || "No card text."));
   t.append(head, info, pair, brief, text);
-  tiles.push({ t, c, st: group(st), hay: [c.n, c.d, c.x, c.t, c.f, c.at].join(" ").toLowerCase() });
+  tiles.push({ t, c, st: group(st), prio: !!prio, hay: [c.n, c.d, c.x, c.t, c.f, c.at].join(" ").toLowerCase() });
   return t;
 }
 
 function refresh() {
-  const n = { needs: 0, progress: 0, done: 0 };
-  tiles.forEach(x => n[x.st]++);
+  const n = { needs: 0, progress: 0, done: 0, priority: 0 };
+  tiles.forEach(x => { n[x.st]++; if (x.prio && x.st !== "done") n.priority++; });   // the Priority count: still to finish
   $("doneCount").textContent = n.done; $("barFill").style.width = (tiles.length ? n.done / tiles.length * 100 : 0) + "%";
   $("barLabel").setAttribute("aria-label", `${n.done} of ${tiles.length} cards have art`);
   for (const b of $("seg").querySelectorAll("button")) { b.setAttribute("aria-pressed", String(b.dataset.f === S.filter)); b.querySelector("span").textContent = b.dataset.f === "all" ? tiles.length : n[b.dataset.f]; }
@@ -244,7 +258,7 @@ function refresh() {
     let vis = 0, done = 0;
     for (const x of tiles) if (s.cards.includes(x.c)) {
       if (x.st === "done") done++;
-      const ok = (S.filter === "all" || S.filter === x.st) && (!S.q || x.hay.includes(S.q));
+      const ok = (S.filter === "all" || S.filter === x.st || (S.filter === "priority" && x.prio)) && (!S.q || x.hay.includes(S.q));
       x.t.hidden = !ok; if (ok) vis++;
     }
     s.cnt.textContent = `${done} of ${s.cards.length} have art`; s.sec.hidden = !vis; shown += vis;
