@@ -14,7 +14,7 @@ const CONFIG = {
   REPO: 'https://raw.githubusercontent.com/kleinstein-stack/fusion-fuckery/main/',
   CACHE_SECONDS: 600,              // how long card data from GitHub is reused before it's fetched again
   CLAIM_DAYS: 5,                   // a claim with no art drops back to "Needs art" after this many days (0 = never)
-  BRIEF_URL: '',                   // the artist brief (Google Doc), linked in the board's intro; empty = no link
+  BRIEF_URL: 'https://docs.google.com/document/d/1K2OmPzMFG4AkN5OXTpPEdAAnEHayDDvLqd32bqYMLB4',   // the artist brief, linked in the board's intro; empty = no link
 };
 
 function doGet() {
