@@ -70,6 +70,7 @@ section.fac { margin-top: 34px; }
 .chip.prio { background: var(--prio-bg); color: var(--prio); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; flex: none; }
 .prio-note { margin: 0; font-size: 13px; font-weight: 700; color: var(--prio); }
+.prio-about { margin: 20px 0 0; max-width: 72ch; padding: 12px 14px; border-radius: 10px; background: var(--prio-bg); color: var(--ink); border-left: 4px solid var(--prio); }
 .stats { display: flex; flex-wrap: wrap; gap: 6px; }
 .stat { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--slot); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .stat b { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
@@ -138,6 +139,7 @@ figure { margin: 0; min-width: 0; }
     <input class="search" id="q" type="search" placeholder="Search names, briefs or card text" aria-label="Search names, briefs or card text">
     <div class="jump" id="jump"></div>
   </div>
+  <p class="prio-about" id="prioAbout" hidden></p>
   <main id="sections"><p class="state" id="loading">Loading the cards…</p></main>
   <p class="state" id="none" hidden>No cards match. Clear the search or pick another filter.</p>
 </div>
@@ -156,6 +158,7 @@ const rawUrl = path => B.repo + path.split("/").map(encodeURIComponent).join("/"
 function render(data) {
   B = data; $("loading").remove();
   if (/^https:\/\/\S+$/.test(B.briefUrl || "")) { $("briefLink").href = B.briefUrl; $("briefLine").hidden = false; }
+  $("prioAbout").textContent = B.priorityNote || "";
   const order = ["Angel", "Blood Demon", "Dino", "Goblin", "Mundane", "Plushy", "Wizard", "Neutral"];
   const groups = {};
   B.cards.forEach(c => (groups[c.g] = groups[c.g] || []).push(c));
@@ -253,6 +256,7 @@ function refresh() {
   $("doneCount").textContent = n.done; $("barFill").style.width = (tiles.length ? n.done / tiles.length * 100 : 0) + "%";
   $("barLabel").setAttribute("aria-label", `${n.done} of ${tiles.length} cards have art`);
   for (const b of $("seg").querySelectorAll("button")) { b.setAttribute("aria-pressed", String(b.dataset.f === S.filter)); b.querySelector("span").textContent = b.dataset.f === "all" ? tiles.length : n[b.dataset.f]; }
+  $("prioAbout").hidden = !(S.filter === "priority" && B.priorityNote);
   let shown = 0;
   for (const s of sections) {
     let vis = 0, done = 0;

@@ -26,17 +26,19 @@ function doGet() {
 
 /** Everything the page shows, in one call from the page. */
 function getBoard() {
+  const prio = priorityMap_();
   return { cards: getCards_(), art: getSubmissions_(), formUrl: CONFIG.FORM_URL, cardField: CONFIG.CARD_FIELD, repo: CONFIG.REPO, briefUrl: CONFIG.BRIEF_URL,
-    priority: priorityMap_() };
+    priority: prio.cards, priorityNote: prio.about };
 }
 
-/** Cards to draw first (saves/art-priority.json in the repo: card name -> why), shown in the board's Priority tab. */
+/** Cards to draw first (saves/art-priority.json in the repo: card name -> why, plus "_about": the note shown at the
+ *  top of the board's Priority tab). */
 function priorityMap_() {
   try {
-    const m = JSON.parse(fetchText_('saves/art-priority.json')), out = {};
-    Object.keys(m).forEach(k => { out[k.trim()] = String(m[k] || '').slice(0, 200); });
-    return out;
-  } catch (e) { return {}; }
+    const m = JSON.parse(fetchText_('saves/art-priority.json')), cards = {};
+    Object.keys(m).forEach(k => { if (k !== '_about') cards[k.trim()] = String(m[k] || '').slice(0, 200); });
+    return { cards, about: String(m._about || '').slice(0, 600) };
+  } catch (e) { return { cards: {}, about: '' }; }
 }
 
 // ---- cards from GitHub ----
