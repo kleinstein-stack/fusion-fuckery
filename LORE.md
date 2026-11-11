@@ -21,7 +21,7 @@ The goal is a TCG that doesn't feel generic: every creature should feel like par
 - Archangel is now **Gabe**.
 - Soul Sucker is now **Scrooger**.
 - Skinless Titan is now **Beelzechad**.
-- Plush Carrion Duchess is now **Plush Dark Duchess** (the full name doesn't fit on the card).
+- Plush Judicator Angel is now **Plush T-Rex**, Plush Dark Duchess (once Plush Carrion Duchess) is now **Plush Mall Cop Gary**, Plush Vein Ripper is now **Plush Spell Slinger** and Plush Sanctified Knight is now **Plush Salem**, so the plushies aren't all angels and demons.
 
 ## Goblins
 
@@ -89,7 +89,7 @@ The angels have a chain of command: acolytes and knights at the bottom, Gabe at 
 *A starting point so the faction fits the world. Change anything.*
 
 - **The idea:** plush versions of everyone above, won from claw machines in arcades. The meltdowns made some of them come alive: they're still the characters they're based on, just stuffed, squeaky and very hard to keep down.
-- **Look:** felt and fleece versions of the originals, with visible stitching, button eyes, tags and prize-machine price stickers. Same outfits and props as the real ones, made of fabric (Plush Vein Ripper's barrel is a felt pouch).
+- **Look:** felt and fleece versions of the originals, with visible stitching, button eyes, tags and prize-machine price stickers. Same outfits and props as the real ones, made of fabric (Plush Mall Cop Gary's badge is a felt patch).
 - **Arcade Kid:** a Gen Z kid who has sunk their entire allowance into the claw machine. "One more try. Just one more."
 - **Plush Collector:** an adult collector with a basement full of mint-condition, tags-still-on plushies. Not a plushy themselves.
 - **Patchwork Plush:** stitched together from the plushies that didn't make it. A bit creepy, very loyal.

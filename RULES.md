@@ -59,7 +59,9 @@ players; Community College of Magic gives 1 flux (it used to give a card); Lord 
 and Crack a pack with its own. **Five new fusions** have attribute recipes, so creatures from different factions can
 fuse (13): Chimera, Blood Mage, The Flock, Fossil Fuel Baron and Absolute Unit. Night School Professor now destroys a
 Frog to cast Frog Bolt (14.8), and Chimera is Winged and a triple fusion (13). New starter decks:
-Jurassic Junkyard, Bone Yard, Red Tape and Night School. The v4.6 cards, decks and rulebook are saved under the git tag
+Jurassic Junkyard, Bone Yard, Red Tape and Night School. Four plushies are now plush versions of other
+factions' creatures, with the same stats and effects: Plush T-Rex, Plush Mall Cop Gary, Plush Spell Slinger and
+Plush Salem (were Plush Judicator Angel, Plush Dark Duchess, Plush Vein Ripper and Plush Sanctified Knight). The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
 
 ## 1. The Golden Rules

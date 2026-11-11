@@ -378,20 +378,20 @@ When this creature dies: Deal 2 damage to any creature, or to your opponent if t
 Plush Goblin,Creature,1+d4,3,2,4,"(you can only materialize this creature while you control a Claw Machine).
 
 When materialized: Gain 1 gold.",Plushy,Greedy / Humanoid / Fluffy,
-Plush Vein Ripper,Creature,4,6,3,6,"(you can only materialize this creature while you control a Claw Machine).
+Plush Spell Slinger,Creature,4,6,3,6,"(you can only materialize this creature while you control a Claw Machine).
 
 
 
 
 
 
-It squeaks when it bites.",Plushy,Unholy / Beast / Fluffy,
-Plush Sanctified Knight,Creature,3,9,5,4,"(you can only materialize this creature while you control a Claw Machine).
+It squeaks when it casts.",Plushy,Unholy / Beast / Fluffy,
+Plush Salem,Creature,3,9,5,4,"(you can only materialize this creature while you control a Claw Machine).
 
 Your creatures in the lanes next to this creature take 1 less combat damage.",Plushy,Holy / Humanoid / Noble / Fluffy,
-Plush Judicator Angel,Creature,4,10,6,7,"(you can only materialize this creature while you control a Claw Machine).
+Plush T-Rex,Creature,4,10,6,7,"(you can only materialize this creature while you control a Claw Machine).
 When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Plushy,Holy / Humanoid / Winged / Noble / Fluffy,
-Plush Dark Duchess,Creature,3,10,5,3,"(you can only materialize this creature while you control a Claw Machine).
+Plush Mall Cop Gary,Creature,3,10,5,3,"(you can only materialize this creature while you control a Claw Machine).
 At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Unholy / Humanoid / Noble / Fluffy,
 Patchwork Plush,Creature,3,14,8,1,"(you can only materialize this creature while you control a Claw Machine).
 

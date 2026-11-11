@@ -1152,14 +1152,14 @@ Object.assign(FX, {
     const inHand = p.hand.some(isClaw), s = !hasClaw(p) && !inHand ? 3 : inHand ? 0.2 : 0.9;   // a spare one against Pipebomb
     return { score: s, run: () => tutor(g, p, clawPick) };
   } }] },
-  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Sanctified Knight": FX["Sanctified Knight"],
-  "Plush Judicator Angel": FX["Judicator Angel"], "Plush Vein Ripper": {},
+  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Salem": FX["Sanctified Knight"],
+  "Plush T-Rex": FX["Judicator Angel"], "Plush Spell Slinger": {},
   "Plush Goblin": { value: 1, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); } },
-  "Plush Dark Duchess": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
+  "Plush Mall Cop Gary": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
     const p = g.p[u.ctrl], list = fluffyWaste(p).filter(c => c.d.kind === "creature");
     if (!list.length || (hasPatchwork(p) && list.length < 3)) return;   // Patchwork Plush wants them in the Waste Repository
     const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0];
-    p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  Plush Dark Duchess returns ${c.d.name} to the hand.`);
+    p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  Plush Mall Cop Gary returns ${c.d.name} to the hand.`);
   } },
   "Patchwork Plush": { value: 2, patchwork: true, aura(g, k, u) { return k === u && says(u.d, /has \+1 ATK for each/i) ? g.p[u.ctrl].waste.filter(fluffy).length : 0; } },   // the ATK bonus only while its text has it
   "Mega Plush": { value: 4, perSplice: 1, clawGuard: true, aura(g, k, u) { return k !== u && fluffy(u) ? spliceCount(k) : 0; } },
@@ -1874,10 +1874,10 @@ const FX_TEXT = {
   "Plush Cherub": "16zn475",
   "Plush Blood Imp": "1jq1dnd",
   "Plush Goblin": "1aamqke",
-  "Plush Vein Ripper": "5h7gkh",
-  "Plush Sanctified Knight": "sxbdhc",
-  "Plush Judicator Angel": "1c3jdc3",
-  "Plush Dark Duchess": "11ssl6r",
+  "Plush Spell Slinger": "5yui08",
+  "Plush Salem": "sxbdhc",
+  "Plush T-Rex": "1c3jdc3",
+  "Plush Mall Cop Gary": "11ssl6r",
   "Patchwork Plush": "1m6hvk9",
   "Mega Plush": "4jejkb",
 };
