@@ -385,14 +385,14 @@ Plush Spell Slinger,Creature,4,6,3,6,"(you can only materialize this creature wh
 
 
 
-It squeaks when it casts.",Plushy,Unholy / Beast / Fluffy,
+It squeaks when it casts.",Plushy,Arcane / Humanoid / Fluffy,
 Plush Salem,Creature,3,9,5,4,"(you can only materialize this creature while you control a Claw Machine).
 
-Your creatures in the lanes next to this creature take 1 less combat damage.",Plushy,Holy / Humanoid / Noble / Fluffy,
+Your creatures in the lanes next to this creature take 1 less combat damage.",Plushy,Unholy / Amorphous / Fluffy,
 Plush T-Rex,Creature,4,10,6,7,"(you can only materialize this creature while you control a Claw Machine).
-When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Plushy,Holy / Humanoid / Winged / Noble / Fluffy,
+When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Plushy,Prehistoric / Beast / Fluffy,
 Plush Mall Cop Gary,Creature,3,10,5,3,"(you can only materialize this creature while you control a Claw Machine).
-At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Unholy / Humanoid / Noble / Fluffy,
+At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Ordinary / Humanoid / Fluffy,
 Patchwork Plush,Creature,3,14,8,1,"(you can only materialize this creature while you control a Claw Machine).
 
 This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0).
