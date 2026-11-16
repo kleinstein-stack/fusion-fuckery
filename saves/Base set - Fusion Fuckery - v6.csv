@@ -2,7 +2,7 @@ Name,Type,ATK,HP,Flux Cost,Speed,Description,Faction,Attribute,Cold Storage
 Ritual Pit,Continuous Spell,N/A,N/A,N/A,,Once per turn: Banish an 'Unholy' creature from your Waste Repository. Your next fusion this turn may use an 'Unholy' creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,
 The bodega,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: You may discard 1 card, then draw 1 card. If you discarded an 'Ordinary' creature, put a Complaint on an enemy creature.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,yes
 Primordial Soup,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Put the top card of your deck into your Waste Repository.
 
 At the start of your turn: Roll a d20. On a 1, destroy every creature on the field.",Dino,,
@@ -117,17 +117,17 @@ On your turn: You may banish this creature to gain 1 gold.
 Penny stocks today. A yacht tomorrow.",Goblin,Greedy / Humanoid,
 Johnny '5 inches',Creature,4,10,4,5,"Whenever your opponent pays a fine: Gain 1 PHP and 1 gold.
 
-He's walking here! Legend says he's Gregg's cousin from New York.",Mundane,Ordinary / Humanoid / Greedy,
-Gregg,Creature,5,8,3,4,"Gregg has no effect, he's just a dude.",Mundane,Ordinary / Humanoid,
+He's walking here! Legend says he's Gregg's cousin from New York.",Mundane,Ordinary / Humanoid / Greedy,yes
+Gregg,Creature,5,8,3,4,"Gregg has no effect, he's just a dude.",Mundane,Ordinary / Humanoid,yes
 Gregg's Friend Joe,Creature,4,9,4,5,"When this creature attacks: Put a Complaint on the creature it attacks.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
-Gregg's Dawg,Creature,4,12,5,3,Your other 'Ordinary' creatures take 1 less combat damage.,Mundane,Ordinary / Beast / Guardian,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,yes
+Gregg's Dawg,Creature,4,12,5,3,Your other 'Ordinary' creatures take 1 less combat damage.,Mundane,Ordinary / Beast / Guardian,yes
 Bunny,Creature,2,3,1,,"Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
 ",Mundane,Beast,yes
 Cat,Creature,3,7,2,6,"At the end of your turn, if this creature didn't attack: Put a Complaint on an enemy creature.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Beast,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Beast,yes
 Spine Crawler,Creature,4,4,2,,Whenever this creature mutates: it gains +1 ATK.,Mutant,Fractured / Amorphous,yes
 Failed Clone,Creature,2,3,1,,When materialized: Mutate (D6).,Mutant,Fractured / Humanoid,yes
 Mutation Host,Creature,4,5,3,,Once per turn: You may force another creature to mutate.,Mutant,Fractured / Amorphous,yes
@@ -147,11 +147,11 @@ Parasite Larva,Creature,1,3,1,,"While attached, the host's damage get's reduced 
 Egg incubator,Equipment,N/A,N/A,N/A,,"Equip this 'Egg incubator' to any 'egg' creature. The first time this equiped 'egg' were to take damage from a creature in combat, negate this damage.",,,yes
 Gregg's Vape,Spell,N/A,N/A,N/A,,"Choose a creature you control with 'Gregg' in its name: It gains +4 ATK until end of turn. At the end of your turn, put a Complaint on it (no vaping indoors).
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,yes
 Sanctuary Bells,Field Spell,N/A,N/A,N/A,,"At the end of your turn: Restore 1 HP to each 'Holy' creature on the field, yours and your opponent's.
 
 Your Descends cost 1 less flux.",Angel,,
-Greggs,Field Spell,N/A,N/A,N/A,,At the end of each turn: Restore 1 HP to each creature with 'Gregg' in its name.,Mundane,,
+Greggs,Field Spell,N/A,N/A,N/A,,At the end of each turn: Restore 1 HP to each creature with 'Gregg' in its name.,Mundane,,yes
 Brood Fog,Field Spell,N/A,N/A,N/A,,"At the end of your turn, each Infested creature takes 1 damage.
 If an Infested creature dies, the player controlling that creature draws 1 card.",Parasite,,yes
 Seraphim Wall,Fusion,7,30,,1,"{Chapel Guard + any Holy creature}
@@ -210,7 +210,7 @@ This fusion can be made from creatures of any flux cost.
 
 At the end of your turn, if this creature didn't attack: Restore 3 HP to it.
 
-This furry purrramid is just so cute! :3",Mundane,Ordinary / Beast / Heavy,
+This furry purrramid is just so cute! :3",Mundane,Ordinary / Beast / Heavy,yes
 Cabbit,Fusion,4,8,N/A,,"{Cat + Bunny}
 If this creature doesn’t attack: Restore 1 HP to it at end phase.
 Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
@@ -221,12 +221,12 @@ Fines cost your opponent 1 more flux.
 Once per turn, choose one:
 - Put a Complaint on an enemy creature.
 - Your 'Ordinary' creatures gain +2 ATK until end of turn.
-- Restore 3 HP to each of your 'Ordinary' creatures.",Mundane,Ordinary / Humanoid / Noble,
+- Restore 3 HP to each of your 'Ordinary' creatures.",Mundane,Ordinary / Humanoid / Noble,yes
 Short Change,Instant Spell/Thiefling,,,,,"Target opponent loses 1 Flux. You gain 1 Flux this turn. If they had no Flux, draw 1 card.",,,yes
 The Local Legend,Fusion,9,22,N/A,4,"{any 2 Ordinary creatures with different names}
 Once per turn: Banish a fusion splice from under this creature to put a Complaint on each enemy creature.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,yes
 Patient Zero,Fusion,6,13,N/A,,"{Mutation Host + any 'Mutant' creature}
 Once per turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.",Mutant,Abomination / Humanoid,yes
 The Aberration,Fusion,7,12,N/A,,"{2 Mutants}
@@ -246,10 +246,10 @@ Sacrificial Lamb,Instant Spell,N/A,N/A,N/A,,Banish 2 'Unholy' creatures from you
 Market Crash,Instant Spell,N/A,N/A,N/A,,Pay 5 gold: All 'Greedy' creatures you control gain +3 ATK until end of turn.,Goblin,,
 HOA Complaint,Instant Spell,N/A,N/A,N/A,,"Put a Complaint on an enemy creature. If it already had one, it also loses its effects until end of turn.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,yes
 Tax Evasion,Instant Spell,N/A,N/A,N/A,,"When an enemy creature attacks an 'Ordinary' creature you control: Prevent up to 5 combat damage to your creature in that fight, then put a Complaint on the attacker.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,yes
 "RS PRO 115mm Stainless Steel Curved Tweezers
 ",Instant Spell,N/A,N/A,N/A,,"Remove one attached 'Parasite' creature from an infested creature (that 'Parasite' creature goes to your hand). If you do, deal 2 damage to that infested creature.",Parasite,,yes
 Thiefling Sleight of Hand,Instant Spell,N/A,N/A,N/A,,When your opponent plays a spell: It does nothing. Shuffle it into your deck instead of their Waste Repository; you can play it as if it were yours. (Give it back after the game.),,,yes
@@ -269,7 +269,7 @@ At the start of your next turn, look up the same asset again:
 - If it didn't change, flip a coin. Heads counts as rose, tails as fell.
 After that this card resolves.",Goblin,,
 Bad Bunny Concert tickets,Spell,N/A,N/A,N/A,,"Turn any creature on the field into a creature named 'Bunny', it keeps it's ATK & HP but looses any effects and original atribute(s).",Mundane,,yes
-Costco Hot Dog and Soda Comb for $1.5,Spell,N/A,N/A,N/A,,Restore 4 HP to an 'Ordinary' creature. Draw 1 card.,Mundane,,
+Costco Hot Dog and Soda Comb for $1.5,Spell,N/A,N/A,N/A,,Restore 4 HP to an 'Ordinary' creature. Draw 1 card.,Mundane,,yes
 Genetic Collapse,Spell,,,,,"Destroy a ‘Mutant’ creature you control. Deal damage equal to its ATK, to any creature on the field.",Mutant,,yes
 Forced Evolution,Spell,,,,,"Choose a creature. It restores +2 HP, then mutates.",Mutant,,yes
 Host Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK and 3 HP permanently.,Parasite,,yes
@@ -391,8 +391,8 @@ Plush Salem,Creature,3,9,5,4,"(you can only materialize this creature while you 
 Your creatures in the lanes next to this creature take 1 less combat damage.",Plushy,Unholy / Amorphous / Fluffy,
 Plush T-Rex,Creature,4,10,6,7,"(you can only materialize this creature while you control a Claw Machine).
 When this creature attacks: Restore 2 HP to your creatures in the lanes next to it.",Plushy,Prehistoric / Beast / Fluffy,
-Plush Mall Cop Gary,Creature,3,10,5,3,"(you can only materialize this creature while you control a Claw Machine).
-At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Ordinary / Humanoid / Fluffy,
+Plush Sanctified Knight,Creature,3,10,5,3,"(you can only materialize this creature while you control a Claw Machine).
+At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.",Plushy,Holy / Humanoid / Noble / Fluffy,
 Patchwork Plush,Creature,3,14,8,1,"(you can only materialize this creature while you control a Claw Machine).
 
 This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0).
@@ -441,15 +441,15 @@ This creature has +1 ATK for each fusion splice under it.
 In awe at the size of this lad.",,Heavy,
 Nosy Neighbor,Creature,5,11,6,3,"When materialized: Put a Complaint on up to 2 enemy creatures.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,yes
 Mall Cop Gary,Creature,7,16,9,2,"Enemy creatures with a Complaint can't attack.
 
 Once per turn: Put a Complaint on an enemy creature.
 
-(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,
+(Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,Ordinary / Humanoid,yes
 Neighborhood Watch,Spell,N/A,N/A,N/A,,"This card stays in its spell zone for your opponent's next 2 turns, then goes to your Waste Repository. 
 
-Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,
+Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,yes
 Apprentice,Creature,1,3,1,5,Whenever you play a spell: This creature gains +1 ATK until end of turn.,Wizard,Arcane / Humanoid,
 Toad Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
 Mail-Order Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard 1 card.

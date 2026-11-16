@@ -2,7 +2,7 @@
 
 Decided on 2026-10-19. This replaces the Rulebook v2.1 (*The Blocking Update*) wherever the two disagree; everything
 v2.1 says that isn't covered here still applies. The Mutant, Parasite, Bleed and Equipment rules are only in v2.1,
-because those cards are in cold storage (the Dinos and the Mundane cards came back in v4.7 with new rules, 14.5 and 14.6). The player-facing version with diagrams is
+because those cards are in cold storage (the Dinos came back in v4.7 with new rules, 14.5; the Mundane cards came back in v4.7, 14.6, and went back into cold storage on 2026-11-16). The player-facing version with diagrams is
 `Fusion Fuckery Rulebook v4.7 (editable).docx` (opens in Google Docs) and `Fusion Fuckery Rulebook v4.7.pdf`. The card editor's checks and simulators use these numbers
 (`PLAY` in `tools/editor-template.html`, `R` in `tools/battle-sim.js`).
 
@@ -66,6 +66,10 @@ Sanctified Knight). Without Holy and Noble plushies, the Haunted Arcade and Toy 
 Lazarus for Necrosaurus and a third Mega Plush. Blood Frenzy is now Blood Demon Cigarettes, with the same
 effect. The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
+
+**2026-11-16:** **Mundane is back in cold storage**, all 17 cards, so the Red Tape starter deck is out of play too (14.6 stays
+for when it returns). **Plush Mall Cop Gary is now Plush Sanctified Knight**, with the same stats and effect and Sanctified
+Knight's attributes (Holy / Humanoid / Noble / Fluffy).
 
 ## 1. The Golden Rules
 
@@ -349,7 +353,7 @@ you play them early.
 - In the battle sim Dino decks were too strong at first (the best pure-Dino build won 87% against the playtest decks);
   trimming the bigger Dinos' stats brought the two starters to about 51% (Jurassic Junkyard) and 56% (Bone Yard).
 
-### 14.6 Complaints (Mundane, v4.7)
+### 14.6 Complaints (Mundane, v4.7; in cold storage since 2026-11-16)
 - **Complaint:** a counter on a creature (use a coin or a die). Each one gives it **−2 ATK**, and while it has any its
   **"once per turn" effects don't work**. Complaints stack. Card text: "(Complaint: the creature has -2 ATK for each
   one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)"
