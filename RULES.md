@@ -63,7 +63,8 @@ Jurassic Junkyard, Bone Yard, Red Tape and Night School. Four plushies are now p
 factions' creatures, with the same stats and effects and their new originals' attributes: Plush T-Rex, Plush Mall Cop
 Gary, Plush Spell Slinger and Plush Salem (were Plush Judicator Angel, Plush Dark Duchess, Plush Vein Ripper and Plush
 Sanctified Knight). Without Holy and Noble plushies, the Haunted Arcade and Toy Box starters swap Fallen Angel and Lord
-Lazarus for Necrosaurus and a third Mega Plush. The v4.6 cards, decks and rulebook are saved under the git tag
+Lazarus for Necrosaurus and a third Mega Plush. Blood Frenzy is now Blood Demon Cigarettes, with the same
+effect. The v4.6 cards, decks and rulebook are saved under the git tag
 `save-before-v4.7` and in `saves/versions/` ("SAVE before v4.7 rules").
 
 ## 1. The Golden Rules

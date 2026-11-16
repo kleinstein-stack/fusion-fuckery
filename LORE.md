@@ -22,6 +22,7 @@ The goal is a TCG that doesn't feel generic: every creature should feel like par
 - Soul Sucker is now **Scrooger**.
 - Skinless Titan is now **Beelzechad**.
 - Plush Judicator Angel is now **Plush T-Rex**, Plush Dark Duchess (once Plush Carrion Duchess) is now **Plush Mall Cop Gary**, Plush Vein Ripper is now **Plush Spell Slinger** and Plush Sanctified Knight is now **Plush Salem**, so the plushies aren't all angels and demons.
+- Blood Frenzy is now **Blood Demon Cigarettes**.
 
 ## Goblins
 

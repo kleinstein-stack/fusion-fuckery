@@ -154,7 +154,7 @@ function goldReserve(g, p, except) {   // gold the AI keeps for Bull Run / Gobli
   for (const c of p.hand) if (c !== except) r = Math.max(r, goldCostOf(c.d));
   return r;
 }
-// what losing u costs its controller (a Blood Frenzy creature is sacrificed at the end of the turn anyway, once it has attacked)
+// what losing u costs its controller (a Blood Demon Cigarettes creature is sacrificed at the end of the turn anyway, once it has attacked)
 const keepWorth = (g, u) => u.stolen ? -valueOf(g, u) * 0.6 : u.frenzy ? (u.attacked ? 0 : 4) : valueOf(g, u);
 function killWorth(g, p, u) {   // what destroying u is worth to p
   if (u.ctrl === p.i) return -keepWorth(g, u);
@@ -1246,7 +1246,7 @@ const SPELLS = {
     const s = gain - cost * goldW(g, p) * 0.6 - 0.5;
     return s > 0.5 ? { pri: 3, score: s, run: () => cast(g, p, c, () => { p.gold -= cost; att.forEach(u => { u.tAtk += plus; }); }) } : null;
   } },
-  "Blood Frenzy": { needs: x => x.unholy >= 4, play(g, p, c) {
+  "Blood Demon Cigarettes": { needs: x => x.unholy >= 4, play(g, p, c) {
     if (g.phase !== 1 || g.turnNo === 1) return null;
     let best = null;
     for (const u of units(p)) {
@@ -1322,7 +1322,7 @@ const SPELLS = {
     if (g.phase !== 1 || g.turnNo === 1 || !emptyLanes(p).length) return null;
     const o = foe(g, p), paid = says(c.d, /pay PHP equal to/i), until = says(c.d, /start of your next turn/i) ? "start" : "end";
     const cost = t => paid ? (t.d.kind === "fusion" ? num(c.d, /(\d+) for a fusion/i, 10) : t.d.flux || 0) : 0;
-    const outlet = units(p).some(u => fxOf(u) && fxOf(u).bpWaste && !p.once.has(u.d.name + ":eat")) || p.hand.some(x => x.d.name === "Blood Frenzy");
+    const outlet = units(p).some(u => fxOf(u) && fxOf(u).bpWaste && !p.once.has(u.d.name + ":eat")) || p.hand.some(x => x.d.name === "Blood Demon Cigarettes");
     let best = null;
     for (const t of units(o)) {
       const k = cost(t); if (k && !canPay(p, k)) continue;
@@ -1836,7 +1836,7 @@ const FX_TEXT = {
   "Sacrificial Lamb": "14qq9lo",
   "Market Crash": "7o36jn",
   "Loaded Dice": "kide18",
-  "Blood Frenzy": "88e35t",
+  "Blood Demon Cigarettes": "88e35t",
   "Blood Pact Summoning Circle": "1jpgxtw",
   "Goblin Shuffle": "1au5pap",
   "Goblin Stock Broker": "1qrqb09",

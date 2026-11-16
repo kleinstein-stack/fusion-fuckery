@@ -254,7 +254,7 @@ Tax Evasion,Instant Spell,N/A,N/A,N/A,,"When an enemy creature attacks an 'Ordin
 ",Instant Spell,N/A,N/A,N/A,,"Remove one attached 'Parasite' creature from an infested creature (that 'Parasite' creature goes to your hand). If you do, deal 2 damage to that infested creature.",Parasite,,yes
 Thiefling Sleight of Hand,Instant Spell,N/A,N/A,N/A,,When your opponent plays a spell: It does nothing. Shuffle it into your deck instead of their Waste Repository; you can play it as if it were yours. (Give it back after the game.),,,yes
 Loaded Dice,Instant Spell,N/A,N/A,N/A,,"Choose a coin flip or die roll, yours or your opponent's. Flip or roll it again and use the second result.",,,
-Blood Frenzy,Spell,N/A,N/A,N/A,,Choose an 'Unholy' creature you control: It gains +4 ATK and +2 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,
+Blood Demon Cigarettes,Spell,N/A,N/A,N/A,,Choose an 'Unholy' creature you control: It gains +4 ATK and +2 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,
 Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next 'Unholy' creature you materialize this turn costs 2 less flux.,Blood Demon,,
 Archaeologist,Spell,N/A,N/A,N/A,,Put the top 4 cards of your deck into your Waste Repository. Then you may materialize a 'Prehistoric' creature from your Waste Repository by paying its Fossil cost.,Dino,,
 Fossil Record,Spell,N/A,N/A,N/A,,Return up to 2 'Prehistoric' creatures from your Waste Repository to your hand.,Dino,,
