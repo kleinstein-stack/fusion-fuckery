@@ -418,7 +418,12 @@ This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repositor
 Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
 Triple fusion: made from three Beasts, one in each of your lanes, of any flux cost. It takes the middle lane.",,Beast / Heavy / Winged,
 Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
-Whenever you play a spell: You may pay 1 PHP to deal 1 damage to an enemy creature for each fusion splice under this creature.
+Once per turn:
+You may pay 4 PHP to search any spell in your deck, show it to your opponent and put it in your hand.
+
+or
+
+Banish a fusion splice underneath this card gain +2 atk untill the end of the turn.
 ",Wizard / Blood Demon,Arcane / Unholy / Humanoid,
 The Flock,Fusion,8,18,N/A,7,"{any 2 Winged creatures}
 Once per turn: Banish a fusion splice from under this creature to materialize a 'Winged' creature from your Waste Repository.",,Winged,
@@ -450,26 +455,35 @@ Once per turn: Put a Complaint on an enemy creature.
 Neighborhood Watch,Spell,N/A,N/A,N/A,,"This card stays in its spell zone for your opponent's next 2 turns, then goes to your Waste Repository. 
 
 Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,yes
-Apprentice,Creature,1,3,1,5,Whenever you play a spell: This creature gains +1 ATK until end of turn.,Wizard,Arcane / Humanoid,
-Toad Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
-Mail-Order Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard 1 card.
+Apprentice,Creature,1,3,1,5,"This creature gains +1 ATK for each spell you've played this turn, untill the end of your turn.",Wizard,Arcane / Humanoid,
+Frog Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
+Wild Magic Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard 1 card.
 
 Certified (pending).",Wizard,Arcane / Humanoid,
-Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,
+Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1PHP damage to your opponent.,Wizard,Arcane / Humanoid,
 Night School Professor,Creature,3,8,4,3,"Once per turn: Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played.
 
-(Frogs: creatures turned into Frogs by Polymorph, and Toad Familiar.)
+
+
+
+
 
 Tonight's lesson: practical dissection.",Wizard,Arcane / Humanoid,
 Head Librarian,Creature,3,9,5,3,"The first time you play a spell each turn: You may draw 1 card.
 
 Shhh.",Wizard,Arcane / Humanoid,
-Battlemage,Creature,5,10,6,5,This creature has +1 ATK for each spell you've played this turn.,Wizard,Arcane / Humanoid,
-The Archmage,Creature,6,15,9,4,"The first one-shot spell (Spell or Instant Spell) you play each turn resolves twice.
+Battlemage,Creature,5,10,6,5,"This creature gains +1 ATK for each spell you've played this turn, untill the end of your turn.",Wizard,Arcane / Humanoid,
+The Archmage,Creature,6,15,9,4,"The first Spell or Instant Spell you play each turn resolves twice.
+
+
+
+
+
+
 
 He learned it all from a 14 hour video essay.",Wizard,Arcane / Humanoid / Noble,
 Wizard Tower,Fusion,7,24,N/A,1,"{any 2 Arcane creatures}
-Banish a fusion splice from under this creature: Return a one-shot spell (Spell or Instant Spell) from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
+Banish a fusion splice from under this creature: Return a Spell or Instant Spell from your Waste Repository to your hand.",Wizard,Arcane / Heavy,
 Spellsword,Fusion,10,20,N/A,6,"{Battlemage + any Arcane creature}
 Whenever you play a spell: This creature gains +2 ATK until end of turn.",Wizard,Arcane / Humanoid,
 Abracadabra,Spell,N/A,N/A,N/A,,"You can only play this if your Spellcount is 3 or more. Choose a creature that isn't a fusion: Return it to its owner's hand.
@@ -477,12 +491,12 @@ Abracadabra,Spell,N/A,N/A,N/A,,"You can only play this if your Spellcount is 3 o
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
 ...and it's gone!",Wizard,,
-Card Trick,Spell,N/A,N/A,N/A,,"Look at your opponent's hand and choose a card in it. They shuffle it into their deck. Spellcount 3+: Put it into their Waste Repository instead.
+Card Trick,Spell,N/A,N/A,N/A,,"Look at your opponent's hand and choose a card in it. They shuffle it into their deck. If your spellcount 3 or higher: Put it into their Waste Repository instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
 Is this your card?",Wizard,,
-Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. Spellcount 3+: Deal 4 damage instead.
+Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. If your spellcount 3 or higher: Deal 4 damage instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
 Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to a creature.,Wizard,,
@@ -499,4 +513,6 @@ Teacher's pet.",Wizard,,
 Spellbook,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: If your Spellcount is 3 or more, you may draw 1 card.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
-Community College of Magic,Field Spell,N/A,N/A,N/A,,Whenever a player plays their 3rd spell in a turn: They gain 1 flux this turn. (This affects both players.),Wizard,,
+Community College of Magic,Field Spell,N/A,N/A,N/A,,"Whenever a player plays their 3rd spell in a turn: They gain 1 flux this turn.
+
+THIS CARD NEEDS TO REWORKED, IF THIS IS BEING READ ON CARDBOARD I FUCKED UP!",Wizard,,
