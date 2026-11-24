@@ -6,9 +6,7 @@ The bodega,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: You may disca
 Primordial Soup,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Put the top card of your deck into your Waste Repository.
 
 At the start of your turn: Roll a d20. On a 1, destroy every creature on the field.",Dino,,
-Bull Run,Continuous Spell,N/A,N/A,N/A,,"The first time you gain gold each turn: Gain 1 more gold.
-
-While you have 5 or more gold in your pool, your 'Greedy' creatures gain +1 ATK.",Goblin,,
+Bull Run,Continuous Spell,N/A,N/A,N/A,,While you have 5 or more gold in your pool: the first time you gain gold each turn gain 2 instead.,Goblin,,
 Goblin Bank,Continuous Spell,N/A,N/A,N/A,,"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.",Goblin,,
 Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Roll a d6 for a random creature you control.
 1: Destroy it.
@@ -76,25 +74,40 @@ Hemogoblin,Creature,1+d8,8,6,5,"Once per turn: Pay 2 PHP to gain 2 gold.
 
 Once per turn: Pay 2 gold to give this creature +2 Speed until end of turn.
 ",Goblin,Greedy / Unholy / Humanoid,
-Ankylosaurus,Creature,3,9,4,2,"Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).
+Ankylosaurus,Creature,3,9,4,2,"The first time each turn this creature would take combat damage, reduce that damage by 2.
 
-The first time each turn this creature would take combat damage, reduce that damage by 2.",Dino,Prehistoric / Beast,
-Brontosaurus,Creature,4,15,7,1,"Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
 
-Fossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost).
 
-This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!",Dino,Prehistoric / Beast,
-Triceratops,Creature,4,9,5,3,"Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
+
 
 Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
-T-Rex,Creature,7,12,9,4,"Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
+Brontosaurus,Creature,4,15,7,1,"When this creature destroys a creature in combat, the leftover damage hits your opponent).
 
-Fossil 5 (you may materialize this creature from your Waste Repository by banishing 5 other cards from your Waste Repository instead of paying its flux cost).
 
-When materialized from your Waste Repository: Deal 3 damage to the enemy creature in front of this creature.",Dino,Prehistoric / Beast,
-Velociraptor,Creature,2,3,2,7,"Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).
 
-When this creature attacks: Deal 1 damage to a creature in a lane next to its target.",Dino,Prehistoric / Beast,
+
+
+Fossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Triceratops,Creature,4,9,5,3,"When this creature destroys a creature in combat, the leftover damage hits your opponent.
+
+
+
+
+
+Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+T-Rex,Creature,7,12,9,4,"When this creature destroys a creature in combat, the leftover damage hits your opponent.
+
+When materialized from your Waste Repository: Deal 3 damage to the enemy creature in front of this creature.
+
+
+Fossil 5 (you may materialize this creature from your Waste Repository by banishing 5 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Velociraptor,Creature,2,3,2,7,"When this creature attacks: Deal 1 damage to a creature in a lane next to its target.
+
+
+
+
+
+Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
 Dino egg,Creature,1,2,1,,"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including 'T-Rex'). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.",Dino,Prehistoric / Beast,yes
 Galorpian,Creature,4,7,3,,"Why are you blue?
 Once per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.",Galorpian,Amorphous,yes
@@ -195,7 +208,7 @@ Ergof The Dark Emperor,Fusion,9,20,N/A,6,"{Nomed The Dark Viscount + Renroc The 
 Once per turn: Pay 3 PHP to destroy a creature with 6 or less HP, or banish a fusion splice from under this creature to destroy a creature with 10 or less HP.
 ",Blood Demon,Unholy / Humanoid / Noble / Winged,
 TT-rex,Fusion,11,22,N/A,3,"{T-Rex + any Prehistoric creature}
-Stampede (when this creature destroys a creature in combat, the leftover damage hits your opponent).
+When this creature destroys a creature in combat, the leftover damage hits your opponent.
 
 Once per turn: Banish a fusion splice from under this creature to materialize a 'Prehistoric' creature from your Waste Repository without paying its Fossil cost.
 
@@ -405,15 +418,26 @@ Mega Plush,Fusion,8,24,,2,"{any 2 'Fluffy' creatures}
 
 Your other 'Fluffy' creatures have +1 ATK for each fusion splice under this creature.
 If your Claw Machine would leave the field: You may banish a fusion splice from under this creature instead. ",Plushy,Fluffy / Heavy,
-Compsognathus,Creature,1,2,1,7,"Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost).
+Compsognathus,Creature,1,2,1,7,"When this creature dies: Put the top 2 cards of your deck into your Waste Repository.
 
-When this creature dies: Put the top 2 cards of your deck into your Waste Repository.",Dino,Prehistoric / Beast,
-Dilophosaurus,Creature,3,5,4,5,"Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).
 
-When materialized: Deal 2 damage to the enemy creature in front of this creature.",Dino,Prehistoric / Beast,
-Pteranodon,Creature,4,7,6,7,"Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).
 
-When materialized from your Waste Repository: Return another 'Prehistoric' creature from your Waste Repository to your hand.",Dino,Prehistoric / Beast / Winged,
+
+
+Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost)",Dino,Prehistoric / Beast,
+Dilophosaurus,Creature,3,5,4,5,"When materialized: Deal 2 damage to the enemy creature in front of this creature.
+
+
+
+
+
+Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Pteranodon,Creature,4,7,6,7,"When materialized from your Waste Repository: Return another 'Prehistoric' creature from your Waste Repository to your hand.
+
+
+
+
+Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast / Winged,
 Necrosaurus,Fusion,9,22,N/A,4,"{any Prehistoric creature + any Unholy creature}
 This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repository.",Dino / Blood Demon,Prehistoric / Unholy / Heavy,
 Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
