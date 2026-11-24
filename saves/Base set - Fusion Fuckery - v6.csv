@@ -286,11 +286,11 @@ Space Squid,Spell,N/A,N/A,N/A,,"Pay PHP equal to an enemy creature's flux cost (
 
 You can't play this card if you have no empty lane.",,,
 Unfuse,Spell,N/A,N/A,N/A,,Break a fusion back down into its fusion splices.,,,
-Goblin General,Creature,1+d6,6,5,4,"Your other 'Greedy' creatures roll their dice twice and keep the higher result.
+Goblin General,Creature,1+d6,6,5,4,"When materalised, select One of your other 'Greedy' creatures get, that creature get's to flip a coin of extra damage, tails = 1 | heads =2
 
 Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.
 ",Goblin,Greedy / Humanoid,
-Gob-omber,Creature,1+d6,6,5,6,"On your turn, or when this creature dies: You may pay X gold. Banish this creature and deal X damage to every creature on the field.
+Gob-omber,Creature,1+d6,6,5,6,"On your turn, or when this creature dies: You may pay an amount of gold. Banish this creature and deal that amount of gold in damage to every creature on the field.
 
 
 
@@ -320,7 +320,11 @@ Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.
 
 
 The house always wins. He just works for the house.",Goblin,Greedy / Humanoid,
-Mountain Orc,Creature,5+d20,12,9,2,"Natural 20: This attack also hits the creatures in the lanes next to its target. Natural 1: This attack deals half damage.
+Mountain Orc,Creature,5+d20,12,9,2,"If you roll a: 
+
+Natural 20: This attack also hits the creatures in the lanes next to its target. 
+
+Natural 1: This attack deals 4 damage.
 ",Goblin,Greedy / Humanoid,
 It's Free Fuse-Estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux.
 
@@ -333,17 +337,13 @@ When this creature attacks: Restore 2 HP to each creature you control for each f
 ",Angel,Holy / Winged,
 Goblin King,Fusion,3+d10,24,,3,"{Goblin General + any Greedy creature}
 Your 'Greedy' creatures roll their dice twice and keep the higher result.
-
-At the start of your turn: Gain 1 gold for each fusion splice under this creature.
-
-Your 'Greedy' creatures gain +1 ATK for every 5 gold in your pool.
 ",Goblin,Greedy / Humanoid,
 Goblin Bombardier,Fusion,4+d8,22,,5,"{Gob-omber + any Greedy creature}
 Once per turn: Banish a fusion splice from under this creature to deal 6 damage to an enemy creature and 2 to the creatures in the lanes next to it.",Goblin,Greedy / Humanoid,
 Indulgence Seller,Fusion,8,24,,3,"{any Holy creature + any Greedy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-Once per turn: Pay X gold to restore 2X HP to a creature you control. Each fusion splice you banish from under this creature for this counts as 3 gold.
+Once per turn: Pay any amount of gold to restore 2 times that amount of HP to a creature you control. You may banish any amount of fusion splices underneath this card instead of paying gold.
 ",Angel / Goblin,Holy / Greedy,
 Market Research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for any 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
 Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to Oblivion. Gain 2 flux this turn.
@@ -381,7 +381,7 @@ Plush Goblin,Creature,1+d4,3,2,4,"(you can only materialize this creature while 
 When materialized: Gain 1 gold.",Plushy,Greedy / Humanoid / Fluffy,
 Plush Spell Slinger,Creature,4,6,3,6,"(you can only materialize this creature while you control a Claw Machine).
 
-
+You may destroy this card, when you do you can destroy a spell on the field.
 
 
 
