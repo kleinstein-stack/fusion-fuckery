@@ -6,7 +6,7 @@ The bodega,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: You may disca
 Primordial Soup,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Put the top card of your deck into your Waste Repository.
 
 At the start of your turn: Roll a d20. On a 1, destroy every creature on the field.",Dino,,
-Bull Run,Continuous Spell,N/A,N/A,N/A,,While you have 5 or more gold in your pool: the first time you gain gold each turn gain 2 instead.,Goblin,,
+Bull Run,Continuous Spell,N/A,N/A,N/A,,"While you have 5 or more gold in your pool, the first time you gain gold each turn: Gain 2 more gold.",Goblin,,
 Goblin Bank,Continuous Spell,N/A,N/A,N/A,,"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.",Goblin,,
 Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Roll a d6 for a random creature you control.
 1: Destroy it.
@@ -81,10 +81,9 @@ Ankylosaurus,Creature,3,9,4,2,"The first time each turn this creature would take
 
 
 Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
-Brontosaurus,Creature,4,15,7,1,"When this creature destroys a creature in combat, the leftover damage hits your opponent).
+Brontosaurus,Creature,4,15,7,1,"When this creature destroys a creature in combat, the leftover damage hits your opponent.
 
-
-
+This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!
 
 
 Fossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
@@ -299,11 +298,11 @@ Space Squid,Spell,N/A,N/A,N/A,,"Pay PHP equal to an enemy creature's flux cost (
 
 You can't play this card if you have no empty lane.",,,
 Unfuse,Spell,N/A,N/A,N/A,,Break a fusion back down into its fusion splices.,,,
-Goblin General,Creature,1+d6,6,5,4,"When materalised, select One of your other 'Greedy' creatures get, that creature get's to flip a coin of extra damage, tails = 1 | heads =2
+Goblin General,Creature,1+d6,6,5,4,"When materialized: Choose another 'Greedy' creature you control and flip a coin. It gains +1 ATK (tails) or +2 ATK (heads).
 
 Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.
 ",Goblin,Greedy / Humanoid,
-Gob-omber,Creature,1+d6,6,5,6,"On your turn, or when this creature dies: You may pay an amount of gold. Banish this creature and deal that amount of gold in damage to every creature on the field.
+Gob-omber,Creature,1+d6,6,5,6,"On your turn, or when this creature dies: You may pay any amount of gold. If you do, banish this creature and deal that much damage to every creature on the field.
 
 
 
@@ -356,7 +355,7 @@ Once per turn: Banish a fusion splice from under this creature to deal 6 damage 
 Indulgence Seller,Fusion,8,24,,3,"{any Holy creature + any Greedy creature}
 Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-Once per turn: Pay any amount of gold to restore 2 times that amount of HP to a creature you control. You may banish any amount of fusion splices underneath this card instead of paying gold.
+Once per turn: Pay any amount of gold to restore twice that much HP to a creature you control. Each fusion splice you banish from under this creature counts as 3 gold.
 ",Angel / Goblin,Holy / Greedy,
 Market Research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for any 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
 Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to Oblivion. Gain 2 flux this turn.
@@ -379,8 +378,8 @@ Claw Machine,Field Spell,N/A,N/A,N/A,,You can only materialize 'Fluffy' creature
 Arcade Kid,Creature,1,3,1,5,"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.
 
 
-For every 'Fluffy' creature on the field this card gains +2 ATK & +2 HP.",Plushy,Humanoid,
-Plush Collector,Creature,2,6,3,3,"When this card is on the field, you may metarialize 1 'Fluffy' creature to an Ajdacent lane, even if you don't own claw machine.",Plushy,Humanoid,
+This creature has +2 ATK and +2 HP for each 'Fluffy' creature on the field.",Plushy,Humanoid,
+Plush Collector,Creature,2,6,3,3,"Once per turn, you may materialize a 'Fluffy' creature in a lane next to this creature, even if you don't control a Claw Machine.",Plushy,Humanoid,
 Plush Catalogue,Spell,N/A,N/A,N/A,,"Search your deck for a card with 'Plush' in its name, show it to your opponent and put it into your hand.",Plushy,,
 Needle and Thread,Spell,N/A,N/A,N/A,,Return up to 2 'Fluffy' creatures from your Waste Repository to your hand.,Plushy,,
 Plush Cherub,Creature,1,2,1,6,"(you can only materialize this creature while you control a Claw Machine).
@@ -394,7 +393,7 @@ Plush Goblin,Creature,1+d4,3,2,4,"(you can only materialize this creature while 
 When materialized: Gain 1 gold.",Plushy,Greedy / Humanoid / Fluffy,
 Plush Spell Slinger,Creature,4,6,3,6,"(you can only materialize this creature while you control a Claw Machine).
 
-You may destroy this card, when you do you can destroy a spell on the field.
+Sacrifice this creature: Destroy a spell on the field.
 
 
 
@@ -424,7 +423,7 @@ Compsognathus,Creature,1,2,1,7,"When this creature dies: Put the top 2 cards of 
 
 
 
-Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost)",Dino,Prehistoric / Beast,
+Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
 Dilophosaurus,Creature,3,5,4,5,"When materialized: Deal 2 damage to the enemy creature in front of this creature.
 
 
@@ -443,12 +442,9 @@ This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repositor
 Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
 Triple fusion: made from three Beasts, one in each of your lanes, of any flux cost. It takes the middle lane.",,Beast / Heavy / Winged,
 Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
-Once per turn:
-You may pay 4 PHP to search any spell in your deck, show it to your opponent and put it in your hand.
-
-or
-
-Banish a fusion splice underneath this card gain +2 atk untill the end of the turn.
+Once per turn, choose one:
+- Pay 4 PHP: Search your deck for a spell, show it to your opponent and put it into your hand.
+- Banish a fusion splice from under this creature: It gains +2 ATK until end of turn.
 ",Wizard / Blood Demon,Arcane / Unholy / Humanoid,
 The Flock,Fusion,8,18,N/A,7,"{any 2 Winged creatures}
 Once per turn: Banish a fusion splice from under this creature to materialize a 'Winged' creature from your Waste Repository.",,Winged,
@@ -480,12 +476,12 @@ Once per turn: Put a Complaint on an enemy creature.
 Neighborhood Watch,Spell,N/A,N/A,N/A,,"This card stays in its spell zone for your opponent's next 2 turns, then goes to your Waste Repository. 
 
 Until then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.",Mundane,,yes
-Apprentice,Creature,1,3,1,5,"This creature gains +1 ATK for each spell you've played this turn, untill the end of your turn.",Wizard,Arcane / Humanoid,
+Apprentice,Creature,1,3,1,5,This creature has +1 ATK for each spell you've played this turn.,Wizard,Arcane / Humanoid,
 Frog Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
 Wild Magic Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard 1 card.
 
 Certified (pending).",Wizard,Arcane / Humanoid,
-Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1PHP damage to your opponent.,Wizard,Arcane / Humanoid,
+Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,
 Night School Professor,Creature,3,8,4,3,"Once per turn: Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played.
 
 
@@ -497,7 +493,7 @@ Tonight's lesson: practical dissection.",Wizard,Arcane / Humanoid,
 Head Librarian,Creature,3,9,5,3,"The first time you play a spell each turn: You may draw 1 card.
 
 Shhh.",Wizard,Arcane / Humanoid,
-Battlemage,Creature,5,10,6,5,"This creature gains +1 ATK for each spell you've played this turn, untill the end of your turn.",Wizard,Arcane / Humanoid,
+Battlemage,Creature,5,10,6,5,This creature has +1 ATK for each spell you've played this turn.,Wizard,Arcane / Humanoid,
 The Archmage,Creature,6,15,9,4,"The first Spell or Instant Spell you play each turn resolves twice.
 
 
@@ -516,12 +512,12 @@ Abracadabra,Spell,N/A,N/A,N/A,,"You can only play this if your Spellcount is 3 o
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
 ...and it's gone!",Wizard,,
-Card Trick,Spell,N/A,N/A,N/A,,"Look at your opponent's hand and choose a card in it. They shuffle it into their deck. If your spellcount 3 or higher: Put it into their Waste Repository instead.
+Card Trick,Spell,N/A,N/A,N/A,,"Look at your opponent's hand and choose a card in it. They shuffle it into their deck. If your Spellcount is 3 or higher: Put it into their Waste Repository instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
 Is this your card?",Wizard,,
-Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. If your spellcount 3 or higher: Deal 4 damage instead.
+Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. If your Spellcount is 3 or higher: Deal 4 damage instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
 Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to a creature.,Wizard,,
