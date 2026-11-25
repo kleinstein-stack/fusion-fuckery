@@ -23,6 +23,8 @@ The goal is a TCG that doesn't feel generic: every creature should feel like par
 - Skinless Titan is now **Beelzechad**.
 - Plush Judicator Angel is now **Plush T-Rex**, Plush Dark Duchess (once Plush Carrion Duchess) is now **Plush Mall Cop Gary**, Plush Vein Ripper is now **Plush Spell Slinger** and Plush Sanctified Knight is now **Plush Salem**, so the plushies aren't all angels and demons. Plush Mall Cop Gary is now **Plush Sanctified Knight**, since the Mundane cards are back in cold storage.
 - Blood Frenzy is now **Blood Demon Cigarettes**.
+- Toad Familiar is now **Frog Familiar**.
+- Mail-Order Wizard is now **Wild Magic Wizard**.
 
 ## Goblins
 

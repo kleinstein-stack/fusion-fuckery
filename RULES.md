@@ -335,7 +335,7 @@ you play them early.
   drew a card when one died, and plushies were destroyed without it.)
 - **Plush Cherub (v4.6):** whenever another Fluffy creature you control dies, draw a card.
 - Plush cards are plush versions of existing creatures: they keep the original's attributes (so they fit its
-  faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy; they search for the Claw
+  faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy. Arcade Kid searches for the Claw
   Machine. Plush Catalogue searches for any card with "Plush" in its name, including more Plush Catalogues.
 
 ### 14.5 Fossil & Stampede (Dinos, v4.7)
@@ -390,9 +390,9 @@ you play them early.
   change. When it turns back it has the HP it had before Polymorph, so damage it took as a Frog is gone (a Frog that's
   destroyed stays destroyed). A Frog has exactly 1 ATK, so Complaints don't lower it (they're still there when it
   turns back).
-- **Frogs and Night School Professor:** a Frog is a creature turned into one by Polymorph (on either side) or a Toad
+- **Frogs and Night School Professor:** a Frog is a creature turned into one by Polymorph (on either side) or a Frog
   Familiar. Once per turn, Night School Professor destroys one to cast Frog Bolt: 5 damage to an enemy creature.
-  Destroying an enemy Frog destroys that creature for good, and a Toad Familiar destroyed this way still returns a
+  Destroying an enemy Frog destroys that creature for good, and a Frog Familiar destroyed this way still returns a
   spell to your hand. Frog Bolt counts as a spell you played (Spellcount, Spell Slinger, Battlemage and other
   "whenever you play a spell" effects), but it isn't a card: Pipebomb can't stop it and The Archmage doesn't make
   it resolve twice. Complaints stop it, like any "once per turn" effect.

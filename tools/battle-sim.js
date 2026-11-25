@@ -546,7 +546,7 @@ function hitUnit(g, src, tgt, n, ctx, rolled) {
   const before = tgt.hp, foeP = g.p[tgt.ctrl];
   const dealt = damage(g, tgt, n, { src, combat: true });
   const f = fxOf(src); if (f && f.onCombatDamage) f.onCombatDamage(g, src, dealt);
-  if (n > before && !onField(g, tgt) && !g.over && says(src.d, /Stampede \(/) && (ctx.attack || !says(src.d, /Stampede \(when this creature attacks/i))) {   // Stampede: the leftover hits the player
+  if (n > before && !onField(g, tgt) && !g.over && says(src.d, /Stampede \(|the leftover damage hits your opponent/i) && (ctx.attack || !says(src.d, /Stampede \(when this creature attacks/i))) {   // Stampede: the leftover hits the player
     L(g, `  Stampede: ${n - Math.max(0, before)} damage carries through to ${who(g, foeP)}.`); losePHP(g, foeP, n - Math.max(0, before), { combat: true });
   }
   return dealt;
@@ -837,7 +837,7 @@ function discardWorst(g, p) {
   p.hand.splice(p.hand.indexOf(c), 1); toWaste(g, c); L(g, `  ${who(g, p)} discards ${c.d.name}.`);
   return c;
 }
-const isFrog = u => !!u.frog || u.d.name === "Toad Familiar";   // Night School Professor's Frogs (v4.7)
+const isFrog = u => !!u.frog || u.d.name === "Frog Familiar";   // Night School Professor's Frogs (v4.7)
 function frogify(g, u, until) {   // Polymorph: 1 ATK and no effects until the end of the caster's next turn; its HP stays,
   if (!onField(g, u) || u.frog) return;   // and when it turns back it has the HP it had before (damage taken as a Frog is gone)
   u.frog = { until, die: u.die, hp: u.hp }; u.die = 0;
@@ -1152,14 +1152,14 @@ Object.assign(FX, {
     const inHand = p.hand.some(isClaw), s = !hasClaw(p) && !inHand ? 3 : inHand ? 0.2 : 0.9;   // a spare one against Pipebomb
     return { score: s, run: () => tutor(g, p, clawPick) };
   } }] },
-  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Salem": FX["Sanctified Knight"],
-  "Plush T-Rex": FX["Judicator Angel"], "Plush Spell Slinger": {},
+  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Salem": FX["Judicator Angel"],
+  "Plush Sanctified Knight": FX["Sanctified Knight"], "Plush Spell Slinger": {},
   "Plush Goblin": { value: 1, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); } },
-  "Plush Sanctified Knight": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
+  "Plush T-Rex": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
     const p = g.p[u.ctrl], list = fluffyWaste(p).filter(c => c.d.kind === "creature");
     if (!list.length || (hasPatchwork(p) && list.length < 3)) return;   // Patchwork Plush wants them in the Waste Repository
     const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0];
-    p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  Plush Sanctified Knight returns ${c.d.name} to the hand.`);
+    p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  ${u.d.name} returns ${c.d.name} to the hand.`);
   } },
   "Patchwork Plush": { value: 2, patchwork: true, aura(g, k, u) { return k === u && says(u.d, /has \+1 ATK for each/i) ? g.p[u.ctrl].waste.filter(fluffy).length : 0; } },   // the ATK bonus only while its text has it
   "Mega Plush": { value: 4, perSplice: 1, clawGuard: true, aura(g, k, u) { return k !== u && fluffy(u) ? spliceCount(k) : 0; } },
@@ -1558,8 +1558,8 @@ Object.assign(FX, {
   "Purrramid": { value: 3, endTurn(g, u) { if (!u.attacked) restoreHP(g, g.p[u.ctrl], u, num(u.d, /restore (\d+) HP to it/i, 3)); } },
   // Wizards
   "Apprentice": { value: 1.5, onSpell(g, u) { u.tAtk += 1; } },
-  "Toad Familiar": { value: 1.5, onDeath(g, u) { spellBack(g, g.p[u.ctrl]); } },
-  "Mail-Order Wizard": { value: 1, onPlay(g, u) { const p = g.p[u.ctrl]; draw(g, p, 1); discardWorst(g, p); } },
+  "Frog Familiar": { value: 1.5, onDeath(g, u) { spellBack(g, g.p[u.ctrl]); } },
+  "Wild Magic Wizard": { value: 1, onPlay(g, u) { const p = g.p[u.ctrl]; draw(g, p, 1); discardWorst(g, p); } },
   "Spell Slinger": { value: 1.5, onSpell(g, u) {
     const p = g.p[u.ctrl], face = num(u.d, /whenever you play a spell: deal (\d+) damage to your opponent/i, 0);
     if (face) { L(g, `  Spell Slinger deals ${face} damage to ${who(g, foe(g, p))}.`); p.st.face += face; losePHP(g, foe(g, p), face); return; }
@@ -1577,11 +1577,11 @@ Object.assign(FX, {
         if (fuel.length < 2) return; banishFromWaste(g, p, fuel); spellBack(g, p, c => c === keep);
       } };
     }
-    // v4.7: destroy a Frog on the field (a Polymorph Frog on either side, or a Toad Familiar) to cast Frog Bolt
+    // v4.7: destroy a Frog on the field (a Polymorph Frog on either side, or a Frog Familiar) to cast Frog Bolt
     const n = num(u.d, /deal (\d+) damage/i, 5), o = foe(g, p);
     let best = null;
     for (const f of allUnits(g).filter(isFrog)) {
-      const lose = f.ctrl === p.i ? -keepWorth(g, f) + (f.d.name === "Toad Familiar" && p.waste.some(oneShot) ? 2 : 0)
+      const lose = f.ctrl === p.i ? -keepWorth(g, f) + (f.d.name === "Frog Familiar" && p.waste.some(oneShot) ? 2 : 0)
         : Math.max(killWorth(g, p, f), defValue(f.d) * 0.6);   // an enemy Frog is a real creature again soon
       for (const t of units(o)) { if (t === f) continue; const s = lose + damageWorth(g, p, t, n) + 0.5; if (!best || s > best.s) best = { f, t, s }; }
       if (!units(o).some(t => t !== f)) { const s = lose + 0.5; if (!best || s > best.s) best = { f, t: null, s }; }
@@ -1749,7 +1749,7 @@ const FX_TEXT = {
   "Crack a pack": "1otyca6",
   "Thiefling Sleight of Hand": "1y85wt2",
   "Nuclear Waste": "ml7cd9",
-  "Community College of Magic": "1gdfx4o",
+  "Community College of Magic": "tvcde7",
   "Spellbook": "dgytun",
   "Spelling Mistake": "12ecaij",
   "Wild Magic": "yrjaff",
@@ -1757,19 +1757,19 @@ const FX_TEXT = {
   "Polymorph": "ltxtuh",
   "Déjà Vu": "1g2fpub",
   "Big Fireball": "i1gqu1",
-  "Pocket Fireball": "1tcpcji",
-  "Card Trick": "106mkim",
+  "Pocket Fireball": "1o7rhe1",
+  "Card Trick": "hqg93d",
   "Abracadabra": "1ua8xnj",
   "Spellsword": "hzlbri",
-  "Wizard Tower": "1xuvjyz",
-  "The Archmage": "11g9ta0",
-  "Battlemage": "12o21dh",
+  "Wizard Tower": "10oa2nx",
+  "The Archmage": "yxm96i",
+  "Battlemage": "cfypzo",
   "Head Librarian": "1mo9vux",
-  "Night School Professor": "1myyrzo",
-  "Spell Slinger": "1mjllps",
-  "Mail-Order Wizard": "1evmc4m",
-  "Toad Familiar": "1ui173g",
-  "Apprentice": "9k5vpj",
+  "Night School Professor": "9s9fse",
+  "Spell Slinger": "1190zw8",
+  "Wild Magic Wizard": "1evmc4m",
+  "Frog Familiar": "1ui173g",
+  "Apprentice": "cfypzo",
   "Neighborhood Watch": "w3o9t5",
   "Gregg's Vape": "8ujfm7",
   "Greggs": "1axuv7n",
@@ -1787,15 +1787,15 @@ const FX_TEXT = {
   "Gregg's Friend Joe": "wza2hl",
   "Gregg": "1ltg8qp",
   "Cat": "lv3nyf",
-  "Compsognathus": "qx59lb",
-  "Velociraptor": "1r3r44s",
-  "Dilophosaurus": "1x35ylb",
-  "Ankylosaurus": "xkmu55",
-  "Triceratops": "h4ioa",
-  "Pteranodon": "18nvqfq",
-  "Brontosaurus": "6arhh",
-  "T-Rex": "7gtq1j",
-  "TT-rex": "1mead2a",
+  "Compsognathus": "1nsb30h",
+  "Velociraptor": "luwt9o",
+  "Dilophosaurus": "1mzcav3",
+  "Ankylosaurus": "1pffard",
+  "Triceratops": "xelvq",
+  "Pteranodon": "3fmsqe",
+  "Brontosaurus": "1klt2i9",
+  "T-Rex": "2uoqfn",
+  "TT-rex": "fkhpum",
   "Necrosaurus": "1a7rnrd",
   "Archaeologist": "zcpxne",
   "Fossil Record": "9ixkax",
@@ -1847,7 +1847,7 @@ const FX_TEXT = {
   "Space Squid": "udsda7",
   "Unfuse": "2rr8zr",
   "Goblin General": "v3esdv",
-  "Gob-omber": "1o9ssaa",
+  "Gob-omber": "1fuleb5",
   "Goblin Miner": "d8v9",
   "Scrooger": "ld1tn1",
   "Gabe": "1nktpyp",
@@ -1875,9 +1875,9 @@ const FX_TEXT = {
   "Plush Blood Imp": "1jq1dnd",
   "Plush Goblin": "1aamqke",
   "Plush Spell Slinger": "5yui08",
-  "Plush Salem": "sxbdhc",
-  "Plush T-Rex": "1c3jdc3",
-  "Plush Sanctified Knight": "11ssl6r",
+  "Plush Salem": "1c3jdc3",
+  "Plush T-Rex": "11ssl6r",
+  "Plush Sanctified Knight": "sxbdhc",
   "Patchwork Plush": "1m6hvk9",
   "Mega Plush": "4jejkb",
 };
