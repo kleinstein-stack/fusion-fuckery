@@ -107,10 +107,121 @@ figure { margin: 0; min-width: 0; }
 .lb-inner { display: grid; justify-items: center; gap: 10px; max-width: 100%; }
 @media (max-width: 760px) { .top { grid-template-columns: minmax(0, 1fr); } .tools { position: static; } }
 @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+
+/* ---------- site tabs ---------- */
+.site { background: var(--ink); color: var(--bg); }
+.site-in { max-width: 1320px; margin: 0 auto; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; }
+.brand { font-family: var(--display); font-size: 18px; letter-spacing: .02em; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.tabs button { border: 0; background: none; color: inherit; opacity: .78; padding: 7px 14px; border-radius: 99px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.tabs button:hover { opacity: 1; }
+.tabs button[aria-selected="true"] { background: var(--bg); color: var(--ink); opacity: 1; }
+.vhead h1 { margin-bottom: 0; }
+.ghost { display: inline-block; border: 1px solid var(--line); border-radius: 8px; padding: 6px 11px; font-weight: 700; font-size: 13px; background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
+.ghost:disabled { opacity: .5; cursor: default; }
+select { font: inherit; color: inherit; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 10px; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-weight: 700; font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.3); max-width: calc(100vw - 32px); text-align: center; }
+
+/* ---------- deck builder ---------- */
+.db { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 370px); gap: 24px; align-items: start; margin-top: 18px; }
+.db-tools { position: sticky; top: 0; z-index: 4; background: var(--bg); padding: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.pool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 150px), 1fr)); gap: 14px 12px; }
+.pc { position: relative; min-width: 0; }
+.pc-add { display: block; width: 100%; border: 0; padding: 0; background: none; border-radius: 9px; cursor: pointer; }
+.pc img, .vc img { display: block; width: 100%; height: auto; aspect-ratio: 63 / 88; border-radius: 9px; background: var(--slot); box-shadow: 0 1px 4px rgba(0,0,0,.28); }
+.pc-add:hover img { box-shadow: 0 0 0 3px var(--accent), 0 4px 14px rgba(0,0,0,.3); }
+.pc.full .pc-add { cursor: not-allowed; }
+.pc.full img { filter: saturate(.35) brightness(.8); }
+.pc.in img { box-shadow: 0 0 0 3px var(--done), 0 1px 4px rgba(0,0,0,.28); }
+.count-badge { position: absolute; top: -6px; right: -6px; min-width: 30px; text-align: center; background: var(--done); color: var(--surface); font-weight: 700; font-size: 13px; border-radius: 99px; padding: 2px 8px; box-shadow: 0 1px 4px rgba(0,0,0,.3); font-variant-numeric: tabular-nums; }
+.pc-btns { display: flex; justify-content: space-between; gap: 6px; margin-top: 6px; }
+.round { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.round:disabled { opacity: .35; cursor: default; }
+.pc-name { font-size: 12px; font-weight: 700; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: center; flex: 1; text-align: center; }
+.deck { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 12px; }
+.deck input[type=text] { width: 100%; font: inherit; font-weight: 700; font-size: 17px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 8px 10px; }
+.meter { display: grid; grid-template-columns: 86px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.meter .bar { height: 8px; } .meter.ok .bar i { background: var(--done); } .meter.over .bar i { background: var(--prio); } .meter .bar i { background: var(--todo); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+.checks li { padding: 7px 10px; border-radius: 8px; border-left: 4px solid; }
+.checks .err { background: var(--prio-bg); border-color: var(--prio); }
+.checks .warn { background: var(--todo-bg); border-color: var(--todo); }
+.checks .good { background: var(--done-bg); border-color: var(--done); font-weight: 700; }
+.curve { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; align-items: end; height: 92px; padding-top: 6px; }
+.curve div { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; text-align: center; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.curve i { align-self: end; display: block; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+.curve b { font-size: 11px; color: var(--ink); }
+.sub-h { margin: 4px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.drow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 3px 0; }
+.drow .th { height: 34px; border-radius: 6px; background-color: var(--slot); background-size: 150% auto; background-position: 50% 24%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); cursor: zoom-in; }
+.drow .nm { font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
+.drow .nm small { display: block; font-size: 11px; color: var(--muted); }
+.drow .qty { display: flex; align-items: center; gap: 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.drow .round { width: 26px; height: 26px; font-size: 14px; }
+.dactions { display: flex; flex-wrap: wrap; gap: 6px; }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.dlg { position: fixed; inset: 0; z-index: 25; background: var(--shade); display: grid; place-items: center; padding: 16px; }
+.dlg-in { background: var(--surface); color: var(--ink); border-radius: 14px; padding: 16px; width: min(560px, 100%); display: grid; gap: 10px; }
+.dlg-in h2 { margin: 0; font-size: 18px; }
+.dlg-in textarea { width: 100%; min-height: 260px; font: 13px/1.4 ui-monospace, Consolas, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--bg); color: var(--ink); }
+@media (max-width: 900px) { .db { grid-template-columns: minmax(0, 1fr); } .deck { position: static; max-height: none; order: -1; } .db-tools { position: static; } }
+
+/* ---------- decks ---------- */
+.decks-sec { margin-top: 30px; }
+.decks-sec > h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0 0 6px; }
+.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 16px; margin-top: 14px; }
+.dt { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.dt h3 { margin: 0; font-size: 19px; line-height: 1.2; }
+.dt .by { font-size: 13px; color: var(--muted); }
+.dt-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.dots { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.strip img { width: 100%; aspect-ratio: 63 / 88; border-radius: 6px; display: block; background: var(--slot); cursor: zoom-in; }
+.dt .notes { margin: 0; font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; }
+.vgrid-h { margin: 8px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px 8px; }
+.vc { position: relative; cursor: zoom-in; }
+.vc .count-badge { top: -5px; right: -5px; min-width: 26px; font-size: 12px; padding: 1px 6px; }
+
+/* ---------- rules ---------- */
+.rules-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 36px; align-items: start; margin-top: 22px; }
+.toc { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; display: grid; gap: 2px; font-size: 14px; }
+.toc button { text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 6px; color: var(--muted); cursor: pointer; font-weight: 700; }
+.toc button:hover { background: var(--surface); color: var(--ink); }
+.rb { max-width: 80ch; font-size: 16px; line-height: 1.6; }
+.rb > h1 { display: none; }
+.rb .tagline { font-family: var(--display); font-size: 24px; margin: 0 0 8px; }
+.rb h2 { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.15; margin: 38px 0 12px; padding-bottom: 6px; border-bottom: 3px solid var(--accent); scroll-margin-top: 12px; }
+.rb h3 { font-size: 19px; margin: 24px 0 6px; }
+.rb p { margin: 0 0 10px; }
+.rb ul, .rb ol { margin: 0 0 12px; padding-left: 24px; } .rb li { margin: 0 0 5px; }
+.rb .tscroll { overflow-x: auto; margin: 6px 0 16px; }
+.rb table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; line-height: 1.45; }
+.rb th, .rb td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; vertical-align: top; background: var(--surface) !important; }
+.rb th { background: var(--slot) !important; }
+.rb th p, .rb td p { margin: 0; }
+.rb p.example { background: var(--wip-bg); border-left: 4px solid var(--wip); padding: 9px 13px; border-radius: 6px; font-style: italic; }
+.rb p.figure { text-align: center; margin: 14px 0 4px; }
+.rb p.figure img { max-width: 100%; height: auto; width: auto !important; border-radius: 8px; background: #fff; }
+.rb p.caption { text-align: center; font-style: italic; color: var(--muted); font-size: 14px; }
+.rb td img, .rb li img, .rb p.normal img { height: 1.3em; width: auto !important; vertical-align: -0.25em; }
+.rb span[style] { color: inherit !important; }
+@media (max-width: 900px) { .rules-layout { grid-template-columns: minmax(0, 1fr); } .toc { position: static; max-height: none; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
 </style>
 </head>
 <body>
-<div class="wrap">
+<nav class="site" aria-label="Pages">
+  <div class="site-in">
+    <span class="brand">Fusion Fuckery</span>
+    <div class="tabs" role="tablist" id="tabs">
+      <button type="button" role="tab" data-v="art" aria-selected="true">Art board</button>
+      <button type="button" role="tab" data-v="build" aria-selected="false">Deck builder</button>
+      <button type="button" role="tab" data-v="decks" aria-selected="false">Decks</button>
+      <button type="button" role="tab" data-v="rules" aria-selected="false">Rules</button>
+    </div>
+  </div>
+</nav>
+<div class="wrap view" id="v-art" role="tabpanel">
   <header class="top">
     <div>
       <p class="eyebrow">Fusion Fuckery</p>
@@ -142,6 +253,70 @@ figure { margin: 0; min-width: 0; }
   <p class="prio-about" id="prioAbout" hidden></p>
   <main id="sections"><p class="state" id="loading">Loading the cards…</p></main>
   <p class="state" id="none" hidden>No cards match. Clear the search or pick another filter.</p>
+</div>
+
+<div class="wrap view" id="v-build" role="tabpanel" hidden>
+  <header class="vhead">
+    <p class="eyebrow">Fusion Fuckery</p>
+    <h1>Deck builder</h1>
+    <p class="lede">Click a card to add it, and press <b>−</b> to take one out. A deck is a <b>Main Deck of exactly 30</b> creatures and spells plus a <b>Fusion Deck of up to 10</b> fusions, with <b>at most 3 copies</b> of any card. Fusions go to the Fusion Deck on their own. The deck panel checks every rule as you go, and warns you about fusions your creatures can't make. Your deck stays in this browser.</p>
+  </header>
+  <div class="db">
+    <section aria-label="Cards">
+      <div class="db-tools" role="toolbar" aria-label="Filter cards">
+        <input class="search" id="dbQ" type="search" placeholder="Search names, card text or attributes" aria-label="Search cards">
+        <div class="seg" id="dbType">
+          <button type="button" data-t="all" aria-pressed="true">All</button>
+          <button type="button" data-t="1" aria-pressed="false">Creatures</button>
+          <button type="button" data-t="2" aria-pressed="false">Spells</button>
+          <button type="button" data-t="0" aria-pressed="false">Fusions</button>
+        </div>
+        <select id="dbFac" aria-label="Faction"><option value="">Every faction</option></select>
+        <select id="dbAttr" aria-label="Attribute"><option value="">Every attribute</option></select>
+      </div>
+      <div class="pool-grid" id="pool"><p class="state">Loading the cards…</p></div>
+      <p class="state" id="poolNone" hidden>No cards match. Clear the search or the filters.</p>
+    </section>
+    <aside class="deck" aria-label="Your deck">
+      <input type="text" id="dbName" placeholder="Name your deck" aria-label="Deck name" maxlength="60">
+      <div class="meter" id="mMain"><span>Main Deck</span><span class="bar"><i></i></span><span class="n"></span></div>
+      <div class="meter" id="mFus"><span>Fusion Deck</span><span class="bar"><i></i></span><span class="n"></span></div>
+      <ul class="checks" id="dbChecks" aria-live="polite"></ul>
+      <div><p class="sub-h"><span>Creature flux curve</span><span id="dbMix"></span></p><div class="curve" id="dbCurve"></div></div>
+      <div id="dbList"></div>
+      <div class="dactions">
+        <button type="button" class="btn" id="dbCopy">Copy list</button>
+        <button type="button" class="ghost" id="dbSave">Download .txt</button>
+        <button type="button" class="ghost" id="dbLoad">Paste a list</button>
+        <button type="button" class="ghost" id="dbClear">Clear</button>
+      </div>
+      <p class="hint">The list works in the card editor's <b>Load list</b> too.</p>
+    </aside>
+  </div>
+</div>
+
+<div class="wrap view" id="v-decks" role="tabpanel" hidden>
+  <header class="vhead">
+    <p class="eyebrow">Fusion Fuckery</p>
+    <h1>Decks</h1>
+    <p class="lede">Decks made by players, plus the starter decks. Open one to see every card, copy its list, or load it into the deck builder to make it your own.</p>
+  </header>
+  <p class="state" id="decksState">Loading the decks…</p>
+  <section class="decks-sec" id="secCommunity" hidden><h2>Player decks</h2><p class="lede">Added to the board by hand.</p><div class="deck-grid" id="gridCommunity"></div></section>
+  <section class="decks-sec" id="secStarters" hidden><h2>Starter decks</h2><div class="deck-grid" id="gridStarters"></div></section>
+</div>
+
+<div class="wrap view" id="v-rules" role="tabpanel" hidden>
+  <header class="vhead">
+    <p class="eyebrow">Fusion Fuckery</p>
+    <h1>Rules</h1>
+    <p class="lede" id="rulesLede">The full rulebook.</p>
+  </header>
+  <p class="state" id="rulesState">Loading the rules…</p>
+  <div class="rules-layout" id="rulesLayout" hidden>
+    <nav class="toc" id="toc" aria-label="Rulebook sections"></nav>
+    <article id="rulesBody"></article>
+  </div>
 </div>
 <script>
 const FC = { "Angel": "--f-angel", "Blood Demon": "--f-blood-demon", "Dino": "--f-dino", "Goblin": "--f-goblin", "Mundane": "--f-mundane", "Plushy": "--f-plushy", "Wizard": "--f-wizard", "Neutral": "--f-neutral" };
@@ -177,6 +352,7 @@ function render(data) {
   }
   $("totalCount").textContent = B.cards.length;
   refresh();
+  cardsReady();
 }
 
 function tile(c) {
@@ -284,8 +460,377 @@ function lightbox(src, label) {
 }
 function fail(err) { $("loading").textContent = "The board couldn't load: " + ((err && err.message) || err) + " Reload the page to try again."; }
 
-if (window.google && google.script && google.script.run) google.script.run.withSuccessHandler(render).withFailureHandler(fail).getBoard();
-else if (window.BOARD_TEST) window.BOARD_TEST.then(render, fail);   // local testing only
+/* =====================================================================
+   Shared: server calls, storage, card lookups
+   ===================================================================== */
+const api = (fn, ...args) => new Promise((ok, no) => {
+  if (window.google && google.script && google.script.run) google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn](...args);
+  else if (window.BOARD_TEST_API && BOARD_TEST_API[fn]) Promise.resolve(BOARD_TEST_API[fn](...args)).then(ok, no);   // local testing only
+  else no(new Error("The board isn't connected."));
+});
+const store = {   // only this browser's own conveniences (the deck in progress, the last tab)
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+const RULE = { main: 30, fusion: 10, copies: 3, fuseFlux: 5 };   // rulebook sections 6 and 14
+let BY = null, INDEX = null, boardReady;
+const BOARD = new Promise(r => { boardReady = r; });   // resolves once the cards are in
+const cardImg = c => B.repo + "art/cards/" + c.s + ".jpg";
+const isFusion = c => c.k === 0;
+const attrsOf = c => (c.at || "").split("/").map(s => s.trim().toLowerCase()).filter(Boolean);
+const fluxOf = c => { const n = parseInt(c.fl, 10); return isNaN(n) ? null : n; };
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const facVar = g => `var(${FC[g] || "--f-neutral"})`;
+let toastTimer = null;
+function toast(msg) {
+  let t = document.querySelector(".toast"); if (!t) { t = el("div", "toast"); t.setAttribute("role", "status"); document.body.append(t); }
+  t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2600);
+}
+
+// Reading deck lists people type or paste: "3 Chapel Guard", "3x Chapel Guard", "1-2 2x shotgun wedding", typos and old names
+const norm = s => String(s).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+const noThe = s => String(s).replace(/\bthe\b/gi, " ");
+const ALIAS = { "orc": "Mountain Orc", "flesh collector": "Salem", "carrion duchess": "Carrion The Dark Duchess", "pain drinker": "Beelzechud",
+  "holy acolyte": "Acolyte Adam", "archangel": "Gabe", "soul sucker": "Scrooger", "skinless titan": "Beelzechad", "toad familiar": "Frog Familiar",
+  "mail-order wizard": "Wild Magic Wizard", "blood frenzy": "Blood Demon Cigarettes", "tweezers": "RS PRO 115mm Stainless Steel Curved Tweezers" };
+function cardsReady() {
+  BY = {}; INDEX = new Map();
+  for (const c of B.cards) BY[c.n] = c;
+  for (const c of B.cards) { INDEX.set(norm(c.n), c); const k = norm(noThe(c.n)); if (!INDEX.has(k)) INDEX.set(k, c); }
+  for (const [a, n] of Object.entries(ALIAS)) if (BY[n]) INDEX.set(norm(a), BY[n]);
+  boardReady();
+  if (VIEW === "build") openBuilder();
+  if (VIEW === "decks") openDecks();
+}
+function osa(a, b) {   // edit distance, counting a swap of two letters as one edit
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) {
+    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+  }
+  return d[a.length][b.length];
+}
+function findCard(s) {
+  const k = norm(s), k2 = norm(noThe(s)); if (!k) return null;
+  if (INDEX.has(k)) return INDEX.get(k);
+  if (INDEX.has(k2)) return INDEX.get(k2);
+  let best = null, bd = 99, tie = false;
+  for (const [key, c] of INDEX) { const d = osa(k2, key); if (d < bd) { bd = d; best = c; tie = false; } else if (d === bd && c !== best) tie = true; }
+  return best && !tie && bd <= Math.min(2, Math.floor(k2.length / 4)) ? best : null;
+}
+function parseList(text) {
+  const out = { name: "", cards: {}, unknown: [] };
+  for (const raw of String(text || "").split(/\r?\n/)) {
+    const line = raw.trim(); if (!line) continue;
+    const h = /^#\s+(?!#)(.+)/.exec(line); if (h) { out.name = h[1].trim().slice(0, 60); continue; }
+    if (/^(#|\/\/)/.test(line)) continue;   // "## Main Deck (30)" and other headings
+    let m = /^(?:.*?\s)?(\d+)\s*[x×]?\s+([^\d\s].*?)\s*$/i.exec(line), q, s;
+    if (m) { q = +m[1]; s = m[2]; } else if ((m = /^(.+?)\s*[x×]\s*(\d+)$/i.exec(line))) { q = +m[2]; s = m[1]; } else continue;
+    const c = q > 0 && findCard(s);
+    if (c) out.cards[c.n] = (out.cards[c.n] || 0) + q; else out.unknown.push(line);
+  }
+  return out;
+}
+function listText(name, cards) {   // the card editor's format: "# Name", "## Main Deck (30)", "3x Card"
+  const a = analyse(cards), line = ([c, q]) => `${q}x ${c.n}`;
+  return [`# ${name || "My deck"}`, "", `## Main Deck (${a.nMain})`, ...a.main.map(line), "", `## Fusion Deck (${a.nFus})`, ...a.fus.map(line), ""].join("\r\n");
+}
+
+/* ---------- the rules a deck has to follow (rulebook 6 and 14) ---------- */
+function recipeParts(f) {
+  const m = /^\s*\{([^}]*)\}/.exec(f.x || ""); if (!m) return null;
+  return m[1].split(/\s+\+\s+/).map(p => {
+    p = p.trim(); const r = /^any (?:(\d+) )?'?([\w-]+)'? (creatures?|fusions?)/i.exec(p);
+    return r ? { n: +(r[1] || 1), attr: r[2].toLowerCase(), fusion: /^fusion/i.test(r[3]) } : { name: p, n: 1 };
+  });
+}
+function cantMake(f, main, fus) {
+  const parts = recipeParts(f); if (!parts) return "";
+  const has = n => main.some(([c]) => c.n === n);
+  const melting = has("Melting Pot"), ritual = has("Ritual Pit"), anyCost = /any flux cost/i.test(f.x);
+  const avail = new Map();   // card -> copies that can be a fusion splice for this fusion
+  for (const [c, q] of main) if (c.k === 1) {
+    const fl = fluxOf(c) || 0;
+    if (fl >= RULE.fuseFlux || melting || anyCost || (ritual && fl >= 3 && attrsOf(c).includes("unholy"))) avail.set(c, q);
+  }
+  for (const [c, q] of fus) if (c !== f) avail.set(c, q);   // fusions count as 5+ flux and can fill attribute parts
+  const take = (ok, n) => {
+    let got = 0;
+    for (const [c, q] of [...avail].filter(([c, q]) => q > 0 && ok(c)).sort((a, b) => b[1] - a[1])) {
+      const use = Math.min(q, n - got); avail.set(c, q - use); got += use; if (got >= n) break;
+    }
+    return got >= n;
+  };
+  const cost = melting || anyCost ? "" : " that costs 5+ flux";
+  for (const p of parts.filter(p => p.name)) if (!take(c => c.n === p.name, 1)) return `${f.n} can't be made: it needs ${p.name}${BY[p.name] && !isFusion(BY[p.name]) && (fluxOf(BY[p.name]) || 0) < RULE.fuseFlux && cost ? " (and it costs under 5 flux)" : ""}.`;
+  for (const p of parts.filter(p => !p.name)) if (!take(c => (!p.fusion || isFusion(c)) && attrsOf(c).includes(p.attr), p.n))
+    return `${f.n} can't be made: it needs ${p.n > 1 ? p.n : "a"} ${cap(p.attr)} ${p.fusion ? "fusion" : "creature"}${p.n > 1 ? "s" : ""}${p.fusion ? "" : cost.replace("costs", p.n > 1 ? "cost" : "costs")}.`;
+  return "";
+}
+function analyse(cards) {
+  const main = [], fus = [], errors = [], warns = [], order = ([a], [b]) => a.k - b.k || (fluxOf(a) || 0) - (fluxOf(b) || 0) || a.n.localeCompare(b.n);
+  let nMain = 0, nFus = 0;
+  for (const [n, q] of Object.entries(cards || {})) {
+    const c = BY[n]; if (!c || !(q > 0)) continue;
+    if (isFusion(c)) { fus.push([c, q]); nFus += q; } else { main.push([c, q]); nMain += q; }
+    if (q > RULE.copies) errors.push(`${n}: ${q} copies. ${RULE.copies} is the most you can run.`);
+  }
+  main.sort((a, b) => (a[0].k === 1 ? 0 : 1) - (b[0].k === 1 ? 0 : 1) || order(a, b)); fus.sort(order);
+  if (nMain !== RULE.main) errors.unshift(nMain < RULE.main ? `Main Deck: ${nMain} of ${RULE.main} cards. Add ${RULE.main - nMain} more.` : `Main Deck: ${nMain} cards. Take ${nMain - RULE.main} out: it has to be exactly ${RULE.main}.`);
+  if (nFus > RULE.fusion) errors.unshift(`Fusion Deck: ${nFus} fusions. Take ${nFus - RULE.fusion} out: ${RULE.fusion} is the most.`);
+  for (const [f] of fus) { const why = cantMake(f, main, fus); if (why) warns.push(why); }
+  const claw = main.some(([c]) => c.n === "Claw Machine" || c.n === "Plush Collector");
+  if (!claw && [...main, ...fus].some(([c]) => /while you control a Claw Machine/i.test(c.x))) warns.push("Fluffy cards can only be materialized while you control a Claw Machine. Add one (or Plush Collector).");
+  if (!fus.length && nMain) warns.push("No fusions yet. Fusions are the end goal: add up to 10.");
+  return { main, fus, nMain, nFus, errors, warns, legal: !errors.length };
+}
+
+/* =====================================================================
+   Pages
+   ===================================================================== */
+let VIEW = "art";
+function showView(v) {
+  VIEW = v; store.set("ff-board-tab", v);
+  for (const b of $("tabs").querySelectorAll("button")) b.setAttribute("aria-selected", String(b.dataset.v === v));
+  for (const p of document.querySelectorAll(".view")) p.hidden = p.id !== "v-" + v;
+  if (v === "build" && B) openBuilder();
+  if (v === "decks" && B) openDecks();
+  if (v === "rules") openRules();
+  window.scrollTo(0, 0);
+}
+$("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showView(b.dataset.v); });
+
+/* =====================================================================
+   Deck builder
+   ===================================================================== */
+const DK = store.get("ff-deck") || { name: "", cards: {} };
+if (!DK.cards || typeof DK.cards !== "object") DK.cards = {};
+const POOL = { built: false, q: "", t: "all", fac: "", attr: "", items: [] };
+const saveDeck = () => store.set("ff-deck", DK);
+
+function openBuilder() {
+  if (POOL.built) return; POOL.built = true;
+  const facs = [...new Set(B.cards.map(c => c.g))], order = ["Angel", "Blood Demon", "Dino", "Goblin", "Mundane", "Plushy", "Wizard", "Neutral"];
+  facs.sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99)).forEach(g => $("dbFac").append(new Option(g, g)));
+  [...new Set(B.cards.flatMap(attrsOf))].sort().forEach(a => $("dbAttr").append(new Option(cap(a), a)));
+  const cards = B.cards.slice().sort((a, b) => (order.indexOf(a.g) + 1 || 99) - (order.indexOf(b.g) + 1 || 99) || (a.k === 0) - (b.k === 0) || a.k - b.k || (fluxOf(a) || 0) - (fluxOf(b) || 0) || a.n.localeCompare(b.n));
+  $("pool").replaceChildren();
+  for (const c of cards) {
+    const box = el("div", "pc"); box.style.setProperty("--fc", facVar(c.g));
+    const add = el("button", "pc-add"); add.type = "button";
+    const img = new Image(); img.src = cardImg(c); img.alt = c.n; img.loading = "lazy"; img.width = 520; img.height = 726;
+    add.append(img); add.addEventListener("click", () => addCard(c));
+    const badge = el("span", "count-badge"); badge.hidden = true;
+    const btns = el("div", "pc-btns"), minus = el("button", "round", "−"), zoom = el("button", "round", "⤢");
+    minus.type = zoom.type = "button"; minus.setAttribute("aria-label", "Take one " + c.n + " out"); zoom.setAttribute("aria-label", "Look at " + c.n + " up close");
+    minus.addEventListener("click", () => setQty(c, (DK.cards[c.n] || 0) - 1));
+    zoom.addEventListener("click", () => lightbox(cardImg(c), c.n));
+    add.addEventListener("contextmenu", e => { e.preventDefault(); setQty(c, (DK.cards[c.n] || 0) - 1); });
+    btns.append(minus, el("span", "pc-name", c.n), zoom);
+    box.append(add, badge, btns); $("pool").append(box);
+    POOL.items.push({ c, box, add, badge, minus, hay: [c.n, c.x, c.at, c.t, c.f].join(" ").toLowerCase() });
+  }
+  $("dbName").value = DK.name || "";
+  filterPool(); updateDeck();
+}
+function filterPool() {
+  let shown = 0;
+  for (const it of POOL.items) {
+    const c = it.c, ok = (POOL.t === "all" || String(c.k) === POOL.t) && (!POOL.fac || c.g === POOL.fac) && (!POOL.attr || attrsOf(c).includes(POOL.attr)) && (!POOL.q || it.hay.includes(POOL.q));
+    it.box.hidden = !ok; if (ok) shown++;
+  }
+  $("poolNone").hidden = shown > 0;
+}
+$("dbQ").addEventListener("input", e => { POOL.q = e.target.value.trim().toLowerCase(); if (POOL.built) filterPool(); });
+$("dbType").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; POOL.t = b.dataset.t; for (const x of $("dbType").querySelectorAll("button")) x.setAttribute("aria-pressed", String(x === b)); if (POOL.built) filterPool(); });
+$("dbFac").addEventListener("change", e => { POOL.fac = e.target.value; filterPool(); });
+$("dbAttr").addEventListener("change", e => { POOL.attr = e.target.value; filterPool(); });
+$("dbName").addEventListener("input", e => { DK.name = e.target.value; saveDeck(); });
+
+function whyFull(c) {   // the reason another copy can't go in, or ""
+  const a = analyse(DK.cards), q = DK.cards[c.n] || 0;
+  if (q >= RULE.copies) return `${RULE.copies} copies is the most you can run.`;
+  if (isFusion(c) && a.nFus >= RULE.fusion) return `Your Fusion Deck is full (${RULE.fusion}).`;
+  if (!isFusion(c) && a.nMain >= RULE.main) return `Your Main Deck is full (${RULE.main}).`;
+  return "";
+}
+function addCard(c) { const why = whyFull(c); if (why) { toast(why); return; } setQty(c, (DK.cards[c.n] || 0) + 1); }
+function setQty(c, q) {
+  if (q > 0) DK.cards[c.n] = q; else delete DK.cards[c.n];
+  saveDeck(); updateDeck();
+}
+function updateDeck() {
+  if (!POOL.built) return;
+  const a = analyse(DK.cards);
+  for (const it of POOL.items) {
+    const q = DK.cards[it.c.n] || 0, why = whyFull(it.c);
+    it.badge.hidden = !q; it.badge.textContent = q + "/" + RULE.copies;
+    it.box.classList.toggle("in", q > 0); it.box.classList.toggle("full", !!why);
+    it.add.title = why || "Add " + it.c.n; it.add.setAttribute("aria-label", why ? it.c.n + ": " + why : "Add " + it.c.n);
+    it.minus.disabled = !q;
+  }
+  const meter = (id, n, max, exact) => { const m = $(id); m.querySelector("i").style.width = Math.min(100, n / max * 100) + "%"; m.querySelector(".n").textContent = `${n} / ${max}`;
+    m.classList.toggle("ok", exact ? n === max : n <= max && n > 0); m.classList.toggle("over", n > max); };
+  meter("mMain", a.nMain, RULE.main, true); meter("mFus", a.nFus, RULE.fusion, false);
+  const checks = $("dbChecks"); checks.replaceChildren();
+  if (a.legal) checks.append(el("li", "good", a.warns.length ? "Legal deck. A few things to check:" : "Legal deck. Ready to play!"));
+  a.errors.forEach(t => checks.append(el("li", "err", t)));
+  a.warns.forEach(t => checks.append(el("li", "warn", t)));
+  // flux curve of the Main Deck's creatures (1 to 10+)
+  const curve = Array(10).fill(0); let nCre = 0, nSp = 0;
+  for (const [c, q] of a.main) { if (c.k === 1) { curve[Math.min(10, Math.max(1, fluxOf(c) || 1)) - 1] += q; nCre += q; } else nSp += q; }
+  const top = Math.max(1, ...curve);
+  $("dbCurve").replaceChildren(...curve.map((n, i) => { const d = el("div"); const bar = el("i"); bar.style.height = (n / top * 100) + "%"; d.append(el("b", null, n || ""), bar, el("span", null, i === 9 ? "10+" : String(i + 1))); d.title = `${n} creature${n === 1 ? "" : "s"} at ${i + 1} flux`; return d; }));
+  $("dbMix").textContent = `${nCre} creatures · ${nSp} spells`;
+  const list = $("dbList"); list.replaceChildren();
+  const section = (title, rows, n) => {
+    if (!rows.length) return;
+    const h = el("p", "sub-h"); h.append(el("span", null, title), el("span", null, String(n))); list.append(h);
+    for (const [c, q] of rows) {
+      const r = el("div", "drow"), th = el("div", "th"); th.style.backgroundImage = `url("${cardImg(c)}")`; th.title = c.n; th.addEventListener("click", () => lightbox(cardImg(c), c.n));
+      const nm = el("div", "nm"); nm.append(document.createTextNode(c.n), el("small", null, c.k === 1 ? `${c.fl} flux · ${c.at}` : c.k === 0 ? "Fusion" : TYPE(c.t)));
+      const qty = el("div", "qty"), minus = el("button", "round", "−"), plus = el("button", "round", "+");
+      minus.type = plus.type = "button"; minus.setAttribute("aria-label", "One less " + c.n); plus.setAttribute("aria-label", "One more " + c.n);
+      minus.addEventListener("click", () => setQty(c, q - 1)); plus.addEventListener("click", () => addCard(c));
+      plus.disabled = !!whyFull(c);
+      qty.append(minus, el("span", null, "×" + q), plus); r.append(th, nm, qty); list.append(r);
+    }
+  };
+  section("Creatures", a.main.filter(([c]) => c.k === 1), nCre);
+  section("Spells", a.main.filter(([c]) => c.k !== 1), nSp);
+  section("Fusion Deck", a.fus, a.nFus);
+  if (!a.main.length && !a.fus.length) list.append(el("p", "hint", "Your deck is empty. Click cards on the left to add them."));
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+  const ta = el("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); return ok;
+}
+async function copyDeck(name, cards) {
+  const text = listText(name, cards);
+  if (await copyText(text)) toast("Deck list copied."); else textDialog("Copy this deck list", text, null);
+}
+function textDialog(title, value, onOk) {   // shows a list to copy, or takes a pasted one
+  const d = el("div", "dlg"), inner = el("div", "dlg-in"), ta = el("textarea"), row = el("div", "dactions");
+  d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-label", title);
+  ta.value = value || ""; ta.setAttribute("aria-label", title);
+  const close = () => { d.remove(); document.removeEventListener("keydown", key); }, key = e => { if (e.key === "Escape") close(); };
+  if (onOk) { const ok = el("button", "btn", "Load this list"); ok.type = "button"; ok.addEventListener("click", () => { onOk(ta.value); close(); }); row.append(ok); }
+  const cancel = el("button", "ghost", onOk ? "Cancel" : "Close"); cancel.type = "button"; cancel.addEventListener("click", close); row.append(cancel);
+  inner.append(el("h2", null, title));
+  if (onOk) inner.append(el("p", "hint", "One card per line, like \"3 Chapel Guard\" or \"3x Chapel Guard\". Lists copied from here or saved by the card editor work as they are."));
+  inner.append(ta, row); d.append(inner); document.body.append(d);
+  d.addEventListener("click", e => { if (e.target === d) close(); }); document.addEventListener("keydown", key);
+  ta.focus(); if (!onOk) ta.select();
+}
+function loadIntoBuilder(name, cards) {
+  DK.name = name || ""; DK.cards = { ...cards }; saveDeck();
+  if (POOL.built) $("dbName").value = DK.name;
+  showView("build"); updateDeck();
+}
+$("dbCopy").addEventListener("click", () => copyDeck(DK.name, DK.cards));
+$("dbSave").addEventListener("click", () => {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([listText(DK.name, DK.cards)], { type: "text/plain" }));
+  a.download = (DK.name || "deck").replace(/[\\/:*?"<>|]/g, "") + ".txt"; a.target = "_self"; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$("dbLoad").addEventListener("click", () => textDialog("Paste a deck list", "", text => {
+  const p = parseList(text);
+  if (!Object.keys(p.cards).length) { toast("No cards found in that list."); return; }
+  loadIntoBuilder(p.name || DK.name, p.cards);
+  if (p.unknown.length) toast(`Loaded. ${p.unknown.length} line${p.unknown.length === 1 ? "" : "s"} didn't match a card in play: ${p.unknown.slice(0, 3).join(", ")}`);
+}));
+$("dbClear").addEventListener("click", () => { if (!Object.keys(DK.cards).length || confirm("Clear this deck?")) { DK.cards = {}; DK.name = ""; $("dbName").value = ""; saveDeck(); updateDeck(); } });
+
+/* =====================================================================
+   Decks
+   ===================================================================== */
+let DECKS = null, decksLoading = false;
+async function openDecks() {
+  if (DECKS || decksLoading) return; decksLoading = true; $("decksState").hidden = false;
+  try { DECKS = await api("getDecks"); renderDecks(); }
+  catch (e) { $("decksState").textContent = "The decks couldn't load: " + ((e && e.message) || e); }
+  decksLoading = false;
+}
+function renderDecks() {
+  $("decksState").hidden = true;
+  const com = (DECKS.community || []).map(d => { const p = parseList(d.list); return { name: d.name, by: d.by, notes: d.notes, cards: p.cards, unknown: p.unknown }; });
+  const starters = (DECKS.starters || []).filter(d => Object.keys(d.cards).every(n => BY[n]))   // decks with cold-storage cards aren't playable now
+    .map(d => ({ name: d.name, by: "", notes: "", cards: d.cards, unknown: [] }));
+  $("gridCommunity").replaceChildren(...com.map(deckTile)); $("secCommunity").hidden = !com.length;
+  $("gridStarters").replaceChildren(...starters.map(deckTile)); $("secStarters").hidden = !starters.length;
+  if (!com.length && !starters.length) { $("decksState").hidden = false; $("decksState").textContent = "No decks yet."; }
+}
+function deckTile(d) {
+  const a = analyse(d.cards), t = el("article", "dt");
+  const head = el("div", "dt-head"), nm = el("div"); nm.append(el("h3", null, d.name)); if (d.by) nm.append(el("span", "by", "by " + d.by));
+  head.append(nm, el("span", "chip " + (a.legal ? "done" : "needs"), a.legal ? "Legal ✓" : "Not legal yet"));
+  const facs = {}; for (const [c, q] of [...a.main, ...a.fus]) if (c.k === 1 || c.k === 0) facs[c.g] = (facs[c.g] || 0) + q;
+  const dots = el("div", "dots");
+  Object.entries(facs).sort((x, y) => y[1] - x[1]).forEach(([g]) => { const s = el("span", "dot"); s.style.setProperty("--fc", facVar(g)); s.title = g; dots.append(s, document.createTextNode(g + "  ")); });
+  dots.append(document.createTextNode(`· Main ${a.nMain} · Fusion ${a.nFus}`));
+  t.append(head, dots);
+  const show = a.fus.length ? a.fus.map(([c]) => c) : a.main.map(([c]) => c);
+  const strip = el("div", "strip");
+  show.slice(0, 5).forEach(c => { const i = new Image(); i.src = cardImg(c); i.alt = c.n; i.loading = "lazy"; i.title = c.n; i.addEventListener("click", () => lightbox(cardImg(c), c.n)); strip.append(i); });
+  if (show.length) t.append(strip);
+  if (d.notes) t.append(el("p", "notes", d.notes));
+  if (a.errors.length || a.warns.length || d.unknown.length) {
+    const ul = el("ul", "checks");
+    a.errors.forEach(x => ul.append(el("li", "err", x))); a.warns.forEach(x => ul.append(el("li", "warn", x)));
+    if (d.unknown.length) ul.append(el("li", "warn", "Not matched to a card in play: " + d.unknown.join(", ")));
+    t.append(ul);
+  }
+  const full = el("div"); full.hidden = true;
+  const row = el("div", "dactions"), more = el("button", "btn", "Show every card"), load = el("button", "ghost", "Open in the deck builder"), copy = el("button", "ghost", "Copy list");
+  more.type = load.type = copy.type = "button";
+  more.addEventListener("click", () => {
+    if (!full.childNodes.length) {
+      const sec = (title, rows) => { if (!rows.length) return; full.append(el("p", "vgrid-h", `${title} (${rows.reduce((s, [, q]) => s + q, 0)})`)); const g = el("div", "vgrid");
+        for (const [c, q] of rows) { const v = el("div", "vc"), i = new Image(); i.src = cardImg(c); i.alt = c.n; i.loading = "lazy"; i.title = c.n; v.append(i, el("span", "count-badge", "×" + q)); v.addEventListener("click", () => lightbox(cardImg(c), c.n)); g.append(v); }
+        full.append(g); };
+      sec("Creatures", a.main.filter(([c]) => c.k === 1)); sec("Spells", a.main.filter(([c]) => c.k !== 1)); sec("Fusion Deck", a.fus);
+    }
+    full.hidden = !full.hidden; more.textContent = full.hidden ? "Show every card" : "Hide the cards";
+  });
+  load.addEventListener("click", () => { if (Object.keys(DK.cards).length && !confirm(`Replace the deck in your deck builder with ${d.name}?`)) return; loadIntoBuilder(d.name, d.cards); });
+  copy.addEventListener("click", () => copyDeck(d.name, d.cards));
+  row.append(more, load, copy); t.append(row, full);
+  return t;
+}
+
+/* =====================================================================
+   Rules
+   ===================================================================== */
+let rulesState = "";
+async function openRules() {
+  if (rulesState) return; rulesState = "loading";
+  try { const text = await api("getRules"); await BOARD; showRules(text); rulesState = "done"; }   // image links need the repo address
+  catch (e) { rulesState = ""; $("rulesState").textContent = "The rules couldn't load: " + ((e && e.message) || e); }
+}
+function showRules(text) {
+  const doc = new DOMParser().parseFromString(String(text), "text/html");
+  doc.querySelectorAll("script, style, iframe, object, embed, link, meta, form").forEach(n => n.remove());
+  doc.querySelectorAll("*").forEach(n => [...n.attributes].forEach(at => { if (/^on/i.test(at.name) || (/^(href|src)$/i.test(at.name) && /^\s*javascript:/i.test(at.value))) n.removeAttribute(at.name); }));
+  const rb = doc.querySelector(".rb"); if (!rb) throw new Error("the rulebook file is empty");
+  rb.querySelectorAll("img").forEach(img => { const s = img.getAttribute("src") || ""; if (!/^(https?:|data:)/i.test(s)) img.src = rawUrl("rules/" + s); img.loading = "lazy"; });
+  rb.querySelectorAll("table").forEach(tb => { const w = doc.createElement("div"); w.className = "tscroll"; tb.replaceWith(w); w.append(tb); });
+  const toc = $("toc"); toc.replaceChildren();
+  rb.querySelectorAll("h2").forEach((h, i) => { h.id = "rules-" + i; const b = el("button", null, h.textContent); b.type = "button"; b.addEventListener("click", () => document.getElementById(h.id).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })); toc.append(b); });
+  const lede = $("rulesLede"); lede.replaceChildren(document.createTextNode((rb.dataset.title || "The rulebook") + ". "));
+  if (rb.dataset.pdf) {   // the PDF's page on GitHub
+    const gh = B && B.repo.replace(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\//, "https://github.com/$1/$2/blob/$3/");
+    if (gh && /^https:\/\/github\.com\//.test(gh)) { const a = el("a", null, "Open the printable PDF"); a.href = gh + encodeURIComponent(rb.dataset.pdf); a.target = "_blank"; a.rel = "noopener"; lede.append(a, document.createTextNode(".")); }
+  }
+  $("rulesBody").replaceChildren(document.adoptNode(rb));
+  $("rulesState").hidden = true; $("rulesLayout").hidden = false;
+}
+
+/* ---------- start ---------- */
+api("getBoard").then(render, fail);
+{ const last = store.get("ff-board-tab"); if (["build", "decks", "rules"].includes(last)) showView(last); }
 </script>
 </body>
 </html>

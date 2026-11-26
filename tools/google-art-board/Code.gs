@@ -1,10 +1,12 @@
 /**
- * Fusion Fuckery Art Board, served as a Google Apps Script web app.
+ * Fusion Fuckery Art Board, served as a Google Apps Script web app. Four pages: the art board, a deck builder, the
+ * players' decks and the rules.
  *
- * The cards (names, stats, card text), the art briefs, the placeholder art and the card previews come from the
- * public GitHub repo, so the board follows the card editor. Submissions come from the art submission form's
- * response Sheet. A submission only shows once its row says "yes" in the Approved column, and only then is its
- * art file made viewable by link. Email addresses and notes never leave this script.
+ * The cards (names, stats, card text), the art briefs, the placeholder art, the card previews, the starter decks and
+ * the rulebook come from the public GitHub repo, so the board follows the card editor. Submissions come from the art
+ * submission form's response Sheet. A submission only shows once its row says "yes" in the Approved column, and only
+ * then is its art file made viewable by link. Email addresses and notes never leave this script. Players' decks come
+ * from the Sheet's Decks tab, which you fill in by hand.
  * Setup: tools/google-art-board/README.md
  */
 const CONFIG = {
@@ -15,6 +17,7 @@ const CONFIG = {
   CACHE_SECONDS: 600,              // how long card data from GitHub is reused before it's fetched again
   CLAIM_DAYS: 5,                   // a claim with no art drops back to "Needs art" after this many days (0 = never)
   BRIEF_URL: 'https://docs.google.com/document/d/1K2OmPzMFG4AkN5OXTpPEdAAnEHayDDvLqd32bqYMLB4',   // the artist brief, linked in the board's intro; empty = no link
+  DECKS_TAB: 'Decks',              // the Sheet tab with the players' decks the Decks page shows (made on first use)
 };
 
 function doGet() {
@@ -39,6 +42,46 @@ function priorityMap_() {
     Object.keys(m).forEach(k => { if (k !== '_about') cards[k.trim()] = String(m[k] || '').slice(0, 200); });
     return { cards, about: String(m._about || '').slice(0, 600) };
   } catch (e) { return { cards: {}, about: '' }; }
+}
+
+/** The Decks page: the decks you add by hand to the Sheet's Decks tab, and the starter decks from the repo. */
+function getDecks() {
+  return { community: communityDecks_(), starters: starterDecks_() };
+}
+
+const DECK_HEAD = ['Deck name', 'Made by', 'Deck list', 'Notes'];
+function communityDecks_() {
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+  let sh = ss.getSheetByName(CONFIG.DECKS_TAB);
+  if (!sh) {   // first use: make the tab with its headers, ready for you to paste decks into
+    sh = ss.insertSheet(CONFIG.DECKS_TAB);
+    sh.getRange(1, 1, 1, DECK_HEAD.length).setValues([DECK_HEAD]).setFontWeight('bold');
+    sh.setFrozenRows(1); sh.setColumnWidth(3, 380); sh.setColumnWidth(4, 260);
+    return [];
+  }
+  const v = sh.getDataRange().getDisplayValues();
+  if (v.length < 2) return [];
+  const head = v[0].map(h => h.trim().toLowerCase()), col = re => head.findIndex(h => re.test(h));
+  const c = { name: col(/^(deck )?name/), by: col(/^(made )?by|^author/), list: col(/^(deck )?list|^cards/), notes: col(/^notes?/) };
+  if (c.name < 0 || c.list < 0) return [];
+  return v.slice(1).filter(r => (r[c.name] || '').trim() && (r[c.list] || '').trim()).map(r => ({
+    name: r[c.name].trim().slice(0, 80),
+    by: c.by >= 0 ? (r[c.by] || '').trim().slice(0, 60) : '',
+    notes: c.notes >= 0 ? (r[c.notes] || '').trim().slice(0, 600) : '',
+    list: r[c.list].slice(0, 4000),   // read on the page, like a list pasted into the deck builder
+  }));
+}
+
+function starterDecks_() {
+  try {
+    return (JSON.parse(fetchText_('saves/decks.json')).decks || []).filter(d => /^Starter: /.test(d.name))
+      .map(d => ({ name: d.name.replace(/^Starter: /, ''), cards: d.cards || {} }));
+  } catch (e) { return []; }
+}
+
+/** The Rules page: the rulebook as a page fragment (rules/rulebook.html, made by tools/docx-to-html.py --web). */
+function getRules() {
+  return fetchText_('rules/rulebook.html');
 }
 
 // ---- cards from GitHub ----

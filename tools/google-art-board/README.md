@@ -3,6 +3,18 @@
 The art board as a Google Apps Script web app, shown on a Google Sites page. Artists submit art through the Google
 Form; the board shows each card's current look, stats, card text and art brief, and the art you approve.
 
+The site has four pages, picked from the tabs at the top:
+
+- **Art board:** the cards and their art, as above.
+- **Deck builder:** build a deck by clicking cards. It enforces the deck rules (a Main Deck of exactly 30, a Fusion
+  Deck of up to 10, at most 3 copies of a card, fusions only in the Fusion Deck, no cold-storage cards) and warns about
+  fusions the deck's creatures can't make and Fluffy cards without a Claw Machine. Players can copy or download the
+  list (in the card editor's format) or paste one in. The deck in progress stays in that player's browser.
+- **Decks:** the players' decks you add to the Sheet's **Decks** tab, and the starter decks from `saves/decks.json`
+  (a starter with cold-storage cards is left out). Each shows whether it's legal, its key cards, and every card on
+  request, and can be loaded into the deck builder.
+- **Rules:** the rulebook, from `rules/rulebook.html`, with a link to the PDF.
+
 - **Cards, stats, card text, art briefs, placeholder art and card previews** come from this GitHub repo, so the
   board follows the card editor (within about 10 minutes of a push).
 - **Submissions** come from the form's response Sheet. A submission only shows once you type `yes` in its
@@ -47,6 +59,16 @@ Form; the board shows each card's current look, stats, card text and art brief, 
 - **Cards changed?** Card text, stats, briefs and placeholder art update by themselves once they're on GitHub.
   The rendered card previews don't: run `tools\art-previews.ps1` (or `-Only "Card A,Card B"`), and the editor's
   next save (or a push) uploads them.
+- **Adding a player's deck:** in the Sheet's **Decks** tab (the board makes it, with its headers, the first time
+  someone opens the Decks page), fill in a row: **Deck name**, **Made by**, **Deck list** and, if you like, **Notes**.
+  The list is one card per line, like `3 Chapel Guard` or `3x Chapel Guard`; a list copied from the deck builder or
+  saved by the card editor works as it is, and so do small typos and old card names. Lines that don't match a card
+  show under the deck. It's on the board at the next reload; delete the row to take it off.
+- **New art or changed cards, for the deck builder:** its cards show the art the editor uses, from `art\cards\`.
+  Run `tools\art-previews.ps1 -Finished` (or `-Finished -Only "Card A,Card B"`) and push.
+- **Changed the rulebook?** After reprinting the PDF, run
+  `python tools/docx-to-html.py --web "Fusion Fuckery Rulebook v4.7 (editable).docx" rules` (with the docx you
+  changed) and push. The Rules page links the PDF named like the docx, without " (editable)".
 - **Changed the form?** If you rename the card question or rebuild the form, update `FORM_URL` and `CARD_FIELD` at
   the top of `Code.gs` from a new pre-filled link, then Deploy > Manage deployments > edit > Version: New version.
 - **Changed the code?** Paste it in again, then Deploy > Manage deployments > edit (pencil) > Version: **New

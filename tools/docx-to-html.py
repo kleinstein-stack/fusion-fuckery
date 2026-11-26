@@ -1,10 +1,15 @@
-"""The rulebook .docx (as the repo writes it) -> print HTML for headless Edge. argv[1] = docx, argv[2] = html out."""
-import sys, zipfile, base64, html, re
+"""The rulebook .docx (as the repo writes it) -> HTML.
+  python tools/docx-to-html.py <docx> <html out>     print HTML for headless Edge (the PDF)
+  python tools/docx-to-html.py --web <docx> <folder> the art board's Rules tab: <folder>/rulebook.html (a fragment, no
+                                                     page styles) and its pictures in <folder>/img/"""
+import sys, os, zipfile, base64, html, re
 import xml.etree.ElementTree as ET
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
 R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
+WEB = sys.argv[1] == "--web"
+if WEB: sys.argv.pop(1)
 z = zipfile.ZipFile(sys.argv[1])
 rels = {m.group(1): m.group(2) for m in re.finditer(r'Id="([^"]+)"[^>]*Target="([^"]+)"', z.read("word/_rels/document.xml.rels").decode())}
 title = re.search(r"<dc:title>([^<]*)</dc:title>", z.read("docProps/core.xml").decode())
@@ -31,8 +36,11 @@ def runs(p):
                 blip = el.find(f".//{A}blip"); ext = el.find(f".//{WP}extent")
                 src = "word/" + rels[blip.get(R + "embed")]
                 mm = int(ext.get("cx")) / 36000 if ext is not None else None
-                data = base64.b64encode(z.read(src)).decode()
-                txt += f'<img src="data:image/png;base64,{data}"' + (f' style="width:{mm:.1f}mm"' if mm else "") + ">"
+                if WEB:   # a file next to the fragment, linked relatively
+                    name = os.path.basename(src); os.makedirs(os.path.join(sys.argv[2], "img"), exist_ok=True)
+                    open(os.path.join(sys.argv[2], "img", name), "wb").write(z.read(src)); url = "img/" + name
+                else: url = "data:image/png;base64," + base64.b64encode(z.read(src)).decode()
+                txt += f'<img src="{url}" alt=""' + (f' style="width:{mm:.1f}mm"' if mm else "") + ">"
         if not txt: continue
         for s in st: txt = f"<{s}>{txt}</{s}>"
         if c is not None and c.get(W + "val") not in (None, "auto"): txt = f'<span style="color:#{c.get(W + "val")}">{txt}</span>'
@@ -83,6 +91,11 @@ for el in body:
     elif el.tag == W + "tbl":
         close(); out.append(table(el))
 close()
+if WEB:   # the art board styles it; data-pdf names the PDF next to the docx
+    pdf = os.path.basename(sys.argv[1]).replace(" (editable).docx", ".pdf")
+    open(os.path.join(sys.argv[2], "rulebook.html"), "w", encoding="utf-8", newline="\n").write(
+        f'<div class="rb" data-title="{esc(title)}" data-pdf="{esc(pdf)}">{"".join(out)}</div>\n')
+    print("blocks:", len(out)); sys.exit()
 CSS = f"""@page {{ size: A4; margin: 20mm 20mm 18mm; @bottom-center {{ content: "{esc(title)}  ·  Page " counter(page); font: 8.5pt Arial, sans-serif; color: #888; }} }}
 html, body {{ margin: 0; background: #fff; }}
 body {{ font: 10.5pt/1.38 Arial, sans-serif; color: #1a1a1a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}

@@ -2,20 +2,25 @@
 # exporter. Run it after changing cards or placeholder art; the editor's next save (or a push) puts them on GitHub.
 #   tools\art-previews.ps1                          -> every card
 #   tools\art-previews.ps1 -Only "Chimera,Cherub"   -> just those cards
-param([int]$Width = 520, [int]$Quality = 84, [string[]]$Only)
+#   tools\art-previews.ps1 -Finished                -> art\cards\<card>.jpg with the editor's art, for the board's
+#                                                      deck builder and Decks tab (run it after new art or card changes)
+param([int]$Width = 520, [int]$Quality = 84, [string[]]$Only, [switch]$Finished)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $tmp = Join-Path $env:TEMP 'fusion-fuckery-previews'
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
-# the board's left-hand preview always shows the placeholder art (saves\placeholder-art.json), even once finished art is in
-if ($Only) { & (Join-Path $PSScriptRoot 'export-cards.ps1') -OutDir $tmp -Only $Only -Placeholder }
-else { & (Join-Path $PSScriptRoot 'export-cards.ps1') -OutDir $tmp -Placeholder }
+$export = @{ OutDir = $tmp }
+if ($Only) { $export.Only = $Only }
+# the art board's left-hand preview always shows the placeholder art (saves\placeholder-art.json), even once finished
+# art is in; the deck builder's cards show the art the editor uses
+if (-not $Finished) { $export.Placeholder = $true }
+& (Join-Path $PSScriptRoot 'export-cards.ps1') @export
 
 Add-Type -AssemblyName System.Drawing
 $jpeg = [Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object MimeType -eq 'image/jpeg'
 $params = New-Object Drawing.Imaging.EncoderParameters 1
 $params.Param[0] = New-Object Drawing.Imaging.EncoderParameter ([Drawing.Imaging.Encoder]::Quality), ([long]$Quality)
-$out = Join-Path $root 'art\previews'
+$out = Join-Path $root $(if ($Finished) { 'art\cards' } else { 'art\previews' })
 New-Item -ItemType Directory -Force $out | Out-Null
 if (-not $Only) { Get-ChildItem $out -Filter *.jpg | Remove-Item }   # a full run drops renamed and frozen cards
 
