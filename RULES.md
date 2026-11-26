@@ -347,7 +347,8 @@ you play them early.
   Microwave alike.
 - **Milling:** "put the top cards of your deck into your Waste Repository" (Compsognathus, Archaeologist, Primordial Soup)
   fills your Waste Repository on purpose. Milling an empty deck does nothing; drawing from one still costs 5 PHP.
-- **Stampede:** "when this creature destroys a creature in combat, the leftover damage hits your opponent." Leftover
+- **Stampede:** "when this creature destroys a creature in combat, the leftover damage hits your opponent." (Since
+  2026-11-24, T-Rex, TT-rex, Triceratops and Brontosaurus print it in full instead of naming the keyword.) Leftover
   = the hit minus the HP the creature had left. It works on hits back too, and a creature that survives (Chapel Guard,
   Seraphim Wall) leaves nothing over.
 - In the battle sim Dino decks were too strong at first (the best pure-Dino build won 87% against the playtest decks);
