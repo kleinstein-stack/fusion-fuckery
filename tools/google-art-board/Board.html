@@ -287,6 +287,7 @@ select { font: inherit; color: inherit; border: 1px solid var(--line); backgroun
       <div class="dactions">
         <button type="button" class="btn" id="dbCopy">Copy list</button>
         <button type="button" class="ghost" id="dbSave">Download .txt</button>
+        <button type="button" class="ghost" id="dbPdf">Print &amp; cut PDF (A4)</button>
         <button type="button" class="ghost" id="dbLoad">Paste a list</button>
         <button type="button" class="ghost" id="dbClear">Clear</button>
       </div>
@@ -736,6 +737,50 @@ $("dbSave").addEventListener("click", () => {
   a.download = (DK.name || "deck").replace(/[\\/:*?"<>|]/g, "") + ".txt"; a.target = "_self"; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 });
+// Print & cut: every card of the deck (Fusion Deck included) at real size, 63 x 88 mm, 9 to an A4 page, butted together
+// so one straight cut separates two cards, with cut marks in the margins. Built in the browser with jsPDF.
+let jspdfLoading = null;
+const loadJsPdf = () => jspdfLoading || (jspdfLoading = new Promise((ok, no) => {
+  if (window.jspdf) return ok(window.jspdf);
+  const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+  sc.onload = () => window.jspdf ? ok(window.jspdf) : no(new Error("jsPDF didn't load")); sc.onerror = () => { jspdfLoading = null; no(new Error("jsPDF didn't load")); };
+  document.head.append(sc);
+}));
+const imgData = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+  .then(b => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = no; fr.readAsDataURL(b); }));
+async function deckPdf() {
+  const a = analyse(DK.cards), order = [...a.main.filter(([c]) => c.k === 1), ...a.main.filter(([c]) => c.k !== 1), ...a.fus];
+  const list = []; for (const [c, q] of order) for (let i = 0; i < q; i++) list.push(c);
+  if (!list.length) { toast("Your deck is empty. Add some cards first."); return; }
+  const btn = $("dbPdf"), label = btn.textContent; btn.disabled = true;
+  try {
+    btn.textContent = "Loading…";
+    const { jsPDF } = await loadJsPdf();
+    const uniq = [...new Set(list)], data = new Map(); let done = 0;
+    await Promise.all(uniq.map(c => imgData(cardImg(c)).then(d => data.set(c, d)).catch(() => {}).finally(() => { btn.textContent = `Cards ${++done}/${uniq.length}…`; })));
+    const doc = new jsPDF({ unit: "mm", format: "a4" }), W = 63, H = 88, X0 = (210 - 3 * W) / 2, Y0 = (297 - 3 * H) / 2;
+    doc.setProperties({ title: DK.name || "Fusion Fuckery deck" });
+    for (let i = 0; i < list.length; i++) {
+      const k = i % 9; if (i && !k) doc.addPage();
+      const c = list[i], x = X0 + (k % 3) * W, y = Y0 + Math.floor(k / 3) * H, d = data.get(c);
+      if (d) doc.addImage(d, "JPEG", x, y, W, H, c.s, "FAST");
+      else { doc.setDrawColor(120); doc.rect(x, y, W, H); doc.setFontSize(11); doc.text(doc.splitTextToSize(c.n, W - 8), x + 4, y + 10); }
+      if (k === 8 || i === list.length - 1) {   // cut marks in the margins, on every card edge
+        doc.setDrawColor(0); doc.setLineWidth(0.2);
+        for (let j = 0; j <= 3; j++) {
+          const gx = X0 + j * W, gy = Y0 + j * H;
+          doc.line(gx, 2, gx, Y0 - 2); doc.line(gx, Y0 + 3 * H + 2, gx, 295);
+          doc.line(2, gy, X0 - 2, gy); doc.line(X0 + 3 * W + 2, gy, 208, gy);
+        }
+      }
+    }
+    doc.save((DK.name || "deck").replace(/[\\/:*?"<>|]/g, "") + ".pdf");
+    const miss = uniq.length - data.size;
+    toast(miss ? `PDF saved. ${miss} card${miss === 1 ? "" : "s"} had no picture yet, so ${miss === 1 ? "it's" : "they're"} a box with the name.` : "PDF saved. Print it at 100% (actual size), then cut on the marks.");
+  } catch (e) { toast("Couldn't make the PDF: " + e.message); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+$("dbPdf").addEventListener("click", deckPdf);
 $("dbLoad").addEventListener("click", () => textDialog("Paste a deck list", "", text => {
   const p = parseList(text);
   if (!Object.keys(p.cards).length) { toast("No cards found in that list."); return; }

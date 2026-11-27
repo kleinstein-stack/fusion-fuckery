@@ -9,7 +9,8 @@ The site has four pages, picked from the tabs at the top:
 - **Deck builder:** build a deck by clicking cards. It enforces the deck rules (a Main Deck of exactly 30, a Fusion
   Deck of up to 10, at most 3 copies of a card, fusions only in the Fusion Deck, no cold-storage cards) and warns about
   fusions the deck's creatures can't make and Fluffy cards without a Claw Machine. Players can copy or download the
-  list (in the card editor's format) or paste one in. The deck in progress stays in that player's browser.
+  list (in the card editor's format) or paste one in, and **Print & cut PDF (A4)** downloads every card of the deck at
+  real size (63 x 88 mm, 9 to a page, cut marks in the margins), from the pictures in `art/cards/`. The deck in progress stays in that player's browser.
 - **Decks:** the players' decks you add to the Sheet's **Decks** tab, and the starter decks from `saves/decks.json`
   (a starter with cold-storage cards is left out). Each shows whether it's legal, its key cards, and every card on
   request, and can be loaded into the deck builder.
