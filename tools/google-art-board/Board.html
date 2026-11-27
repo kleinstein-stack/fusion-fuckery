@@ -553,7 +553,7 @@ function cantMake(f, main, fus) {
   const avail = new Map();   // card -> copies that can be a fusion splice for this fusion
   for (const [c, q] of main) if (c.k === 1) {
     const fl = fluxOf(c) || 0;
-    if (fl >= RULE.fuseFlux || melting || anyCost || (ritual && fl >= 3 && attrsOf(c).includes("unholy"))) avail.set(c, q);
+    if (fl >= RULE.fuseFlux || anyCost || (melting && fl >= 3) || (ritual && fl >= 3 && attrsOf(c).includes("unholy"))) avail.set(c, q);   // Melting Pot (2026-11-26): 3-4 flux creatures too
   }
   for (const [c, q] of fus) if (c !== f) avail.set(c, q);   // fusions count as 5+ flux and can fill attribute parts
   const take = (ok, n) => {

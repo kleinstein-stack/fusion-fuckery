@@ -71,6 +71,38 @@ effect. The v4.6 cards, decks and rulebook are saved under the git tag
 for when it returns). **Plush Mall Cop Gary is now Plush Sanctified Knight**, with the same stats and effect and Sanctified
 Knight's attributes (Holy / Humanoid / Noble / Fluffy).
 
+**2026-11-26: balance patch.** Rules: **Radiance** only works the first time each turn a creature is restored past
+its max HP (14.1). **Descend** costs half the flux, rounded up, and the creature arrives winded, so it doesn't hit back
+(14.7); Cherub and Acolyte Adam now have it. **Fossil** works once per turn per card name (14.5). **"Once per turn"**
+is now printed as "You can only use this effect of [card] once per turn" (15.7), Blood Price included (14.2), and
+one-shot spells say "You can only play 1 [card] per turn". **Melting Pot** has Ritual Pit's effect for any creature
+(13); Ritual Pit is in cold storage, and Melting Pot replaces it in the Fallen Grace and Bone Yard starters. Nerfs:
+Indulgence Seller (HP equal to the gold, a fusion splice counts as 2 gold), Ergof The Dark Emperor (4 PHP for 5 HP or
+less, a fusion splice for 8 HP or less), Renroc The Dark Marquis (3 PHP), Archaeologist (mills 2), Market Research
+(2 gold), Goblin Shuffle (no extra card), Jar of Materialism (draw 1, your opponent gains 4 PHP), Patchwork Plush
+(10 flux), Microwave and Shotgun Wedding (1 per turn). Reworks: **Lord Lazarus** 3/12, Speed 2, +3 ATK, +5 HP and
++1 Speed per fusion splice, and once per turn it takes a Noble creature from your Waste Repository as a new fusion
+splice; **Fallen Angel** has no effect and 24 HP; **Fossil Record** puts up to 2 Prehistoric creatures from your
+deck into your Waste Repository; **Card Trick** shuffles a random card from your opponent's hand into their deck and
+they draw a new one; **Shotgun Wedding** materializes a fusion from your hand or field that can attack straight away
+(but not you directly) and is destroyed at the end of the turn; **Crack a pack** opens a new sealed pack, 1 card to
+your hand and the rest banished; **Loaded Dice** chooses the result, without side effects; **Arcade Kid** also counts
+the Fluffy creatures in your Waste Repository, and each one makes it cost 1 more flux (up to 10); **Goblin Pit Boss**
+rerolls as the die is rolled (it used to be a Main Phase effect, when no die is being rolled). Smaller changes:
+Ankylosaurus reduces any damage, Pocket Fireball can hit a player, Energy Drink can't trigger Radiance, Pipebomb
+negates the spell as well, Overclock can't feed itself, Plush Catalogue can't find another Plush Catalogue, Unfuse
+lets the fusion's owner choose which fusion splices go to the Waste Repository when there's no room, a Space Squid'd
+fusion's fusion splices are yours too, Gabe is 8/16 and Judicator Angel 6/12, and Beelzechud, Carrion The Dark
+Duchess and Nomed The Dark Viscount are Winged. The cards, decks and rulebook from before are in `saves/versions/`
+("SAVE before balance patch 2026-11-26").
+
+**2026-11-27:** **Face-down spells** (10.9): like Yu-Gi-Oh!, you can set a spell face down in your Main Phase and
+play it later, on your opponent's turn too. **Unfuse** now materializes the fusion splices, so their "when
+materialized" effects trigger. **Déjà Vu** works once per game. **Boss's Orders is now You're FIRED!**: 1 damage to a
+creature, and it loses 2 Speed. **Speed:** no more +1 Speed for the attacker; on a speed tie the attacker strikes
+first (it was a coin flip). Twisted Dimensions says the same. All saved decks, the starter decks included, were removed (the old ones are in
+`saves/versions/`).
+
 ## 1. The Golden Rules
 
 1. **The card wins.** If a card's text contradicts this rulebook, do what the card says.
@@ -163,13 +195,13 @@ Knight's attributes (Holy / Humanoid / Noble / Fluffy).
 
 - **Natural materialize:** in Main Phase 1, from your hand. Pay its flux cost (some creatures let you pay part of it
   in PHP with **Blood Price**, 14.2), then put it in any empty lane. No limit beyond flux and lanes.
-- **By effect** (Carrion The Dark Duchess, Lord Lazarus…): happens whenever the effect says, without paying flux. It
+- **By effect** (Carrion The Dark Duchess, The Flock…): happens whenever the effect says, without paying flux. It
   still needs an empty lane.
 - "When materialized" effects trigger both ways.
 - **Creatures can't attack the turn they arrive.** A creature or fusion that was materialized, fused or brought back
   this turn waits until your next turn to attack. It still hits back when it's attacked, except a fusion, which arrives
   winded (13). Taking control of a creature (Space Squid) isn't arriving, so that creature can attack. Neither is being
-  moved to another lane (Boss's Orders).
+  moved to another lane by an effect.
 
 ## 10. Spells
 
@@ -184,14 +216,25 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    Field Spell means its owner.
 5. **Chains:** whenever a card or effect is played or activated, the other player may respond with an Instant, then
    the first player may respond to that, and so on. When both pass, the chain resolves **newest first**.
-6. Activated creature effects ("Once per turn: …") are only used in your Main Phases unless the card says
-   otherwise. Triggered effects ("When…", "Whenever…", "At the end of…") happen whenever they trigger.
+6. Activated creature effects (a cost and a colon, "You may …", or anything with "You can only use this effect of …
+   once per turn") are only used in your Main Phases unless the card says otherwise. Triggered effects ("When…", "Whenever…", "At the end of…") happen whenever they trigger.
 7. **Destroying a spell as it's played (Pipebomb, v4.7):** play it in response to a spell (a chain, 5). That spell
    does nothing and goes to its owner's Waste Repository. It was still played, so it counts for Spellcount (14.8) and
    "whenever you play a spell" effects. Pipebomb can also destroy a spell that's already in play: a Continuous or
    Field Spell, or a Neighborhood Watch.
 8. **Nuclear Waste (v4.7)** rolls for one of your creatures at random at the end of your turn. A creature it destroys
    was destroyed, so its "when destroyed" effects trigger.
+9. **Face-down spells (2026-11-27, like Yu-Gi-Oh!):** in your Main Phase, instead of playing a Spell, Instant Spell or
+   Continuous Spell from your hand, you may **set** it face down in an empty spell zone (Field Spells can't be set).
+   It takes up that zone, and your opponent only sees that a card is there.
+   - **Not the turn you set it.** From your opponent's next turn on, you may flip it face up and play it whenever
+     you could play an Instant: on your opponent's turn, during combat, in response to a card or effect, or in your
+     own Main Phases. So a set Spell can be played on your opponent's turn too.
+   - It's played when it's flipped: it counts for Spellcount and "whenever you play a spell" then, its conditions
+     ("Spellcount 3+ only", "You can only play 1 … per turn") are checked then, and any cost is paid then.
+   - Pipebomb can destroy a face-down spell. It goes to its owner's Waste Repository without doing anything.
+   - You don't have to play it; it stays until you do or something removes it.
+10. **Losing Speed (You're FIRED!, 2026-11-27):** permanent, but Speed never goes below 1.
 
 ## 11. Health, damage & destruction
 
@@ -234,12 +277,13 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    lanes next to it hit it back with their ATK, unless they're winded (7).
 4. **Response window:** after the attack is declared, the defending player, then the attacking player, may play
    Instants. "When this creature attacks" effects trigger when the attack is declared.
-5. **Speed decides who hits first.** Speed runs **1–8**; 4 is normal. **The attacker gets +1 Speed** for its attack
-   (attacker's advantage). The faster creature deals its damage first; if they're still tied, **flip a coin** (v4.6).
+5. **Speed decides who hits first.** Speed runs **1–8**; 4 is normal. The faster creature deals its damage first.
+   **On a tie, the attacker strikes first (2026-11-27).** (From v4.6 the attacker got +1 Speed for its attack and a
+   tie was a coin flip; there's no attacker's +1 any more.)
    If the first hit destroys the other creature, it doesn't hit back. On a direct attack, enemies faster than the
-   attacker (counting its +1) hit it before it reaches the player; slower ones hit it after; tied ones flip a coin.
-   **Twisted Dimensions** (field spell, both players) reverses speed: the slower creature strikes first and the
-   attacker gets −1 Speed instead of +1. Ties are still a coin flip.
+   attacker hit it before it reaches the player; slower and tied ones hit it after.
+   **Twisted Dimensions** (field spell, both players) reverses speed: the slower creature strikes first, and
+   a tie still goes to the attacker.
 6. Damage dealt in combat stays (11).
 7. **Winded:** a creature that attacks is **winded** until the start of your next turn, and so is a fusion the turn
    it's made (13). A winded creature **can't hit back when it's attacked**. It still stands in its lane, so an enemy
@@ -268,13 +312,22 @@ Fusions are the end goal: each one is stronger than an Ultra.
   new one has 6 (the two fusions and their 4 splices). Fusion effects that say "for each fusion splice under this
   creature" count them all. **Banishing a fusion splice** sends one card from the stack to its owner's Oblivion; you
   can only banish a card that has nothing under it.
+- **Adding fusion splices (Lord Lazarus, 2026-11-26):** once per turn, Lord Lazarus puts a Noble creature from your
+  Waste Repository under itself as a new fusion splice. It brings no damage with it, and Lord Lazarus gets its
+  +3 ATK, +5 HP and +1 Speed for it straight away (its current HP goes up by 5 too). Banishing a fusion splice from
+  under it takes those away again, and if that drops it to 0 HP it's destroyed.
 - **Ways around the 2 flux:** **It's Free Fuse-Estate** (spell) lets you fuse without paying it. **Crimson Altar**
   (field spell) lets you sacrifice another Unholy creature instead.
-- **Cheaper fusion splices:** **Ritual Pit** (continuous spell): banish an Unholy creature from your Waste
-  Repository, and your next fusion this turn may use a 3–4 flux Unholy creature as a fusion splice. **Melting Pot**
-  (field spell, both players): any creature that meets a recipe can be a fusion splice, whatever it costs.
-- **From your hand:** **Shotgun Wedding** (spell) fuses a creature you control with a creature card from your hand.
-  The usual recipe, 5+ flux and 2 flux rules apply, and it's your fusion for the turn.
+- **Cheaper fusion splices:** **Melting Pot** (field spell, since 2026-11-26): once per turn, banish a creature from
+  your Waste Repository, and your next fusion this turn may use a creature that costs 3 or 4 flux as one of its fusion
+  splices. Only Melting Pot's owner can use it. (It used to let both players fuse creatures of any cost; Ritual Pit,
+  which did this for Unholy creatures only, is in cold storage.)
+- **Shotgun Wedding (2026-11-26):** materialize a fusion from your Fusion Deck, its fusion splices taken from your hand,
+  your field or both. They have to meet its recipe and the 5+ flux rule, as normal. It isn't fusing: it doesn't cost
+  the 2 flux and doesn't use up your fusion for the turn. The fusion goes in one of its splices' lanes, or an empty lane
+  if they all came from your hand. It isn't winded and **can attack this turn**, but not your opponent directly. At the
+  end of your turn it's destroyed, with its fusion splices (death effects trigger). Only 1
+  Shotgun Wedding per turn.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
   Fusions have attributes too, so they can fill attribute parts.
 - **Cross-faction fusions (v4.7):** recipes that only ask for attributes, so different factions can fuse together.
@@ -293,11 +346,15 @@ Fusions are the end goal: each one is stronger than an Ultra.
   the field at full HP (a fusion splice that is itself a fusion comes back with its own splices under it). Then the
   fusion's damage is **split evenly** between them, half each for the usual two (the bigger one takes an odd point),
   but it never takes one below 1 HP: a 2/30 fusion made of a 10 HP and a 7 HP creature comes back as 1/10 and 1/7.
-  If the fusion was winded, they're winded. They've arrived, so they can't attack this turn.
+  If the fusion was winded, they're winded. They've arrived, so they can't attack this turn. **Since 2026-11-27
+  they're materialized** (from the fusion onto the field), so their "when materialized" effects trigger. They come back in the
+  fusion's lane and your empty lanes; if there isn't room for all of them, the **fusion's owner** chooses which go to
+  the Waste Repository instead (2026-11-26).
 - **Space Squid (v4.6):** pay PHP equal to the enemy creature's printed flux cost (10 for a fusion) and move it to an
   empty lane on your side until the start of your next turn; if it was winded, it isn't any more. Then it goes back to
   its owner's old lane, or another empty one (with no empty lane, to its owner's Waste Repository). Without an empty
-  lane of your own you can't play Space Squid.
+  lane of your own you can't play Space Squid. **A fusion's fusion splices are yours too (2026-11-26):** while you
+  control the fusion you can banish them for its effects (they go to their owner's Oblivion).
 - **Space Squid and fusing:** a creature you've taken control of can be one of your fusion splices. It stays under your
   fusion until that fusion leaves the field, and then it goes to its owner's Waste Repository (or its owner's side of
   the field, if the fusion is unfused).
@@ -308,21 +365,33 @@ Fusions are the end goal: each one is stronger than an Ultra.
 A creature with **Radiance** never wastes healing. When HP restored to it would go past its Max HP, the extra becomes
 **your choice** of that much **+ATK** or that much **+HP** over max (overhealth), **until your next turn**. Max HP
 doesn't change; the bonus ends at the start of your next turn.
-Example: a Cherub (Radiance) at 2/2 is restored by 2: choose +2 ATK, or 4/2 HP, until your next turn. (Giving HP is
-different: it's permanent and raises Max HP, see 11.)
-Card text: "Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the
-extra, until your next turn)."
+**Only the first time each turn (2026-11-26):** after a creature's first Radiance bonus in a turn (yours or your
+opponent's), later restores that turn stop at its Max HP as normal. Other creatures with Radiance still get their own
+first one. Before, every restore past max added to the bonus, and a few heals in a row could win the game in one attack.
+Example: a Cherub (Radiance) at 2/2 is restored by 2: choose +2 ATK, or 4/2 HP, until your next turn. Restore it again
+that turn and nothing more happens. (Giving HP is different: it's permanent and raises Max HP, see 11.)
+Energy Drink's restore never triggers Radiance.
+Card text: "Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK
+or +HP equal to the extra, until your next turn)."
 
 ### 14.2 Blood Price
-Card text: **"Pay 3 PHP per flux: Reduce this creature's flux cost by up to Y."** (with Y = 1 just "Pay 3 PHP: Reduce
-this creature's flux cost by 1."). Only when you naturally materialize the creature (from your hand): take any amount
-off its flux cost, up to Y, paying **3 PHP for each flux**. Example: Vein Ripper (3 flux, up to 2) can be played for
+Card text: **"Pay 3 PHP per flux: Reduce this creature's flux cost by up to Y. You can only use this effect of [card]
+once per turn."** (with Y = 1 just "Pay 3 PHP: Reduce this creature's flux cost by 1. …"). Only when you naturally
+materialize the creature (from your hand): take any amount off its flux cost, up to Y, paying **3 PHP for each flux**.
+**Once per turn per card name (2026-11-26):** it can't be used again to take off more, and a second copy of the same
+creature that turn costs full flux. Example: Vein Ripper (3 flux, up to 2) can be played for
 3 flux, 2 flux + 3 PHP, or 1 flux + 6 PHP. The printed cost still decides tier and fusion eligibility. Paying PHP is what lets
 you play them early.
 
 ### 14.3 Dice ATK & Gold
 - **Dice ATK:** an ATK like "1+d6" is **rolled every time the creature attacks**, for that attack only. When it hits
   back in a fight, it rolls too. "Natural 20" / "natural 1" means the die itself showed that number.
+- **Goblin Pit Boss (2026-11-26):** its reroll is a trigger, used the moment a Greedy creature you control rolls its
+  die (in a fight, too): pay 1 gold, roll again and use the new result. Once per turn. (It used to be a Main Phase
+  effect, and no die ATK is rolled in a Main Phase, so it could never be used.)
+- **Loaded Dice (2026-11-26):** you pick the number (or heads/tails) and it's used as the result, but it doesn't
+  trigger side effects: no Natural 20 or Natural 1 bonus, no Goblin Pit Boss gold for the highest number. What the
+  roll is for still happens: a die ATK uses the number, Nuclear Waste uses its table, Primordial Soup's 1 still destroys.
 - **Gold:** everyone starts with **0 Gold**; there's **no cap**. Only cards that mention Gold can make, spend or move
   it. Invested Gold is locked into that card and lost if the card leaves the field.
 - The v2.1 **Market Cycle** is no longer a rule.
@@ -336,13 +405,22 @@ you play them early.
 - **Plush Cherub (v4.6):** whenever another Fluffy creature you control dies, draw a card.
 - Plush cards are plush versions of existing creatures: they keep the original's attributes (so they fit its
   faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy. Arcade Kid searches for the Claw
-  Machine. Plush Catalogue searches for any card with "Plush" in its name, including more Plush Catalogues.
+  Machine. Plush Catalogue searches for any card with "Plush" in its name except another Plush Catalogue (2026-11-26).
+- **Arcade Kid (2026-11-26):** +2 ATK and +2 HP for each Fluffy creature on the field (both sides) and in your Waste
+  Repository, and it costs 1 more flux for each Fluffy creature in your Waste Repository, up to 10 flux. Its printed
+  cost (1) still decides tier and fusion eligibility.
 
 ### 14.5 Fossil & Stampede (Dinos, v4.7)
 - **Fossil X:** "you may materialize this creature from your Waste Repository by banishing X other cards from your Waste
   Repository instead of paying its flux cost." It's a natural materialize: Main Phase 1, an empty lane, "when
   materialized" triggers, and the creature has arrived (it can't attack this turn). It can't be combined with Blood
   Price. The banished cards go to Oblivion, so every Fossil burns some of the fuel for the next one.
+- **Once per turn per card name (2026-11-26):** "You can only Fossil T-Rex once per turn" means one T-Rex a turn by
+  Fossil, whichever copy. Archaeologist pays a Fossil cost, so it counts. TT-rex and Microwave don't use Fossil, so they
+  don't. Different Prehistoric creatures can each be Fossiled in the same turn.
+- **Ankylosaurus (2026-11-26):** the first damage it takes each turn, from combat or an effect, is 2 less.
+- **Fossil Record (2026-11-26):** puts up to 2 Prehistoric creatures from your deck into your Waste Repository, ready to
+  Fossil. (It used to return them to your hand, which is worse than leaving them there.)
 - **"When materialized from your Waste Repository"** (Pteranodon, T-Rex) triggers on Fossil, Archaeologist, TT-rex and
   Microwave alike.
 - **Milling:** "put the top cards of your deck into your Waste Repository" (Compsognathus, Archaeologist, Primordial Soup)
@@ -366,16 +444,20 @@ you play them early.
 - **Purrramid** {Cat + Cat} can be made from creatures of any flux cost, an exception to the 5+ flux rule (13).
 
 ### 14.7 Descend (Angels, v4.7)
-- **Descend:** "when an enemy creature attacks, you may materialize this creature from your hand by paying its flux
-  cost; the attack hits this creature instead." Do it after the attack is declared and its "when this creature
+- **Descend:** "when an enemy creature attacks, you may materialize this creature from your hand by paying half its
+  flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back." Do it after the attack is declared and its "when this creature
   attacks" effects resolve. Put it in any empty lane; the attacker fights it, whatever lane it's in, whether it was
   attacking a creature or you directly.
 - You pay with the flux you have left. **Flux isn't refilled until your Reactor Phase**, so flux you don't spend on
   your turn is there for a Descend on your opponent's turn.
 - It's a materialize: "when materialized" effects trigger. It arrived on your opponent's turn, so it can attack on
-  yours. It isn't winded, so it hits back as normal. "When this creature Descends" effects (Judicator Angel, Gabe)
-  happen before the fight.
-- Bellkeeper Monk and Sanctuary Bells each make your Descends cost 1 less flux. Fusions can't Descend.
+  yours. **It arrives winded (2026-11-26):** it takes the hit but doesn't hit back, and it stays winded (sideways) until
+  the start of your next turn, so it doesn't hit back that turn at all. "When this creature Descends" effects (Judicator
+  Angel, Gabe) happen before the fight.
+- **Cost (2026-11-26):** half the printed flux cost, rounded up: Cherub 1, Acolyte Adam 1, Purifier Nun 2, Sanctified
+  Knight 3, Chapel Guard 3, Judicator Angel 4, Gabe 5. (It used to be the full cost, with the creature hitting back.)
+- Bellkeeper Monk and Sanctuary Bells each make your Descends cost 1 less flux, after halving, but a Descend never
+  costs less than 0. Fusions can't Descend.
 
 ### 14.8 Spellcount (Wizards, v4.7)
 - **Spellcount:** the number of spells you've played this turn, including Instants on your opponent's turn. A spell
@@ -384,7 +466,8 @@ you play them early.
 - "Spellcount 3+: …" means the bonus applies when your Spellcount is 3 or more as the card resolves.
 - **One-shot spell:** a Spell or Instant Spell (not a Continuous or Field Spell). **The Archmage:** the first one-shot
   spell you play each turn resolves twice (costs aren't paid again). **Déjà Vu** plays a one-shot spell from your Waste
-  Repository as if it were in your hand, then banishes it.
+  Repository as if it were in your hand, then banishes it. Once per game (2026-11-27): after you've used one Déjà
+  Vu's effect, the others do nothing for the rest of the game.
 - **Spellcount 3+ only (Abracadabra, Extra Credit):** you can only play the card if it would be at least your 3rd
   spell this turn (it counts itself). A spell Déjà Vu plays counts too, so Déjà Vu as your 2nd spell can play one.
 - **Polymorph:** the creature is a Frog with 1 ATK and no effects until the end of your next turn. Its HP doesn't
@@ -400,8 +483,10 @@ you play them early.
 - **Abracadabra (Spellcount 3+ only):** the creature goes back to its owner's hand as a new card: its damage, Complaints and fusion stack
   are gone, and it has to be materialized again (paying its flux). A creature you took with Space Squid goes back to
   its owner's hand, not yours.
-- **Card Trick:** you see your opponent's whole hand, then pick one card. Below Spellcount 3 they shuffle it into
-  their deck; at Spellcount 3+ it goes to their Waste Repository.
+- **Card Trick (2026-11-26):** pick a card from your opponent's hand at random, without looking. They shuffle it into
+  their deck and draw 1 card. Only 1 Card Trick per turn. (It used to show you their hand, and at Spellcount 3+ the
+  card went to their Waste Repository.)
+- **Pocket Fireball (2026-11-26):** can hit a player as well as a creature.
 - **Spelling Mistake:** take the ATK and HP the creature has right now (Complaints and other changes included) and
   swap them: the old ATK is its new HP and max HP, and the old HP is its new ATK. Effects that are still going
   (a Complaint, +ATK until end of turn) keep applying afterwards. A creature with 0 ATK is destroyed. On a Frog, its
@@ -425,6 +510,9 @@ you play them early.
 5. **Hand limit:** 8, checked at the end of every turn.
 6. **Searching your deck:** shuffle afterwards and offer the cut.
 7. **Once per turn / once per game:** counted per effect name, so 3 copies of a card still get one activation.
+   Since 2026-11-26 cards print it: "You can only use this effect of Blood Ledger once per turn" (two Blood Ledgers
+   still search once), "You can only Fossil T-Rex once per turn", and for one-shot spells "You can only play 1 Microwave
+   per turn". A Complaint stops these effects like any "once per turn" effect.
 8. **Targeting:** an effect targets when it chooses a specific card. Attacking isn't targeting for "untargetable".
 9. **Simultaneous effects:** the player whose turn it is resolves theirs first, in the order they choose.
 
@@ -440,15 +528,17 @@ you play them early.
 | Flux | starts 3, +1 a turn, max 10. Second player +1 on their first turn |
 | Reactor Phase | +1 max flux and refill; or also Feed (a card to Oblivion: +1 flux this turn); or Skip (no +1, draw 1) |
 | Lanes / spell zones / field spells | 3 / 3 / 1 per player |
-| Speed | 1–8, 4 is normal. The attacker gets +1, faster strikes first, a tie is a coin flip |
+| Speed | 1–8, 4 is normal. Faster strikes first; on a tie the attacker does |
 | Winded | Turn it sideways. A creature that attacked, or a fusion just made, can't hit back when attacked until your next turn. On a direct attack it still hits back, last |
 | Fusing | once per turn, 2 flux, two 5+ flux creatures (or fusions) in lanes next to each other. The fusion keeps their damage and is winded |
 | Unfuse | the splices come back at full HP and split the fusion's damage, never below 1 HP |
 | Empty deck | lose 5 PHP for each draw you can't make |
 | Hand limit | 8 |
 | Complaint | −2 ATK each, no "once per turn" effects. Pay a 3 flux fine in your Main Phase to remove one |
-| Descend | On your opponent's turn, when an enemy attacks: materialize it from your hand with leftover flux; the attack hits it |
+| Descend | On your opponent's turn, when an enemy attacks: materialize it from your hand for half its flux (rounded up) from your leftover flux; the attack hits it, and it arrives winded (no hitting back) |
+| Radiance | Only the first restore past max each turn becomes a bonus |
 | Spellcount | Spells you've played this turn, counting the one being played |
+| Face-down spells | Set a spell in your Main Phase; from your opponent's next turn, flip and play it whenever you could play an Instant |
 
 ## Designer notes
 
@@ -481,6 +571,12 @@ Holy Hustle barely changed.
 
 **Stat budget.** points = ATK + HP ÷ 2 + (Speed − 4) ÷ 2 + effect, aiming for **2 × flux + 1** (about 20 for Ultras) and
 **28 for fusions**. Two 5-flux creatures are worth 22, so a fusion pays them back plus the fuse.
+
+- **Linear from 1 to 10 (2026-11-26):** in theory a 10 flux card should be about 8 times a 1 flux card, in stats or in
+  an effect that's worth it. Gabe was 6/14, about twice as useful as a Cherub (1/2) for ten times the flux; he's now
+  8/16 (8 × Cherub), and Judicator Angel is 6/12 (was 4/10). By this line the budget is about **(7 × flux + 2) ÷ 3**:
+  10 at 4 flux, 12 at 5, 15 at 6, 17 at 7, 22 at 9 and 24 at 10 (1 point more than 2 × flux + 1 at 5 flux, 3 more at
+  10). Other expensive creatures haven't been moved up to it yet.
 
 - **Blood Price creatures** used to aim 1–2 points under budget. Since v4.4 they aim for the full budget: in the
   battle sim Blood Demons fell far behind otherwise.

@@ -1,5 +1,5 @@
 Name,Type,ATK,HP,Flux Cost,Speed,Description,Faction,Attribute,Cold Storage
-Ritual Pit,Continuous Spell,N/A,N/A,N/A,,Once per turn: Banish an 'Unholy' creature from your Waste Repository. Your next fusion this turn may use an 'Unholy' creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,
+Ritual Pit,Continuous Spell,N/A,N/A,N/A,,Once per turn: Banish an 'Unholy' creature from your Waste Repository. Your next fusion this turn may use an 'Unholy' creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,yes
 The bodega,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: You may discard 1 card, then draw 1 card. If you discarded an 'Ordinary' creature, put a Complaint on an enemy creature.
 
 (Complaint: the creature has -2 ATK for each one and its 'once per turn' effects don't work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)",Mundane,,yes
@@ -14,103 +14,107 @@ Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Roll a d6 
 4–6: It gains +2 ATK and +2 HP permanently.
 
 It's glowing. That's probably fine.",,,
-Cherub,Creature,1,2,1,6,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Cherub,Creature,1,2,1,6,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
+
+Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 When materialized: Restore 2 HP to another creature.",Angel,Holy / Humanoid / Winged,
-Acolyte Adam,Creature,1,5,2,2,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Acolyte Adam,Creature,1,5,2,2,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
-Once per turn: Restore 2 HP to another creature.
+Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+
+You may restore 2 HP to another creature. You can only use this effect of Acolyte Adam once per turn.
 ",Angel,Holy / Humanoid,
-Sanctified Knight,Creature,3,8,5,4,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
+Sanctified Knight,Creature,3,8,5,4,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
 Your creatures in the lanes next to this creature take 1 less combat damage.",Angel,Holy / Humanoid / Noble,
-Judicator Angel,Creature,4,10,7,7,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
+Judicator Angel,Creature,6,12,7,7,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
 When this creature Descends: The attacking creature gets -3 ATK until end of turn.",Angel,Holy / Humanoid / Winged / Noble,
-Chapel Guard,Creature,4,12,6,1,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
+Chapel Guard,Creature,4,12,6,1,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
 The first time this creature would be destroyed, it survives with 1 HP instead.
 
 Halberd polished, posture perfect.",Angel,Holy / Humanoid,
-Purifier Nun,Creature,2,10,4,3,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
+Purifier Nun,Creature,2,10,4,3,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
 When materialized: Restore 3 HP to any creature. If it's 'Unholy', deal 3 damage to it instead.",Angel,Holy / Humanoid,
-Bellkeeper Monk,Creature,3,10,6,2,"Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Bellkeeper Monk,Creature,3,10,6,2,"Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 At the start of your turn: Restore 1 HP to each of your creatures.
 
 Your Descends cost 1 less flux.",Angel,Holy / Humanoid,
-Beelzechud,Creature,5,6,5,5,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Beelzechud,Creature,5,6,5,5,"Pay 3 PHP: Reduce this creature's flux cost by 1. You can only use this effect of Beelzechud once per turn.
 
 Whenever you lose PHP: This creature gains +1 ATK until end of turn.
-",Blood Demon,Unholy / Humanoid,
-Carrion The Dark Duchess,Creature,3,10,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+",Blood Demon,Unholy / Humanoid / Winged,
+Carrion The Dark Duchess,Creature,3,10,5,3,"Pay 3 PHP: Reduce this creature's flux cost by 1. You can only use this effect of Carrion The Dark Duchess once per turn.
 
 At the end of your turn: You may pay 2 PHP to return an 'Unholy' creature with 5 or less max HP from your Waste Repository to the field.
-",Blood Demon,Unholy / Humanoid / Noble,
-Nomed The Dark Viscount,Creature,6,11,7,5,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
+",Blood Demon,Unholy / Humanoid / Noble / Winged,
+Nomed The Dark Viscount,Creature,6,11,7,5,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2. You can only use this effect of Nomed The Dark Viscount once per turn.
 
 Whenever this creature deals combat damage: Gain 1 PHP.
-",Blood Demon,Unholy / Humanoid / Noble,
-Renroc The Dark Marquis,Creature,5,8,7,6,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
+",Blood Demon,Unholy / Humanoid / Noble / Winged,
+Renroc The Dark Marquis,Creature,5,8,7,6,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2. You can only use this effect of Renroc The Dark Marquis once per turn.
 
-Once per turn: Pay 2 PHP to destroy a creature with 4 or less HP.
+Pay 3 PHP: Destroy a creature with 4 or less HP. You can only use this effect of Renroc The Dark Marquis once per turn.
 ",Blood Demon,Unholy / Humanoid / Noble,
-Blood Priest,Creature,4,8,5,4,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Blood Priest,Creature,4,8,5,4,"Pay 3 PHP: Reduce this creature's flux cost by 1. You can only use this effect of Blood Priest once per turn.
 
 Whenever you sacrifice a creature: Gain 2 PHP.
 ",Blood Demon,Unholy / Humanoid,
-Blood Imp,Creature,1,2,1,7,"Pay 3 PHP: Reduce this creature's flux cost by 1.
+Blood Imp,Creature,1,2,1,7,"Pay 3 PHP: Reduce this creature's flux cost by 1. You can only use this effect of Blood Imp once per turn.
 
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.
 ",Blood Demon,Unholy / Beast / Winged,
-Vein Ripper,Creature,4,4,3,6,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2.
+Vein Ripper,Creature,4,4,3,6,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 2. You can only use this effect of Vein Ripper once per turn.
 ",Blood Demon,Unholy / Beast,
-Salem,Creature,7,12,9,2,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP.
+Salem,Creature,7,12,9,2,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP. You can only use this effect of Salem once per turn.
 
-Once per turn: Sacrifice another creature you control to draw 1 card. This creature gains +2 ATK and +2 HP permanently.
+Sacrifice another creature you control: Draw 1 card, and this creature gains +2 ATK and +2 HP permanently. You can only use this effect of Salem once per turn.
 ",Blood Demon,Unholy / Amorphous,
-Hemogoblin,Creature,1+d8,8,6,5,"Once per turn: Pay 2 PHP to gain 2 gold.
+Hemogoblin,Creature,1+d8,8,6,5,"Pay 2 PHP: Gain 2 gold. You can only use this effect of Hemogoblin once per turn.
 
-Once per turn: Pay 2 gold to give this creature +2 Speed until end of turn.
+Pay 2 gold: This creature gains +2 Speed until end of turn. You can only use this effect of Hemogoblin once per turn.
 ",Goblin,Greedy / Unholy / Humanoid,
-Ankylosaurus,Creature,3,9,4,2,"The first time each turn this creature would take combat damage, reduce that damage by 2.
+Ankylosaurus,Creature,3,9,4,2,"The first time each turn this creature would take damage, reduce that damage by 2.
 
 
 
 
 
-Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Ankylosaurus once per turn.",Dino,Prehistoric / Beast,
 Brontosaurus,Creature,4,15,7,1,"When this creature destroys a creature in combat, the leftover damage hits your opponent.
 
 This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!
 
 
-Fossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Brontosaurus once per turn.",Dino,Prehistoric / Beast,
 Triceratops,Creature,4,9,5,3,"When this creature destroys a creature in combat, the leftover damage hits your opponent.
 
 
 
 
 
-Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Triceratops once per turn.",Dino,Prehistoric / Beast,
 T-Rex,Creature,7,12,9,4,"When this creature destroys a creature in combat, the leftover damage hits your opponent.
 
 When materialized from your Waste Repository: Deal 3 damage to the enemy creature in front of this creature.
 
 
-Fossil 5 (you may materialize this creature from your Waste Repository by banishing 5 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 5 (you may materialize this creature from your Waste Repository by banishing 5 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil T-Rex once per turn.",Dino,Prehistoric / Beast,
 Velociraptor,Creature,2,3,2,7,"When this creature attacks: Deal 1 damage to a creature in a lane next to its target.
 
 
 
 
 
-Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Velociraptor once per turn.",Dino,Prehistoric / Beast,
 Dino egg,Creature,1,2,1,,"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including 'T-Rex'). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.",Dino,Prehistoric / Beast,yes
 Galorpian,Creature,4,7,3,,"Why are you blue?
 Once per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.",Galorpian,Amorphous,yes
-Goblin,Creature,1+d4,3,2,4,"Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently.
+Goblin,Creature,1+d4,3,2,4,"You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently. You can only use this effect of Goblin once per turn.
 
 
 
@@ -179,18 +183,19 @@ Once per turn, flip all coins you control. For each heads, choose one:
 • Steal a card from your opponent’s field and shuffle it into their hand.
 Tails do nothing.",,,yes
 Alexandre,Creature/Thiefling,4,8,5,,"Whenever you steal a card, coin, or Flux, this creature gains +1 ATK permanently.",,,yes
-Fallen Angel,Fusion,11,20,,6,"{any Holy creature + any Unholy creature}
-Once per turn, when you restore HP to a creature or pay PHP: Deal 1 damage to the enemy creature in front of this creature for each fusion splice under it.
+Fallen Angel,Fusion,11,24,,6,"{any Holy creature + any Unholy creature}
 ",Angel / Blood Demon,Holy / Unholy / Winged,
-Lord Lazarus,Fusion,9,22,,4,"{any 2 Noble creatures}
-When this creature is destroyed: You may banish a fusion splice from under it. If you do, return it to the field at the start of your next turn with its other fusion splices and its ATK, HP and Speed halved (4 ATK / 11 HP / 2 Speed). If all your lanes are full then, it goes to your Waste Repository.
+Lord Lazarus,Fusion,3,12,,2,"{any 2 Noble creatures}
+This creature has +3 ATK, +5 HP and +1 Speed for each fusion splice under it.
+
+Put a 'Noble' creature from your Waste Repository under this creature as a fusion splice. You can only use this effect of Lord Lazarus once per turn.
 ",Angel / Blood Demon,Noble,
 Arch Cleric,Fusion,7,26,,3,"{Bellkeeper Monk + any Holy creature}
-Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 At the start of your turn: Restore 2 HP to a creature you control.
 
-Once per turn: Banish a fusion splice from under this creature to restore 5 HP to a creature you control.",Angel,Holy / Cleric,
+Banish a fusion splice from under this creature: Restore 5 HP to a creature you control. You can only use this effect of Arch Cleric once per turn.",Angel,Holy / Cleric,
 Beelzechad,Fusion,14,18,N/A,4,"{Beelzechud + any Unholy creature}
 At the end of your turn: Lose 2 PHP, unless you banish a fusion splice from under this creature.
 
@@ -199,23 +204,23 @@ Whenever you lose PHP: This creature gains +1 ATK until end of turn.
 Whenever this creature destroys a creature in combat: Deal 2 damage to each enemy creature.
 ",Blood Demon,Unholy / Heavy,
 The Meat Cathedral,Fusion,7,20,N/A,1,"{Blood Priest + any Unholy creature}
-Once per turn: Banish 2 cards from your Waste Repository, or 1 fusion splice from under this creature, to restore 3 HP to a creature or gain 3 PHP.
+Banish 2 cards from your Waste Repository, or 1 fusion splice from under this creature: Restore 3 HP to a creature or gain 3 PHP. You can only use this effect of The Meat Cathedral once per turn.
 
 Whenever you banish creature(s) this way: This creature gains +1 ATK permanently.
 ",Blood Demon,Unholy / Guardian / Heavy,
 Ergof The Dark Emperor,Fusion,9,20,N/A,6,"{Nomed The Dark Viscount + Renroc The Dark Marquis}
-Once per turn: Pay 3 PHP to destroy a creature with 6 or less HP, or banish a fusion splice from under this creature to destroy a creature with 10 or less HP.
+Pay 4 PHP to destroy a creature with 5 or less HP, or banish a fusion splice from under this creature to destroy a creature with 8 or less HP. You can only use this effect of Ergof The Dark Emperor once per turn.
 ",Blood Demon,Unholy / Humanoid / Noble / Winged,
 TT-rex,Fusion,11,22,N/A,3,"{T-Rex + any Prehistoric creature}
 When this creature destroys a creature in combat, the leftover damage hits your opponent.
 
-Once per turn: Banish a fusion splice from under this creature to materialize a 'Prehistoric' creature from your Waste Repository without paying its Fossil cost.
+Banish a fusion splice from under this creature: Materialize a 'Prehistoric' creature from your Waste Repository without paying its Fossil cost. You can only use this effect of TT-rex once per turn.
 
 Life... uh, finds a way",Dino,Prehistoric / Beast / Heavy,
 Hop Goblin,Fusion,5+d12,20,N/A,3,"{any 2 Greedy creatures}
 This creature rolls its die once for each fusion splice under it and keeps the highest result. (If it has no fusion splices, it rolls once.)
 
-Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently.
+You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently. You can only use this effect of Hop Goblin once per turn.
 ",Goblin,Greedy / Small / Heavy,
 Purrramid,Fusion,6,18,N/A,2,"{Cat + Cat}
 This fusion can be made from creatures of any flux cost.
@@ -265,12 +270,12 @@ Tax Evasion,Instant Spell,N/A,N/A,N/A,,"When an enemy creature attacks an 'Ordin
 "RS PRO 115mm Stainless Steel Curved Tweezers
 ",Instant Spell,N/A,N/A,N/A,,"Remove one attached 'Parasite' creature from an infested creature (that 'Parasite' creature goes to your hand). If you do, deal 2 damage to that infested creature.",Parasite,,yes
 Thiefling Sleight of Hand,Instant Spell,N/A,N/A,N/A,,When your opponent plays a spell: It does nothing. Shuffle it into your deck instead of their Waste Repository; you can play it as if it were yours. (Give it back after the game.),,,yes
-Loaded Dice,Instant Spell,N/A,N/A,N/A,,"Choose a coin flip or die roll, yours or your opponent's. Flip or roll it again and use the second result.",,,
+Loaded Dice,Instant Spell,N/A,N/A,N/A,,"Choose a coin flip or die roll, yours or your opponent's: You choose its result. That result doesn't trigger any side effects (like a Natural 20, or rolling the highest number on a die).",,,
 Blood Demon Cigarettes,Spell,N/A,N/A,N/A,,Choose an 'Unholy' creature you control: It gains +4 ATK and +2 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,
 Blood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next 'Unholy' creature you materialize this turn costs 2 less flux.,Blood Demon,,
-Archaeologist,Spell,N/A,N/A,N/A,,Put the top 4 cards of your deck into your Waste Repository. Then you may materialize a 'Prehistoric' creature from your Waste Repository by paying its Fossil cost.,Dino,,
-Fossil Record,Spell,N/A,N/A,N/A,,Return up to 2 'Prehistoric' creatures from your Waste Repository to your hand.,Dino,,
-Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards plus 1.
+Archaeologist,Spell,N/A,N/A,N/A,,Put the top 2 cards of your deck into your Waste Repository. Then you may materialize a 'Prehistoric' creature from your Waste Repository by paying its Fossil cost.,Dino,,
+Fossil Record,Spell,N/A,N/A,N/A,,Search your deck for up to 2 'Prehistoric' creatures and put them into your Waste Repository.,Dino,,
+Goblin Shuffle,Spell,N/A,N/A,N/A,,"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.
 
 For each 'Greedy' creature you put on the bottom of your deck this way, gain 1 gold.",Goblin,,
 Goblin Stock Broker,Spell,N/A,N/A,N/A,,"Pay 3 gold: Choose a real stock, ETF or cryptocurrency ticker and write down its price now.
@@ -287,20 +292,22 @@ Forced Evolution,Spell,,,,,"Choose a creature. It restores +2 HP, then mutates."
 Host Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK and 3 HP permanently.,Parasite,,yes
 Infection Burst,Spell,N/A,N/A,N/A,,Infest a target creature with a 'Parasite' creature from your hand or Waste Repository.,Parasite,,yes
 And for my next trick...,Spell,N/A,N/A,N/A,,"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don't have any coins left. After stealing their coin, add this card to their deck and shuffel.",,,yes
-Crack a pack,Spell,N/A,N/A,N/A,,"Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository. ",,,
-Energy Drink,Spell,N/A,N/A,N/A,,Choose a creature you control: Restore half its max HP (rounded down). It gains +2 Speed until end of turn.,,,
-Jar of Materialism,Spell,N/A,N/A,N/A,,"Draw 1 card and then draw another card.
+Crack a pack,Spell,N/A,N/A,N/A,,"Open a new, sealed booster pack. Add 1 card from it to your hand and banish the rest of the pack.",,,
+Energy Drink,Spell,N/A,N/A,N/A,,Choose a creature you control: Restore half its max HP (rounded down). It gains +2 Speed until end of turn. This doesn't trigger Radiance.,,,
+Jar of Materialism,Spell,N/A,N/A,N/A,,"Draw 1 card. Your opponent gains 4 PHP.
 
 Just different enough not to get sued...",,,
-Microwave,Spell,N/A,N/A,N/A,,Reheat a creature (not a fusion) from any Waste Repository and materialize it on your side of the field.,,,
-Pipebomb,Instant Spell,N/A,N/A,N/A,,"Target 1 spell card, destroy it!",,,
-Space Squid,Spell,N/A,N/A,N/A,,"Pay PHP equal to an enemy creature's flux cost (10 for a fusion): Take control of it until the start of your next turn. Move it to an empty lane on your side; if it was winded, it isn't any more. Then return it to its owner.
+Microwave,Spell,N/A,N/A,N/A,,"Reheat a creature (not a fusion) from any Waste Repository and materialize it on your side of the field.
+
+You can only play 1 Microwave per turn.",,,
+Pipebomb,Instant Spell,N/A,N/A,N/A,,Target 1 spell card: Negate it and destroy it!,,,
+Space Squid,Spell,N/A,N/A,N/A,,"Pay PHP equal to an enemy creature's flux cost (10 for a fusion): Take control of it until the start of your next turn. Move it to an empty lane on your side; if it was winded, it isn't any more. Then return it to its owner. If it's a fusion, you also control its fusion splices.
 
 You can't play this card if you have no empty lane.",,,
-Unfuse,Spell,N/A,N/A,N/A,,Break a fusion back down into its fusion splices.,,,
+Unfuse,Spell,N/A,N/A,N/A,,"Break a fusion back down into its fusion splices and materialize them on the field. If there isn't room for all of them, the fusion's owner chooses which go to the Waste Repository.",,,
 Goblin General,Creature,1+d6,6,5,4,"When materialized: Choose another 'Greedy' creature you control and flip a coin. It gains +1 ATK (tails) or +2 ATK (heads).
 
-Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature.
+You may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature. You can only use this effect of Goblin General once per turn.
 ",Goblin,Greedy / Humanoid,
 Gob-omber,Creature,1+d6,6,5,6,"On your turn, or when this creature dies: You may pay any amount of gold. If you do, banish this creature and deal that much damage to every creature on the field.
 
@@ -312,21 +319,21 @@ Gob-omber,Creature,1+d6,6,5,6,"On your turn, or when this creature dies: You may
 Zero trigger discipline. Plenty of triggers.",Goblin,Greedy / Humanoid,
 Goblin Miner,Creature,d6,8,4,3,"When materialized and at the start of your turn: Gain 1 gold.
 
-Once per turn: You may pay 2 gold. At the start of your next turn, gain 1 flux for that turn instead of 1 gold.
+Pay 2 gold: At the start of your next turn, gain 1 flux for that turn instead of 1 gold. You can only use this effect of Goblin Miner once per turn.
 ",Goblin,Greedy / Humanoid,
 Scrooger,Fusion,4+d8,26,,3,"{any Unholy creature + any Greedy creature}
 This creature has +1 ATK for each fusion splice under it.
 
 Whenever another creature dies: Gain 1 gold or 1 PHP. If it was a creature you controlled (not a fusion), you may put it under this creature as a fusion splice instead.
 ",Blood Demon / Goblin,Unholy / Greedy,
-Gabe,Creature,6,14,10,6,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying its flux cost; the attack hits this creature instead).
+Gabe,Creature,8,16,10,6,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
 When this creature Descends: Destroy the attacking creature if it has 6 HP or less.
 
-Once per turn: Restore 2 HP to a creature you control.",Angel,Holy / Humanoid / Winged,
+You may restore 2 HP to a creature you control. You can only use this effect of Gabe once per turn.",Angel,Holy / Humanoid / Winged,
 Goblin Pit Boss,Creature,2+d10,10,7,3,"Whenever a 'Greedy' creature you control rolls the highest number on its die: Gain 2 gold.
 
-Once per turn: Pay 1 gold to reroll a 'Greedy' creature's die.
+When a 'Greedy' creature you control rolls its die: You may pay 1 gold to roll it again and use the new result. You can only use this effect of Goblin Pit Boss once per turn.
 
 
 
@@ -343,7 +350,7 @@ It's Free Fuse-Estate,Spell,N/A,N/A,N/A,,"Fuse without paying the 2 flux.
 (Fusing: once per turn, 2 creatures you control in lanes next to each other that each cost 5 or more flux become the fusion splices of a fusion from your Fusion Deck whose recipe they meet. The fusion takes one of their lanes.)",,,
 Crimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an 'Unholy' creature you control that isn't one of the fusion splices instead of paying the 2 flux.,Blood Demon,,
 Seraph of Judgment,Fusion,9,18,,8,"{Judicator Angel + any Holy creature}
-Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
 When this creature attacks: Restore 2 HP to each creature you control for each fusion splice under this creature.
 ",Angel,Holy / Winged,
@@ -351,14 +358,14 @@ Goblin King,Fusion,3+d10,24,,3,"{Goblin General + any Greedy creature}
 Your 'Greedy' creatures roll their dice twice and keep the higher result.
 ",Goblin,Greedy / Humanoid,
 Goblin Bombardier,Fusion,4+d8,22,,5,"{Gob-omber + any Greedy creature}
-Once per turn: Banish a fusion splice from under this creature to deal 6 damage to an enemy creature and 2 to the creatures in the lanes next to it.",Goblin,Greedy / Humanoid,
+Banish a fusion splice from under this creature: Deal 6 damage to an enemy creature and 2 to the creatures in the lanes next to it. You can only use this effect of Goblin Bombardier once per turn.",Goblin,Greedy / Humanoid,
 Indulgence Seller,Fusion,8,24,,3,"{any Holy creature + any Greedy creature}
-Radiance (when this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
+Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
-Once per turn: Pay any amount of gold to restore twice that much HP to a creature you control. Each fusion splice you banish from under this creature counts as 3 gold.
+Pay any amount of gold: Restore that much HP to a creature you control. Each fusion splice you banish from under this creature counts as 2 gold. You can only use this effect of Indulgence Seller once per turn.
 ",Angel / Goblin,Holy / Greedy,
-Market Research,Spell,N/A,N/A,N/A,,"Pay 4 gold: Search your deck for any 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
-Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to Oblivion. Gain 2 flux this turn.
+Market Research,Spell,N/A,N/A,N/A,,"Pay 2 gold: Search your deck for any 'Greedy' creature, show it to your opponent and put it into your hand.",Goblin,,
+Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card other than Overclock from your field to Oblivion. Gain 2 flux this turn.
 
 
 
@@ -369,18 +376,22 @@ Overclock,Spell,N/A,N/A,N/A,,"Feed the reactor: Send a card from your field to O
 
 
 The warning lights are mostly decorative.",,,
-Blood Ledger,Continuous Spell,N/A,N/A,N/A,,"Once per turn: Pay 2 PHP to search your deck for an 'Unholy' creature, show it to your opponent and put it into your hand.",Blood Demon,,
-Boss's Orders,Spell,N/A,N/A,N/A,,"Move a creature to an empty lane on its controller's side. Moving isn't arriving, so it can still attack this turn.",,,
-Melting Pot,Field Spell,N/A,N/A,N/A,,Fusing doesn't need creatures that cost 5 or more flux: any creatures that meet a recipe can become fusion splices. (This affects both players.),,,
-Twisted Dimensions,Field Spell,N/A,N/A,N/A,,"Speed is reversed: the slower creature strikes first. An attacker gets -1 Speed for its attack instead of +1, and a tie is still a coin flip. (This affects both players.)",,,
-Shotgun Wedding,Spell,N/A,N/A,N/A,,"Fuse a creature you control with a creature card from your hand, as if it were in the lane next to it. Pay the 2 flux and follow the recipe and the 5+ flux rule as normal. This is your fusion for the turn; the fusion takes your creature's lane.",,,
+Blood Ledger,Continuous Spell,N/A,N/A,N/A,,"Pay 2 PHP: Search your deck for an 'Unholy' creature, show it to your opponent and put it into your hand. You can only use this effect of Blood Ledger once per turn.",Blood Demon,,
+You're FIRED!,Spell,N/A,N/A,N/A,,Deal 1 damage to a creature. It loses 2 Speed.,,,
+Melting Pot,Field Spell,N/A,N/A,N/A,,Banish a creature from your Waste Repository: Your next fusion this turn may use a creature that costs 3 or 4 flux as one of its fusion splices. You can only use this effect of Melting Pot once per turn.,,,
+Twisted Dimensions,Field Spell,N/A,N/A,N/A,,"Speed is reversed: the slower creature strikes first, and a tie still goes to the attacker. (This affects both players.)",,,
+Shotgun Wedding,Spell,N/A,N/A,N/A,,"Materialize a fusion from your Fusion Deck, using creatures from your hand or your field that meet its recipe as its fusion splices. It isn't winded and can attack this turn, but not your opponent directly. Destroy it at the end of your turn.
+
+You can only play 1 Shotgun Wedding per turn.",,,
 Claw Machine,Field Spell,N/A,N/A,N/A,,You can only materialize 'Fluffy' creatures while you control this card.,Plushy,,
 Arcade Kid,Creature,1,3,1,5,"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.
 
 
-This creature has +2 ATK and +2 HP for each 'Fluffy' creature on the field.",Plushy,Humanoid,
-Plush Collector,Creature,2,6,3,3,"Once per turn, you may materialize a 'Fluffy' creature in a lane next to this creature, even if you don't control a Claw Machine.",Plushy,Humanoid,
-Plush Catalogue,Spell,N/A,N/A,N/A,,"Search your deck for a card with 'Plush' in its name, show it to your opponent and put it into your hand.",Plushy,,
+This creature has +2 ATK and +2 HP for each 'Fluffy' creature on the field and in your Waste Repository.
+
+This creature costs 1 more flux for each 'Fluffy' creature in your Waste Repository (up to 10 flux).",Plushy,Humanoid,
+Plush Collector,Creature,2,6,3,3,"You may materialize a 'Fluffy' creature in a lane next to this creature, even if you don't control a Claw Machine. You can only use this effect of Plush Collector once per turn.",Plushy,Humanoid,
+Plush Catalogue,Spell,N/A,N/A,N/A,,"Search your deck for a card with 'Plush' in its name, except Plush Catalogue, show it to your opponent and put it into your hand.",Plushy,,
 Needle and Thread,Spell,N/A,N/A,N/A,,Return up to 2 'Fluffy' creatures from your Waste Repository to your hand.,Plushy,,
 Plush Cherub,Creature,1,2,1,6,"(you can only materialize this creature while you control a Claw Machine).
 
@@ -406,7 +417,7 @@ At the end of your turn: You may return a 'Fluffy' creature from your Waste Repo
 ",Plushy,Prehistoric / Beast / Fluffy,
 Plush Sanctified Knight,Creature,3,10,5,3,"(you can only materialize this creature while you control a Claw Machine).
 Your creatures in the lanes next to this creature take 1 less combat damage.",Plushy,Holy / Humanoid / Noble / Fluffy,
-Patchwork Plush,Creature,3,14,8,1,"(you can only materialize this creature while you control a Claw Machine).
+Patchwork Plush,Creature,3,14,10,1,"(you can only materialize this creature while you control a Claw Machine).
 
 This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0).
 
@@ -423,35 +434,35 @@ Compsognathus,Creature,1,2,1,7,"When this creature dies: Put the top 2 cards of 
 
 
 
-Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost). You can only Fossil Compsognathus once per turn.",Dino,Prehistoric / Beast,
 Dilophosaurus,Creature,3,5,4,5,"When materialized: Deal 2 damage to the enemy creature in front of this creature.
 
 
 
 
 
-Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast,
+Fossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Dilophosaurus once per turn.",Dino,Prehistoric / Beast,
 Pteranodon,Creature,4,7,6,7,"When materialized from your Waste Repository: Return another 'Prehistoric' creature from your Waste Repository to your hand.
 
 
 
 
-Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost).",Dino,Prehistoric / Beast / Winged,
+Fossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Pteranodon once per turn.",Dino,Prehistoric / Beast / Winged,
 Necrosaurus,Fusion,9,22,N/A,4,"{any Prehistoric creature + any Unholy creature}
 This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repository.",Dino / Blood Demon,Prehistoric / Unholy / Heavy,
 Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
 Triple fusion: made from three Beasts, one in each of your lanes, of any flux cost. It takes the middle lane.",,Beast / Heavy / Winged,
 Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
-Once per turn, choose one:
+Choose one (you can only use this effect of Blood Mage once per turn):
 - Pay 4 PHP: Search your deck for a spell, show it to your opponent and put it into your hand.
 - Banish a fusion splice from under this creature: It gains +2 ATK until end of turn.
 ",Wizard / Blood Demon,Arcane / Unholy / Humanoid,
 The Flock,Fusion,8,18,N/A,7,"{any 2 Winged creatures}
-Once per turn: Banish a fusion splice from under this creature to materialize a 'Winged' creature from your Waste Repository.",,Winged,
+Banish a fusion splice from under this creature: Materialize a 'Winged' creature from your Waste Repository. You can only use this effect of The Flock once per turn.",,Winged,
 Fossil Fuel Baron,Fusion,7,22,N/A,3,"{any Prehistoric creature + any Greedy creature}
 Whenever a card is banished from your Waste Repository: Gain 1 gold.
 
-Once per turn: You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently.
+You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently. You can only use this effect of Fossil Fuel Baron once per turn.
 
 
 Turns out dinosaurs are worth a fortune. Just not alive.",Dino / Goblin,Prehistoric / Greedy / Beast,
@@ -482,7 +493,7 @@ Wild Magic Wizard,Creature,2,4,2,4,"When materialized: Draw 1 card, then discard
 
 Certified (pending).",Wizard,Arcane / Humanoid,
 Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,
-Night School Professor,Creature,3,8,4,3,"Once per turn: Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played.
+Night School Professor,Creature,3,8,4,3,"Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played. You can only use this effect of Night School Professor once per turn.
 
 
 
@@ -512,16 +523,16 @@ Abracadabra,Spell,N/A,N/A,N/A,,"You can only play this if your Spellcount is 3 o
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)
 
 ...and it's gone!",Wizard,,
-Card Trick,Spell,N/A,N/A,N/A,,"Look at your opponent's hand and choose a card in it. They shuffle it into their deck. If your Spellcount is 3 or higher: Put it into their Waste Repository instead.
+Card Trick,Spell,N/A,N/A,N/A,,"Choose a random card from your opponent's hand: They shuffle it into their deck, then draw 1 card.
 
-(Spellcount: the number of spells you've played this turn. A spell counts itself.)
+You can only play 1 Card Trick per turn.
 
 Is this your card?",Wizard,,
-Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature. If your Spellcount is 3 or higher: Deal 4 damage instead.
+Pocket Fireball,Instant Spell,N/A,N/A,N/A,,"Deal 2 damage to a creature or a player. If your Spellcount is 3 or higher: Deal 4 damage instead.
 
 (Spellcount: the number of spells you've played this turn. A spell counts itself.)",Wizard,,
 Big Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to a creature.,Wizard,,
-Déjà Vu,Spell,N/A,N/A,N/A,,"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it.",Wizard,,
+Déjà Vu,Spell,N/A,N/A,N/A,,"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it. You can only use this effect of Déjà Vu once per game.",Wizard,,
 Polymorph,Spell,N/A,N/A,N/A,,"Choose an enemy creature (not a fusion): Until the end of your next turn, it's a Frog with 1 ATK and no effects. Its HP doesn't change. Then it turns back, with the HP it had before this spell.",Wizard,,
 Spelling Mistake,Instant Spell,N/A,N/A,N/A,,"Swap a creature's ATK and HP, using the numbers it has right now. It stays swapped until it leaves the field. If its HP becomes 0, it's destroyed.
 

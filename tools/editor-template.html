@@ -1010,9 +1010,9 @@ async function ghApi(path, opts = {}) {
 async function ghSaveDecks() {
   const cur = await ghGet("saves/decks.json");
   let remote = { decks: [] }; try { remote = JSON.parse(cur ? cur.text : "{}"); } catch {}
-  const byName = new Map((remote.decks || []).map(d => [d.name, d]));
+  const byName = new Map((sameEpoch(remote) ? remote.decks || [] : []).map(d => [d.name, d]));
   deckState.decks.forEach(d => byName.set(d.name, d));
-  const merged = { decks: [...byName.values()], current: 0 };
+  const merged = { decks: [...byName.values()], current: 0, epoch: DECK_EPOCH };
   merged.current = Math.max(0, merged.decks.findIndex(d => d.name === deck().name));
   await ghPut("saves/decks.json", b64FromText(JSON.stringify(merged)), `Update decks (${ghUser || "website"})`, cur && cur.sha);
   decksDirty = false;
@@ -1376,15 +1376,19 @@ function budgetOf(c) {
 const FACTION_COLORS = { Angel: "#f2cf5b", "Blood Demon": "#d23a3a", Dino: "#3fae5a", Goblin: "#9ccc3c", Mundane: "#9aa3ad",
   Mutant: "#b05ae0", Parasite: "#e8873a", Thiefling: "#3d8fe0", Galorpian: "#2cc3d6", Plushy: "#f48fc4" };
 const DECK_KEY = "fusion-fuckery-decks";
-let deckState = { decks: [{ name: "My deck", cards: {} }], current: 0 };
-try { const s = JSON.parse(localStorage.getItem(DECK_KEY)); if (s && s.decks && s.decks.length) deckState = s; } catch {}
 // Built-in copy of saves/decks.json (like the card list), so the starter decks show up even without the helper
 // or when GitHub can't be reached. Only adds decks this browser doesn't have yet; never overwrites one by name.
 const EMBEDDED_DECKS = __DECKS_DATA__;
+// "epoch" in saves/decks.json: when it changes, every browser drops the decks it kept, so a wipe of the saved decks
+// sticks instead of coming back from someone's browser on their next save.
+const DECK_EPOCH = (EMBEDDED_DECKS && EMBEDDED_DECKS.epoch) || "";
+const sameEpoch = s => ((s && s.epoch) || "") === DECK_EPOCH;
+let deckState = { decks: [{ name: "My deck", cards: {} }], current: 0, epoch: DECK_EPOCH };
+try { const s = JSON.parse(localStorage.getItem(DECK_KEY)); if (s && s.decks && s.decks.length && sameEpoch(s)) deckState = s; } catch {}
 function addMissingDecks(src) {
   if (!src || !src.decks) return;
   const blank = deckState.decks.length === 1 && !Object.keys(deckState.decks[0].cards).length;   // untouched "My deck"
-  if (blank) { deckState = { decks: src.decks.map(d => ({ name: d.name, cards: { ...d.cards } })), current: 0 }; return; }
+  if (blank) { deckState = { decks: src.decks.map(d => ({ name: d.name, cards: { ...d.cards } })), current: 0, epoch: DECK_EPOCH }; return; }
   const have = new Set(deckState.decks.map(d => d.name));
   src.decks.filter(d => !have.has(d.name)).forEach(d => deckState.decks.push({ name: d.name, cards: { ...d.cards } }));
 }
@@ -1401,7 +1405,7 @@ function saveDecks() {
 async function syncDecksWithServer() {
   try {
     const s = await (await api("api/decks")).json();
-    if (s && s.decks && s.decks.length) { deckState = s; refreshDeck(); }
+    if (s && s.decks && s.decks.length && sameEpoch(s)) { deckState = s; refreshDeck(); }
   } catch { if (!GH) saveDecks(); } // nothing on disk yet: upload what this browser has
 }
 
