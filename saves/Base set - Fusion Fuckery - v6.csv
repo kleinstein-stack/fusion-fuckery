@@ -73,7 +73,7 @@ Vein Ripper,Creature,4,4,3,6,"Pay 3 PHP per flux: Reduce this creature's flux co
 Salem,Creature,7,12,9,2,"Pay 3 PHP per flux: Reduce this creature's flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP. You can only use this effect of Salem once per turn.
 
 Sacrifice another creature you control: Draw 1 card, and this creature gains +2 ATK and +2 HP permanently. You can only use this effect of Salem once per turn.
-",Blood Demon,Unholy / Amorphous,
+",Blood Demon,Unholy / Amorphous / Noble,
 Hemogoblin,Creature,1+d8,8,6,5,"Pay 2 PHP: Gain 2 gold. You can only use this effect of Hemogoblin once per turn.
 
 Pay 2 gold: This creature gains +2 Speed until end of turn. You can only use this effect of Hemogoblin once per turn.
@@ -406,8 +406,10 @@ Sacrifice this creature: Destroy a spell on the field.
 
 It squeaks when it casts.",Plushy,Arcane / Humanoid / Fluffy,
 Plush Salem,Creature,3,9,5,4,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
-When this creature is destroyed: Draw 1 card, then discard 1 card.",Plushy,Unholy / Amorphous / Fluffy,
+When this creature is destroyed: Draw 1 card, then discard 1 card.",Plushy,Unholy / Amorphous / Noble / Fluffy,
 Plush T-Rex,Creature,4,10,6,7,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
+At the end of your turn: You may return a 'Fluffy' creature from your Waste Repository to your hand.
+
 When this creature dies: Deal 3 damage to the enemy creature in front of it.",Plushy,Prehistoric / Beast / Fluffy,
 Plush Sanctified Knight,Creature,3,10,5,3,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
 When this creature dies: Deal 1 damage to the creatures in the lanes next to it.",Plushy,Holy / Humanoid / Noble / Fluffy,

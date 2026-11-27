@@ -105,8 +105,8 @@ first (it was a coin flip). Twisted Dimensions says the same. **Plushies reworke
 no Claw Machine on the field is destroyed (it used to be impossible to materialize one); Claw Machine now rolls a d6
 once per turn and on a 6 brings a Fluffy creature back from your Waste Repository; Arcade Kid only searches for the
 Claw Machine; new death effects on Plush Salem (draw 1, then discard 1), Plush Sanctified Knight (1 damage to the
-creatures next to it) and Plush T-Rex (3 damage to the enemy in front of it); Patchwork Plush gets +2 ATK and +2 HP
-for each Fluffy creature on the field and in your Waste Repository, and still gets cheaper. All saved decks, the starter decks included, were removed (the old ones are in
+creatures next to it) and Plush T-Rex (3 damage to the enemy in front of it, and it still returns a Fluffy creature to your hand at the end of your turn); Patchwork Plush gets +2 ATK and +2 HP
+for each Fluffy creature on the field and in your Waste Repository, and still gets cheaper. **Salem and Plush Salem are Noble** (so they fit Lord Lazarus's recipe). All saved decks, the starter decks included, were removed (the old ones are in
 `saves/versions/`).
 
 ## 1. The Golden Rules
@@ -414,7 +414,8 @@ you play them early.
 - **Plush Collector** says "even if you don't control a Claw Machine", so a plushy it materializes isn't destroyed
   (the card wins).
 - **Plush death effects (2026-11-27):** Plush Salem: draw 1 card, then discard 1. Plush Sanctified Knight: 1 damage to
-  the creatures in the lanes next to it, on its own side. Plush T-Rex: 3 damage to the enemy creature in front of it.
+  the creatures in the lanes next to it, on its own side. Plush T-Rex: 3 damage to the enemy creature in front of it (and it keeps its end-of-turn effect: return a Fluffy
+  creature from your Waste Repository to your hand).
   All of them trigger when a plushy is destroyed for having no Claw Machine.
 - **Plush Cherub (v4.6):** whenever another Fluffy creature you control dies, draw a card.
 - Plush cards are plush versions of existing creatures: they keep the original's attributes (so they fit its
