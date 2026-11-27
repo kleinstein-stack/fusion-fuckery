@@ -415,6 +415,8 @@ Patchwork Plush,Creature,3,14,10,1,"(If this creature is materialized without a 
 
 This creature has +2 ATK and +2 HP for each 'Fluffy' creature on the field and in your Waste Repository.
 
+This creature costs 1 less flux for each 'Fluffy' creature in your Waste Repository (not below 0).
+
 
 ",Plushy,Fluffy / Amorphous,
 Mega Plush,Fusion,8,24,,2,"{any 2 'Fluffy' creatures}

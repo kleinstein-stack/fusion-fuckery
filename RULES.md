@@ -106,7 +106,7 @@ no Claw Machine on the field is destroyed (it used to be impossible to materiali
 once per turn and on a 6 brings a Fluffy creature back from your Waste Repository; Arcade Kid only searches for the
 Claw Machine; new death effects on Plush Salem (draw 1, then discard 1), Plush Sanctified Knight (1 damage to the
 creatures next to it) and Plush T-Rex (3 damage to the enemy in front of it); Patchwork Plush gets +2 ATK and +2 HP
-for each Fluffy creature on the field and in your Waste Repository instead of getting cheaper. All saved decks, the starter decks included, were removed (the old ones are in
+for each Fluffy creature on the field and in your Waste Repository, and still gets cheaper. All saved decks, the starter decks included, were removed (the old ones are in
 `saves/versions/`).
 
 ## 1. The Golden Rules
@@ -422,7 +422,8 @@ you play them early.
   Machine. Plush Catalogue searches for any card with "Plush" in its name except another Plush Catalogue (2026-11-26).
 - **Arcade Kid (2026-11-27):** just searches for the Claw Machine (its stat bonus and cost increase are gone).
 - **Patchwork Plush (2026-11-27):** +2 ATK and +2 HP for each Fluffy creature on the field (both sides) and in your
-  Waste Repository, counting itself. It costs its printed 10 flux; it no longer gets cheaper.
+  Waste Repository, counting itself, and it costs 1 less flux for each Fluffy creature in your Waste Repository (not
+  below 0).
 
 ### 14.5 Fossil & Stampede (Dinos, v4.7)
 - **Fossil X:** "you may materialize this creature from your Waste Repository by banishing X other cards from your Waste
