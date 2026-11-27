@@ -99,7 +99,8 @@ Duchess and Nomed The Dark Viscount are Winged. The cards, decks and rulebook fr
 **2026-11-27:** **Face-down spells** (10.9): like Yu-Gi-Oh!, you can set a spell face down in your Main Phase and
 play it later, on your opponent's turn too. **Unfuse** now materializes the fusion splices, so their "when
 materialized" effects trigger. **Déjà Vu** works once per game. **Boss's Orders is now You're FIRED!**: 1 damage to a
-creature, and it loses 2 Speed. **Speed:** no more +1 Speed for the attacker; on a speed tie the attacker strikes
+creature, and it loses 2 Speed. **Arriving:** creatures can attack the turn they're
+materialized; only fusions (winded) wait a turn. **Speed:** no more +1 Speed for the attacker; on a speed tie the attacker strikes
 first (it was a coin flip). Twisted Dimensions says the same. All saved decks, the starter decks included, were removed (the old ones are in
 `saves/versions/`).
 
@@ -187,7 +188,7 @@ first (it was a coin flip). Twisted Dimensions says the same. All saved decks, t
 | 2 | Reactor | Max flux +1 (not on your first turn), then refill. You may also **Feed** (a card from your hand to Oblivion: +1 flux this turn) or **Skip** (no +1 max flux, draw 1 card) (7). |
 | 3 | Start | Radiance bonuses from your last turn end → start-of-turn effects. |
 | 4 | Main 1 | In any order: materialize creatures, play spells, activate effects. **One fusion** (13). |
-| 5 | Battle | Attack (12). Nobody attacks on the first turn of the game, and creatures that arrived this turn can't attack. |
+| 5 | Battle | Attack (12). Nobody attacks on the first turn of the game, and fusions made this turn can't attack. |
 | 6 | Main 2 | Spells and effects. No natural materializing and no fusing. |
 | 7 | End | End-of-turn effects → discard down to 8 cards. |
 
@@ -198,10 +199,10 @@ first (it was a coin flip). Twisted Dimensions says the same. All saved decks, t
 - **By effect** (Carrion The Dark Duchess, The Flock…): happens whenever the effect says, without paying flux. It
   still needs an empty lane.
 - "When materialized" effects trigger both ways.
-- **Creatures can't attack the turn they arrive.** A creature or fusion that was materialized, fused or brought back
-  this turn waits until your next turn to attack. It still hits back when it's attacked, except a fusion, which arrives
-  winded (13). Taking control of a creature (Space Squid) isn't arriving, so that creature can attack. Neither is being
-  moved to another lane by an effect.
+- **Only fusions can't attack the turn they arrive (2026-11-27).** A creature can attack the turn it's materialized or
+  brought back. A fusion arrives winded (13), so it waits until your next turn, and so do creatures that come back
+  winded from Unfuse. (From v4.3 until 2026-11-27 no creature could attack the turn it arrived.) Nobody attacks on the
+  first turn of the game.
 
 ## 10. Spells
 
@@ -269,8 +270,8 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 
 ## 12. Combat
 
-1. In your Battle Phase, each of your creatures can **attack once per turn**, one attack at a time, except on the turn it
-   arrived (9).
+1. In your Battle Phase, each of your creatures can **attack once per turn**, one attack at a time. A fusion can't attack
+   the turn it's made (9).
 2. **Choose a target.** An attacker can hit the enemy creature **in front of it** or in **a lane next to it** (the
    middle lane reaches all three enemy lanes).
 3. **Direct attacks:** if nothing is in front of it, it may attack the **player** instead. Enemy creatures in the
@@ -346,7 +347,7 @@ Fusions are the end goal: each one is stronger than an Ultra.
   the field at full HP (a fusion splice that is itself a fusion comes back with its own splices under it). Then the
   fusion's damage is **split evenly** between them, half each for the usual two (the bigger one takes an odd point),
   but it never takes one below 1 HP: a 2/30 fusion made of a 10 HP and a 7 HP creature comes back as 1/10 and 1/7.
-  If the fusion was winded, they're winded. They've arrived, so they can't attack this turn. **Since 2026-11-27
+  If the fusion was winded, they're winded and can't attack this turn; otherwise they can. **Since 2026-11-27
   they're materialized** (from the fusion onto the field), so their "when materialized" effects trigger. They come back in the
   fusion's lane and your empty lanes; if there isn't room for all of them, the **fusion's owner** chooses which go to
   the Waste Repository instead (2026-11-26).
@@ -413,7 +414,7 @@ you play them early.
 ### 14.5 Fossil & Stampede (Dinos, v4.7)
 - **Fossil X:** "you may materialize this creature from your Waste Repository by banishing X other cards from your Waste
   Repository instead of paying its flux cost." It's a natural materialize: Main Phase 1, an empty lane, "when
-  materialized" triggers, and the creature has arrived (it can't attack this turn). It can't be combined with Blood
+  materialized" triggers, and since 2026-11-27 it can attack this turn. It can't be combined with Blood
   Price. The banished cards go to Oblivion, so every Fossil burns some of the fuel for the next one.
 - **Once per turn per card name (2026-11-26):** "You can only Fossil T-Rex once per turn" means one T-Rex a turn by
   Fossil, whichever copy. Archaeologist pays a Fossil cost, so it counts. TT-rex and Microwave don't use Fossil, so they
@@ -523,7 +524,7 @@ you play them early.
 | Starting PHP | 30. Restoring can't take you above 30; gaining can |
 | Main Deck / Fusion Deck | 30 / up to 10, max 3 copies |
 | Opening hand | 5. One free redraw if it has 0–1 creatures; mulligan only if both agree |
-| Arriving | Creatures and fusions can't attack the turn they arrive |
+| Arriving | Creatures can attack the turn they arrive; fusions can't (they're winded) |
 | Draw per turn | 1 (first player skips their first) |
 | Flux | starts 3, +1 a turn, max 10. Second player +1 on their first turn |
 | Reactor Phase | +1 max flux and refill; or also Feed (a card to Oblivion: +1 flux this turn); or Skip (no +1, draw 1) |

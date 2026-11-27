@@ -458,6 +458,7 @@ const R = { speedNormal: 4, speedScale: 0.5, coinTie: false, attBonus: false,   
   early: 12,   // the stats look at which cards were in the top 12 of the shuffled deck (opening hand + about 7 draws)
   redraw: true,   // v4.3: a player whose opening hand has 0 or 1 creatures shuffles it back and draws a new one, once
   sick: true,   // v4.3: creatures and fusions can't attack the turn they arrive (taking control of one isn't arriving)
+  sickFusionsOnly: true,   // 2026-11-27: only fusions wait (they arrive winded), and creatures that come back winded from Unfuse
   // Rules to try, aimed at giving players more decisions that matter (ideas from Magic, Lorcana, Pokemon and Yu-Gi-Oh!):
   winded: true,       // v4.4: a creature that attacked can't hit back until its controller's next turn (Magic's tapping, Lorcana's exert)
   intercept: false,   // a creature next to a direct attacker may step in front of it and fight it instead (Magic's blocking)
@@ -561,6 +562,7 @@ function clawCheck(g) {
 // Claw Machine: a Fluffy creature may attack the player directly past the creature in front of it (which hits back),
 // unless the opponent controls a Fluffy creature
 const bypass = (g, u) => fluffy(u) && hasClaw(g.p[u.ctrl]) && says(g.p[u.ctrl].field.c.d, /attack your opponent directly/i) && !units(foe(g, g.p[u.ctrl])).some(fluffy);
+const sickNow = (g, u) => R.sick && u.arrived === g.turnNo && (!R.sickFusionsOnly || u.d.kind === "fusion" || u.winded);
 const canFace = (g, u) => !u.noDirect && (!foe(g, g.p[u.ctrl]).lanes[u.lane] || bypass(g, u));
 function tutor(g, p, pick) {   // search the deck: pick(card) -> a score, or null if it can't be taken. Shuffles after.
   let best = null;
@@ -1103,7 +1105,7 @@ function scoreFace(g, att) {
 }
 function bestAttack(g, u) {   // AI: the best score u can get from one attack this turn
   const o = foe(g, g.p[u.ctrl]); let best = -Infinity;
-  if ((R.sick && u.arrived === g.turnNo) || lockedOut(g, u)) return best;   // it can't attack (yet)
+  if (sickNow(g, u) || lockedOut(g, u)) return best;   // it can't attack (yet)
   for (const l of [u.lane].concat(NB[u.lane])) if (o.lanes[l]) best = Math.max(best, scoreFight(g, u, o.lanes[l]));
   if (canFace(g, u)) best = Math.max(best, scoreFace(g, u));
   return best;
@@ -1352,7 +1354,7 @@ const topAtk = (g, p) => units(p).sort((a, b) => atkOf(g, b) - atkOf(g, a))[0] |
 function wildWorth(g, p, r) {
   const o = foe(g, p);
   if (r === 1) { const u = topAtk(g, p); return u ? -(g.phase === 1 && !u.attacked ? Math.max(0, atkOf(g, u) - 1) * 0.4 : 0) - (u.d.fx ? 0.8 : 0) : 0; }
-  if (r === 2) return g.phase === 1 ? units(p).filter(u => !u.attacked && !(R.sick && u.arrived === g.turnNo)).length * 1.4 - units(o).length * 0.5 : -units(o).length * 0.3;
+  if (r === 2) return g.phase === 1 ? units(p).filter(u => !u.attacked && !sickNow(g, u)).length * 1.4 - units(o).length * 0.5 : -units(o).length * 0.3;
   if (r === 3) return drawOk(p, 2) ? 4.5 : 0.5;
   if (r === 4) return g.phase === 1 ? 2.2 : p.hand.some(x => x.d.name === "Big Fireball") ? 1.5 : 0.2;
   if (r === 5) return Math.max(0, ...units(o).map(t => damageWorth(g, p, t, 5)));
@@ -2683,7 +2685,7 @@ function battle(g, p) {
   for (let guard = 0; guard < 10 && !g.over; guard++) {
     let best = null;
     for (const u of units(p)) {
-      if ((u.attacked && !u.extra) || expAtk(g, u) <= 0 || (R.sick && u.arrived === g.turnNo) || lockedOut(g, u)) continue;   // Extra Credit: a second attack
+      if ((u.attacked && !u.extra) || expAtk(g, u) <= 0 || sickNow(g, u) || lockedOut(g, u)) continue;   // Extra Credit: a second attack
       for (const l of [u.lane].concat(NB[u.lane])) { const t = o.lanes[l]; if (t) { const s = scoreFight(g, u, t) + jitter(g, p); if (!best || s > best.s) best = { s, u, t }; } }
       if (canFace(g, u)) { const s = scoreFace(g, u) + jitter(g, p); if (!best || s > best.s) best = { s, u, t: null }; }
     }
