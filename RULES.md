@@ -106,7 +106,12 @@ no Claw Machine on the field is destroyed (it used to be impossible to materiali
 once per turn and on a 6 brings a Fluffy creature back from your Waste Repository; Arcade Kid only searches for the
 Claw Machine; new death effects on Plush Salem (draw 1, then discard 1), Plush Sanctified Knight (1 damage to the
 creatures next to it) and Plush T-Rex (3 damage to the enemy in front of it, and it still returns a Fluffy creature to your hand at the end of your turn); Patchwork Plush gets +2 ATK and +2 HP
-for each Fluffy creature on the field and in your Waste Repository, and still gets cheaper. **Salem and Plush Salem are Noble** (so they fit Lord Lazarus's recipe). All saved decks, the starter decks included, were removed (the old ones are in
+for each Fluffy creature on the field and in your Waste Repository, and still gets cheaper. **Salem and Plush Salem are Noble** (so they fit Lord Lazarus's recipe). **Removal:** **Ritual Pit** is back as a Spell: destroy a creature, and
+its controller draws 1 card. **Goblin General** is now Hostile Takeover: once per turn, pay gold equal to a creature's
+current HP to destroy it (its old effects are gone). **Gob-omber**'s blast deals double damage to creatures that cost
+6 or more flux and to fusions. **Shotgun Wedding** needs at least one fusion splice from your field. **Underdog** (14.9): every creature
+that costs 1–3 flux deals 2 more combat damage to fusions. **The Flock is now The Feeble Fusion** (13): 2 or 3
+creatures of any flux cost whose flux adds up to 7 or more, 6/16, with **Execute** (14.9). All saved decks, the starter decks included, were removed (the old ones are in
 `saves/versions/`).
 
 ## 1. The Golden Rules
@@ -201,7 +206,7 @@ for each Fluffy creature on the field and in your Waste Repository, and still ge
 
 - **Natural materialize:** in Main Phase 1, from your hand. Pay its flux cost (some creatures let you pay part of it
   in PHP with **Blood Price**, 14.2), then put it in any empty lane. No limit beyond flux and lanes.
-- **By effect** (Carrion The Dark Duchess, The Flock…): happens whenever the effect says, without paying flux. It
+- **By effect** (Carrion The Dark Duchess, Claw Machine…): happens whenever the effect says, without paying flux. It
   still needs an empty lane.
 - "When materialized" effects trigger both ways.
 - **Only fusions can't attack the turn they arrive (2026-11-27).** A creature can attack the turn it's materialized or
@@ -243,6 +248,10 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
 10. **Losing Speed (You're FIRED!, 2026-11-27):** permanent, but Speed never goes below 1.
 
 ## 11. Health, damage & destruction
+
+**Ritual Pit (Spell, 2026-11-27):** destroy any creature, fusions included; the creature's controller draws 1 card.
+Chapel Guard and Seraphim Wall can still save it, as with any "destroy".
+
 
 **Player health (PHP).** You start at 30. Restoring can't take you above 30; gaining can.
 
@@ -326,12 +335,11 @@ Fusions are the end goal: each one is stronger than an Ultra.
   (field spell) lets you sacrifice another Unholy creature instead.
 - **Cheaper fusion splices:** **Melting Pot** (field spell, since 2026-11-26): once per turn, banish a creature from
   your Waste Repository, and your next fusion this turn may use a creature that costs 3 or 4 flux as one of its fusion
-  splices. Only Melting Pot's owner can use it. (It used to let both players fuse creatures of any cost; Ritual Pit,
-  which did this for Unholy creatures only, is in cold storage.)
-- **Shotgun Wedding (2026-11-26):** materialize a fusion from your Fusion Deck, its fusion splices taken from your hand,
-  your field or both. They have to meet its recipe and the 5+ flux rule, as normal. It isn't fusing: it doesn't cost
-  the 2 flux and doesn't use up your fusion for the turn. The fusion goes in one of its splices' lanes, or an empty lane
-  if they all came from your hand. It isn't winded and **can attack this turn**, but not your opponent directly. At the
+  splices. Only Melting Pot's owner can use it. (It used to let both players fuse creatures of any cost. Ritual Pit,
+  which did this for Unholy creatures only, went into cold storage; it came back on 2026-11-27 as a removal Spell.)
+- **Shotgun Wedding (2026-11-26):** materialize a fusion from your Fusion Deck, its fusion splices taken from your field and
+  your hand, with **at least one from your field** (2026-11-27). They have to meet its recipe and the 5+ flux rule, as normal. It isn't fusing: it doesn't cost
+  the 2 flux and doesn't use up your fusion for the turn. The fusion goes in the lane of one of its splices from the field. It isn't winded and **can attack this turn**, but not your opponent directly. At the
   end of your turn it's destroyed, with its fusion splices (death effects trigger). Only 1
   Shotgun Wedding per turn.
 - **Recipes:** a card name means that exact card; an attribute ("any Holy creature") means any creature with it.
@@ -340,7 +348,9 @@ Fusions are the end goal: each one is stronger than an Ultra.
   **Chimera** {any 3 Beast creatures} is a **triple fusion**: three Beasts, one in each of your lanes and of any
   flux cost, fuse into it for the usual 2 flux. It takes the middle lane and frees the other two; damage from all three
   carries over, and Unfuse brings all three back where there's room. **Blood Mage**
-  {any Arcane creature + any Unholy creature}. **The Flock** {any 2 Winged creatures}. **Fossil Fuel Baron** {any
+  {any Arcane creature + any Unholy creature}. **The Feeble Fusion** (2026-11-27, was The Flock) {any 2 or 3 creatures}: 2 or 3 of
+  your creatures in lanes next to each other, of **any flux cost**, as long as their printed flux costs add up to
+  **7 or more** (a fusion counts as 5); with 3 it takes the middle lane, like Chimera. It's 6/16 with Execute (14.9). **Fossil Fuel Baron** {any
   Prehistoric creature + any Greedy creature} gains 1 gold for every card banished from your Waste Repository (a
   Fossil cost, Night School Professor, Salem…). **Absolute Unit** {any 2 Heavy fusions} needs two fusions next to
   each other; every card in both stacks becomes its fusion splice.
@@ -392,6 +402,10 @@ you play them early.
 ### 14.3 Dice ATK & Gold
 - **Dice ATK:** an ATK like "1+d6" is **rolled every time the creature attacks**, for that attack only. When it hits
   back in a fight, it rolls too. "Natural 20" / "natural 1" means the die itself showed that number.
+- **Hostile Takeover (Goblin General, 2026-11-27):** once per turn, in your Main Phase, pay gold equal to a
+  creature's current HP (any creature, fusions included) to destroy it. A 20/26 fusion costs 20 gold.
+- **Gob-omber (2026-11-27):** its blast hits every creature, both sides, for the gold paid; creatures that cost 6 or
+  more flux and all fusions take twice that.
 - **Goblin Pit Boss (2026-11-26):** its reroll is a trigger, used the moment a Greedy creature you control rolls its
   die (in a fight, too): pay 1 gold, roll again and use the new result. Once per turn. (It used to be a Main Phase
   effect, and no die ATK is rolled in a Main Phase, so it could never be used.)
@@ -513,6 +527,13 @@ you play them early.
 - **Wizard Tower:** banish a fusion splice from under it to return a one-shot spell from your Waste Repository to
   your hand. It isn't once per turn, so you can do it once for each splice, and Complaints don't stop it.
 - **Community College of Magic:** whoever plays their 3rd spell in a turn gains 1 flux for that turn (both players).
+
+### 14.9 Underdog & Execute (2026-11-27)
+- **Underdog:** "this creature deals 2 more combat damage to fusions." Every creature that costs 1–3 flux has it, so
+  small creatures can chip big fusions down. It counts when it attacks and when it hits back.
+- **Execute:** "when this creature deals combat damage to a creature, if that creature has half its max HP or less
+  left, destroy it." Half rounds down: a 16 HP creature left at 8 or less is destroyed. Chapel Guard and Seraphim Wall
+  can still save it. On The Feeble Fusion.
 
 ## 15. Advanced rules
 

@@ -401,7 +401,18 @@ function strikesFirst(att, e) {   // 2026-11-27: no attacker's +1; a tie goes to
 function planFight(aUid, target) {
   const A = find(aUid).c, steps = [], i = S.active, o = OPP(i);
   let aHp = curHp(A);
-  const hit = (src, dst, isPlayer) => { const h = hitVal(src); steps.push({ src: src.uid, dst: isPlayer ? null : dst.uid, player: isPlayer ? o : null, n: h.v, r: h.r }); return h.v; };
+  const left = new Map();   // HP each creature has left as the fight plays out
+  const hp = c => left.has(c.uid) ? left.get(c.uid) : curHp(c);
+  const hit = (src, dst, isPlayer) => {
+    const h = hitVal(src); let n = h.v, extra = "";
+    if (!isPlayer && D(dst.n).kind === "fusion" && /Underdog \(/.test(D(src.n).text)) { n += 2; extra = " (Underdog +2)"; }
+    steps.push({ src: src.uid, dst: isPlayer ? null : dst.uid, player: isPlayer ? o : null, n, r: h.r, extra });
+    if (!isPlayer) {
+      const after = hp(dst) - n; left.set(dst.uid, after);
+      if (after > 0 && n > 0 && /Execute \(/.test(D(src.n).text) && after <= Math.floor(maxHp(dst) / 2)) { steps.push({ execute: dst.uid, note: `Execute: ${D(dst.n).name} is down to ${after}/${maxHp(dst)}, so it's destroyed.` }); left.set(dst.uid, 0); return 9999; }   // the caller treats it as destroyed
+    }
+    return n;
+  };
   if (target.player) {
     const lane = find(aUid).k, near = NB[lane].map(l => P(o).lanes[l]).filter(Boolean);
     const early = near.filter(e => !e.winded && !strikesFirst(A, e)).sort((x, y) => spdOf(y) - spdOf(x));
@@ -428,14 +439,14 @@ function fightDialog(aUid, target) {
     for (const s of steps) {
       if (s.note) { ol.append(el("li", "", s.note)); continue; }
       const src = D(find(s.src).c.n).name, dst = s.player != null ? nm(s.player) : D(find(s.dst).c.n).name;
-      ol.append(el("li", "", `${src} hits ${dst} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""}.`));
+      ol.append(el("li", "", `${src} hits ${dst} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""}${s.extra || ""}.`));
     }
     d.append(ol);
     const r = el("div", "row");
     r.append(btn("Apply", () => { d.close(); act(() => {
       A.winded = true; A.attacked = true; log(`${D(A.n).name} attacks ${tName}.`);
       for (const s of steps) {
-        if (s.note) { log("  " + s.note); continue; }
+        if (s.note) { log("  " + s.note); if (s.execute) { const t = find(s.execute); if (t) t.c.dmg = maxHp(t.c); } continue; }
         const src = find(s.src); if (!src) continue;
         if (s.player != null) { P(s.player).php -= s.n; log(`  ${D(src.c.n).name} hits ${nm(s.player)} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""} → ${P(s.player).php} PHP.`); }
         else { const t = find(s.dst); if (!t) continue; t.c.dmg += s.n; log(`  ${D(src.c.n).name} hits ${D(t.c.n).name} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""} → ${curHp(t.c)}/${maxHp(t.c)}.`); }
@@ -464,8 +475,11 @@ function recipeParts(rec) {
     const r = BYNORM.get(norm(p)); return r ? { n: 1, name: r } : { n: 1, unknown: p };
   });
 }
+const feeble = fd => /add up to (\d+) or more/i.test(fd.text);
+const fluxSum = mats => mats.reduce((t, c) => t + (D(c.n).kind === "fusion" ? 5 : (D(c.n).flux || 0)), 0);
 function recipeFits(fd, mats) {
   if (!fd.recipe) return true;
+  if (feeble(fd)) return (mats.length === 2 || mats.length === 3) && mats.every(c => isUnit(D(c.n))) && fluxSum(mats) >= +fd.text.match(/add up to (\d+) or more/i)[1];
   const slots = []; for (const p of recipeParts(fd.recipe)) for (let k = 0; k < p.n; k++) slots.push(p);
   if (slots.length !== mats.length) return false;
   const ok = (s, c) => { const d = D(c.n); return s.unknown ? true : s.name ? d.name === s.name : s.fusion ? d.kind === "fusion" && d.attrs.includes(s.attr) : d.attrs.includes(s.attr); };
@@ -473,7 +487,7 @@ function recipeFits(fd, mats) {
   const go = k => { if (k === slots.length) return true; for (let j = 0; j < mats.length; j++) if (!used[j] && ok(slots[k], mats[j])) { used[j] = true; if (go(k + 1)) return true; used[j] = false; } return false; };
   return go(0);
 }
-const recipeSize = fd => fd.recipe ? recipeParts(fd.recipe).reduce((s, p) => s + p.n, 0) : 2;
+const recipeSize = fd => feeble(fd) ? 0 : fd.recipe ? recipeParts(fd.recipe).reduce((s, p) => s + p.n, 0) : 2;   // 0: 2 or 3
 function fuseDialog(uid) {
   const f = find(uid), i = f.i, p = P(i), mine = [0, 1, 2].map(l => p.lanes[l]);
   const pairs = NB[f.k].filter(l => mine[l]).map(l => [f.c, mine[l]]);
@@ -485,14 +499,14 @@ function fuseDialog(uid) {
     const pick = el("div", "pick"), seen = new Set();
     for (const fc of p.fdeck) {
       if (seen.has(fc.n)) continue; seen.add(fc.n); const fd = D(fc.n), size = recipeSize(fd);
-      const mats = size === 3 ? (mine.every(Boolean) ? mine : null) : pairs.find(pr => recipeFits(fd, pr));
-      const fits = !!mats && recipeFits(fd, mats), cheap = mats && !/any flux cost/i.test(fd.text) && mats.some(c => !big(c));
+      const mats = size === 3 ? (mine.every(Boolean) ? mine : null) : size === 0 ? [...pairs, ...(mine.every(Boolean) ? [mine] : [])].find(pr => recipeFits(fd, pr)) || null : pairs.find(pr => recipeFits(fd, pr));
+      const fits = !!mats && recipeFits(fd, mats), cheap = mats && !/any flux cost/i.test(fd.text) && !feeble(fd) && mats.some(c => !big(c));
       const it = el("div", "it" + (fits ? "" : " no")); it.append(cardSlot(fc, false));
       it.append(el("div", "", fits ? (cheap ? "Fits, but a splice costs under 5" : "Recipe fits") : "Recipe doesn't fit"));
       it.append(btn(fits ? "Fuse" : "Fuse anyway", () => {
         const use = mats || pairs[0]; if (!use) return toast("Not enough creatures for this fusion.");
         d.close(); act(() => {
-          const lane = size === 3 ? 1 : find(use[0].uid).k, carried = use.reduce((s, c) => s + c.dmg, 0), wasWinded = false;
+          const lane = use.length === 3 ? 1 : find(use[0].uid).k, carried = use.reduce((s, c) => s + c.dmg, 0), wasWinded = false;
           use.forEach(c => take(c.uid)); const fu = take(fc.uid); reset(fu);
           fu.under = use; fu.dmg = carried; fu.winded = true; fu.arrived = S.turn; p.lanes[lane] = fu; p.flux -= 2; S.fusedTurn = S.turn;
           log(`${p.name} fuses ${use.map(c => D(c.n).name).join(" + ")} into ${fd.name} (2 flux)${carried ? `, keeping ${carried} damage` : ""}. It's winded.`);
