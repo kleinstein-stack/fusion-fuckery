@@ -101,7 +101,12 @@ play it later, on your opponent's turn too. **Unfuse** now materializes the fusi
 materialized" effects trigger. **Déjà Vu** works once per game. **Boss's Orders is now You're FIRED!**: 1 damage to a
 creature, and it loses 2 Speed. **Arriving:** creatures can attack the turn they're
 materialized; only fusions (winded) wait a turn. **Speed:** no more +1 Speed for the attacker; on a speed tie the attacker strikes
-first (it was a coin flip). Twisted Dimensions says the same. All saved decks, the starter decks included, were removed (the old ones are in
+first (it was a coin flip). Twisted Dimensions says the same. **Plushies reworked** (14.4): a plushy materialized with
+no Claw Machine on the field is destroyed (it used to be impossible to materialize one); Claw Machine now rolls a d6
+once per turn and on a 6 brings a Fluffy creature back from your Waste Repository; Arcade Kid only searches for the
+Claw Machine; new death effects on Plush Salem (draw 1, then discard 1), Plush Sanctified Knight (1 damage to the
+creatures next to it) and Plush T-Rex (3 damage to the enemy in front of it); Patchwork Plush gets +2 ATK and +2 HP
+for each Fluffy creature on the field and in your Waste Repository instead of getting cheaper. All saved decks, the starter decks included, were removed (the old ones are in
 `saves/versions/`).
 
 ## 1. The Golden Rules
@@ -398,18 +403,26 @@ you play them early.
 - The v2.1 **Market Cycle** is no longer a rule.
 
 ### 14.4 Fluffy & the Claw Machine (Plushies)
-- **Fluffy** creatures (plushies) can only be materialized, by any means, while you control a **Claw Machine** (Field
-  Spell). Card text: "(you can only materialize this creature while you control a Claw Machine)."
-- **Claw Machine (v4.6)** does only that. Losing it doesn't hurt the plushies already on the field; you just can't
-  materialize more until you have one again. (Until v4.6 it also gave a discount, let plushies slip past blockers and
-  drew a card when one died, and plushies were destroyed without it.)
+- **Fluffy** creatures (plushies) can be materialized any time, by any means, but **if one is materialized while no
+  Claw Machine is on the field, it's destroyed** straight away, so its "when materialized" and death effects both
+  trigger (2026-11-27). Any Claw Machine counts, yours or your opponent's. Card text: "(If this creature is
+  materialized without a Claw Machine on the field, it's destroyed.)" Losing the Claw Machine later doesn't hurt the
+  plushies already on the field. (From v4.6 until 2026-11-27 a plushy couldn't be materialized at all without your
+  Claw Machine.)
+- **Claw Machine (Field Spell, 2026-11-27):** once per turn, in your Main Phase, roll a d6. On a 6 you may materialize
+  a Fluffy creature from your Waste Repository (into an empty lane).
+- **Plush Collector** says "even if you don't control a Claw Machine", so a plushy it materializes isn't destroyed
+  (the card wins).
+- **Plush death effects (2026-11-27):** Plush Salem: draw 1 card, then discard 1. Plush Sanctified Knight: 1 damage to
+  the creatures in the lanes next to it, on its own side. Plush T-Rex: 3 damage to the enemy creature in front of it.
+  All of them trigger when a plushy is destroyed for having no Claw Machine.
 - **Plush Cherub (v4.6):** whenever another Fluffy creature you control dies, draw a card.
 - Plush cards are plush versions of existing creatures: they keep the original's attributes (so they fit its
   faction's recipes) and add **Fluffy**. Arcade Kid and Plush Collector aren't Fluffy. Arcade Kid searches for the Claw
   Machine. Plush Catalogue searches for any card with "Plush" in its name except another Plush Catalogue (2026-11-26).
-- **Arcade Kid (2026-11-26):** +2 ATK and +2 HP for each Fluffy creature on the field (both sides) and in your Waste
-  Repository, and it costs 1 more flux for each Fluffy creature in your Waste Repository, up to 10 flux. Its printed
-  cost (1) still decides tier and fusion eligibility.
+- **Arcade Kid (2026-11-27):** just searches for the Claw Machine (its stat bonus and cost increase are gone).
+- **Patchwork Plush (2026-11-27):** +2 ATK and +2 HP for each Fluffy creature on the field (both sides) and in your
+  Waste Repository, counting itself. It costs its printed 10 flux; it no longer gets cheaper.
 
 ### 14.5 Fossil & Stampede (Dinos, v4.7)
 - **Fossil X:** "you may materialize this creature from your Waste Repository by banishing X other cards from your Waste

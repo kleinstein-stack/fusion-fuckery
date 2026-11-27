@@ -111,6 +111,9 @@ const fieldFx = (g, key) => g.p.some(q => q.field && q.field.c.d.fx && q.field.c
 const fluffy = x => hasAttr(x.d, "fluffy");
 const isClaw = c => !!(c.d.fx && c.d.fx.claw);
 const hasClaw = p => !!(p.field && isClaw(p.field.c));
+const clawOnField = g => g.p.some(hasClaw);
+const plushDies = d => says(d, /materialized without a Claw Machine on the field, it's destroyed/i);   // 2026-11-27 plush rule
+const plushBlocked = (g, p, c) => fluffy(c) && (plushDies(c.d) ? !clawOnField(g) : !hasClaw(p));   // AI: don't play one that won't stay
 function clawCheck(g) {
   for (const p of g.p) if (!hasClaw(p)) for (const u of units(p)) if (fluffy(u) && onField(g, u) && says(u.d, /destroyed if you stop controlling/i)) {
     L(g, `  ${who(g, p)} has no Claw Machine, so ${u.d.name} is destroyed.`); destroy(g, u, {}); if (g.over) return;
@@ -381,7 +384,7 @@ function makeUnit(g, p, c, lane, halved) {
     attacked: false, negated: false, chapel: false, splices: [], stolen: null, frenzy: false, minerFlux: false, arrived: g.turnNo };
 }
 function materialize(g, p, c, lane, how) {
-  if (lane == null || p.lanes[lane] || (fluffy(c) && !hasClaw(p))) return null;
+  if (lane == null || p.lanes[lane] || (fluffy(c) && !hasClaw(p) && !plushDies(c.d))) return null;
   const u = makeUnit(g, p, c, lane, how === "lazarus");
   if (c.under) { u.splices = c.under; c.under = null; }   // Lord Lazarus comes back with its other splices
   p.lanes[lane] = u;
@@ -390,6 +393,7 @@ function materialize(g, p, c, lane, how) {
   L(g, `${who(g, p)} ${how === "hand" ? "plays" : how === "lazarus" ? "brings back" : how === "fossil" ? "digs up" : how === "descend" ? "descends with" : "materializes"} ${c.d.name} (${LANE[lane]} lane)${how === "lazarus" ? " at half stats" : how === "fossil" || how === "waste" ? " from the Waste Repository" : ""}.`);
   const f = fxOf(u); if (f && f.onPlay) f.onPlay(g, u);
   if (f && f.onRaise && (how === "fossil" || how === "waste") && onField(g, u)) f.onRaise(g, u);
+  if (fluffy(u) && plushDies(u.d) && !clawOnField(g) && onField(g, u)) { L(g, `  No Claw Machine on the field: ${u.d.name} is destroyed.`); kill(g, u, {}); }
   return u;
 }
 function cast(g, p, c, effect) {   // a one-shot Spell or Instant: it uses a spell zone while it resolves
@@ -810,7 +814,7 @@ function descendResponse(g, o, att, target) {
   const was = target ? fightWorth(g, o, att, target, keepWorth(g, target)) : -face * phpW(g, o) * (face >= o.php ? 100 : 1);
   let best = null;
   for (const c of o.hand) {
-    if (!descendOf(c) || (fluffy(c) && !hasClaw(o))) continue;
+    if (!descendOf(c) || plushBlocked(g, o, c)) continue;
     const cost = descendCost(g, o, c); if (cost > o.flux) continue;
     const lane = chooseLane(g, o, c.d), v = makeUnit(g, o, c, lane, false), vw = defValue(c.d);
     if (descWinded(c.d)) v.winded = true;
@@ -1190,6 +1194,7 @@ const FX = {
 // ---- Plushy faction: plush versions reuse their originals' effects ----
 const clawPick = c => isClaw(c) ? 1 : null;
 const fluffyWaste = p => p.waste.filter(c => fluffy(c) && isUnitKind(c.d.kind) && !p.lazarus.includes(c));
+const patchCount = (g, u) => g.p[u.ctrl].waste.filter(fluffy).length + (says(u.d, /'Fluffy' creature on the field/i) ? allUnits(g).filter(fluffy).length : 0);
 const hasPatchwork = p => p.hand.concat(units(p).map(u => u.c)).some(c => c.d.fx && c.d.fx.patchwork);
 Object.assign(FX, {
   "Arcade Kid": { value: 1.5, onPlay(g, u) { const p = g.p[u.ctrl]; if (!p.hand.some(isClaw)) tutor(g, p, clawPick); } },
@@ -1198,16 +1203,27 @@ Object.assign(FX, {
     const inHand = p.hand.some(isClaw), s = !hasClaw(p) && !inHand ? 3 : inHand ? 0.2 : 0.9;   // a spare one against Pipebomb
     return { score: s, run: () => tutor(g, p, clawPick) };
   } }] },
-  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Salem": FX["Judicator Angel"],
-  "Plush Sanctified Knight": FX["Sanctified Knight"], "Plush Spell Slinger": {},
+  "Plush Cherub": { value: 1.5, fluffyDraw: true, onPlay(g, u) { if (says(u.d, /when materialized: restore/i)) FX["Cherub"].onPlay(g, u); } }, "Plush Blood Imp": FX["Blood Imp"], "Plush Salem": { value: 1.5, onDeath(g, u) {   // 2026-11-27: draw 1, then discard 1
+    const p = g.p[u.ctrl]; if (!says(u.d, /draw 1 card, then discard 1 card/i)) return; draw(g, p, 1); if (p.hand.length) discardWorst(g, p);
+  } },
+  "Plush Sanctified Knight": { value: 1, onDeath(g, u) {   // 2026-11-27: 1 damage to the creatures next to it (its own side)
+    const p = g.p[u.ctrl]; if (!says(u.d, /deal 1 damage to the creatures in the lanes next to it/i)) return;
+    NB[u.lane].map(l => p.lanes[l]).filter(Boolean).forEach(t => damage(g, t, 1, {}));
+  } }, "Plush Spell Slinger": {},
   "Plush Goblin": { value: 1, onPlay(g, u) { gainGold(g, g.p[u.ctrl], 1); } },
-  "Plush T-Rex": { value: 3, endTurn(g, u) {   // a Fluffy creature from the Waste Repository back to the hand
+  "Plush T-Rex": { value: 3, onDeath(g, u) {   // 2026-11-27: 3 damage to the enemy creature in front of it
+    if (!says(u.d, /deal 3 damage to the enemy creature in front of it/i)) return;
+    const t = foe(g, g.p[u.ctrl]).lanes[u.lane]; if (t) { L(g, `  Plush T-Rex deals 3 damage to ${t.d.name}.`); damage(g, t, 3, {}); }
+  }, endTurn(g, u) {   // older text: a Fluffy creature from the Waste Repository back to the hand
+    if (!says(u.d, /return a 'Fluffy' creature/i)) return;
     const p = g.p[u.ctrl], list = fluffyWaste(p).filter(c => c.d.kind === "creature");
     if (!list.length || (hasPatchwork(p) && list.length < 3)) return;   // Patchwork Plush wants them in the Waste Repository
     const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0];
     p.waste.splice(p.waste.indexOf(c), 1); p.hand.push(c); L(g, `  ${u.d.name} returns ${c.d.name} to the hand.`);
   } },
-  "Patchwork Plush": { value: 2, patchwork: true, aura(g, k, u) { return k === u && says(u.d, /has \+1 ATK for each/i) ? g.p[u.ctrl].waste.filter(fluffy).length : 0; } },   // the ATK bonus only while its text has it
+  "Patchwork Plush": { value: 2, patchwork: true,   // 2026-11-27: +2 ATK and +2 HP per Fluffy creature on the field and in your Waste Repository
+    aura(g, k, u) { return k === u && says(u.d, /has \+(\d+) ATK(?: and \+\d+ HP)? for each/i) ? num(u.d, /has \+(\d+) ATK/i, 1) * patchCount(g, u) : 0; },
+    onPlay(g, u) { if (!says(u.d, /\+(\d+) HP for each 'Fluffy'/i)) return; const n = num(u.d, /\+(\d+) HP for each 'Fluffy'/i, 2) * patchCount(g, u); u.maxHp += n; u.hp += n; } },   // the ATK bonus only while its text has it
   "Mega Plush": { value: 4, perSplice: 1, clawGuard: true, aura(g, k, u) { return k !== u && fluffy(u) ? spliceCount(k) : 0; } },
 });
 
@@ -1483,13 +1499,20 @@ const SPELLS = {
   "Shotgun Wedding": { wedding: true, needs: x => x.fusions > 0 },   // used by fusionOpts
   // ---- Plushy ----
   "Claw Machine": { perm: true, claw: true, core: cre => cre.some(d => d.attrs.includes("fluffy")),
+    startTurn(g, p, z) {
+      if (!says(z.c.d, /roll a d6: on a 6/i) || !emptyLanes(p).length) return;
+      const list = fluffyWaste(p).filter(c => c.d.kind === "creature"); if (!list.length) return;
+      const r = 1 + Math.floor(g.dice() * 6); L(g, `  Claw Machine: ${who(g, p)} rolls ${r}.`); if (r !== 6) return;
+      const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0]; p.waste.splice(p.waste.indexOf(c), 1);
+      materialize(g, p, c, chooseLane(g, p, c.d), "waste");
+    },
     score: (g, p) => hasClaw(p) ? 0 : units(p).some(fluffy) || p.hand.some(fluffy) ? 6 : 1.2 },
   "Plush Catalogue": { play(g, p, c) {   // any card with "Plush" in its name
     const pick = x => {
       if (!/plush/i.test(x.d.name) || (x.d.name === c.d.name && says(c.d, /except Plush Catalogue/i))) return null;
       if (x.d.name === "Plush Collector") return !hasClaw(p) && !p.hand.some(isClaw) && !units(p).some(u => u.d.name === x.d.name) ? 9 : 1;
       if (x.d.kind !== "creature") return 0.5;
-      const f = Math.max(0, x.d.flux - (x.d.fx && x.d.fx.patchwork ? p.waste.filter(fluffy).length : 0));
+      const f = Math.max(0, x.d.flux - (x.d.fx && x.d.fx.patchwork && says(x.d, /costs 1 less flux for each/i) ? p.waste.filter(fluffy).length : 0));
       return defValue(x.d) - (f > p.maxFlux + 1 ? 4 : 0);
     };
     let best = null; for (const x of p.deck) { const s = pick(x); if (s != null && (best == null || s > best)) best = s; }
@@ -1545,7 +1568,7 @@ Object.assign(FX, {
     L(g, `  The Flock: ${n} damage to ${who(g, o)}.`); p.st.face += n; losePHP(g, o, n);
   }, acts: [{ id: "flock", pri: 2, ai(g, u) {   // once per turn: banish a fusion splice to bring back a Winged creature
     const p = g.p[u.ctrl]; if (!says(u.d, /materialize a '?winged'? creature/i) || !spliceCount(u) || u.stolen || !emptyLanes(p).length) return null;
-    const list = p.waste.filter(c => c.d.kind === "creature" && hasAttr(c.d, "winged") && !p.lazarus.includes(c) && !(fluffy(c) && !hasClaw(p)));
+    const list = p.waste.filter(c => c.d.kind === "creature" && hasAttr(c.d, "winged") && !p.lazarus.includes(c) && !plushBlocked(g, p, c));
     if (!list.length) return null;
     const c = list.sort((a, b) => defValue(b.d) - defValue(a.d))[0], s = defValue(c.d) * 0.45 - spliceCost(u);
     return s > 0.5 ? { score: s, run: () => {
@@ -1957,20 +1980,20 @@ const FX_TEXT = {
   "Melting Pot": "p80nmk",
   "Twisted Dimensions": "775xoq",
   "Shotgun Wedding": "1beaxow",
-  "Claw Machine": "18u65sc",
+  "Claw Machine": "ij28ts",
   "Arcade Kid": "fs5awq",
   "Plush Collector": "7vt99a",
   "Plush Catalogue": "46bpdt",
   "Needle and Thread": "10111wp",
-  "Plush Cherub": "16zn475",
-  "Plush Blood Imp": "1jq1dnd",
-  "Plush Goblin": "1aamqke",
+  "Plush Cherub": "17vv33o",
+  "Plush Blood Imp": "1jc24s",
+  "Plush Goblin": "1ws6qwh",
   "Plush Spell Slinger": "5yui08",
-  "Plush Salem": "1c3jdc3",
-  "Plush T-Rex": "11ssl6r",
-  "Plush Sanctified Knight": "sxbdhc",
-  "Patchwork Plush": "1m6hvk9",
-  "Mega Plush": "4jejkb",
+  "Plush Salem": "10idtuj",
+  "Plush T-Rex": "1iz4jbj",
+  "Plush Sanctified Knight": "f1ypyy",
+  "Patchwork Plush": "1nwsl5g",
+  "Mega Plush": "1mm2mxq",
 };
 
 /* ---------------- the AI ---------------- */
@@ -1978,9 +2001,9 @@ const bpLock = d => /flux cost by (?:up to )?\d+\.(?: You may banish[^.]*\.)? Yo
 function handCreatureOpts(g, p) {   // hand creatures with every way to pay for them (Blood Price)
   const W = phpW(g, p), spare = Math.floor(wasteSpare(p).length / 2), out = [], bpSeen = new Set();
   for (const c of p.hand) {
-    const d = c.d; if (d.kind !== "creature" || d.flux == null || (fluffy(c) && !hasClaw(p))) continue;
-    const disc = (d.fx && d.fx.patchwork ? Math.min(d.flux, p.waste.filter(fluffy).length) : 0)   // Patchwork Plush
-      + (fluffy(c) && says(p.field.c.d, /'Fluffy' creatures cost (\d+) less flux/i) ? num(p.field.c.d, /'Fluffy' creatures cost (\d+) less flux/i, 0) : 0);   // Claw Machine
+    const d = c.d; if (d.kind !== "creature" || d.flux == null || plushBlocked(g, p, c)) continue;
+    const disc = (d.fx && d.fx.patchwork && says(d, /costs 1 less flux for each/i) ? Math.min(d.flux, p.waste.filter(fluffy).length) : 0)   // Patchwork Plush
+      + (fluffy(c) && p.field && says(p.field.c.d, /'Fluffy' creatures cost (\d+) less flux/i) ? num(p.field.c.d, /'Fluffy' creatures cost (\d+) less flux/i, 0) : 0);   // Claw Machine
     const opts = [], lock = bpLock(d), maxK = lock && (p.once.has("BP:" + d.name) || bpSeen.has(d.name)) ? 0 : (d.bp || 0);
     if (lock) bpSeen.add(d.name);   // 2026-11-26: only one copy a turn gets the discount
     for (let k = 0; k <= maxK; k++) {
