@@ -109,8 +109,8 @@ creatures next to it) and Plush T-Rex (3 damage to the enemy in front of it, and
 for each Fluffy creature on the field and in your Waste Repository, and still gets cheaper. **Salem and Plush Salem are Noble** (so they fit Lord Lazarus's recipe). **Removal:** **Ritual Pit** is back as a Spell: destroy a creature, and
 its controller draws 1 card. **Goblin General** is now Hostile Takeover: once per turn, pay gold equal to a creature's
 current HP to destroy it (its old effects are gone). **Gob-omber**'s blast deals double damage to creatures that cost
-6 or more flux and to fusions. **Shotgun Wedding** needs at least one fusion splice from your field. **Underdog** (14.9): every creature
-that costs 1–3 flux deals 2 more combat damage to fusions. **The Flock is now The Feeble Fusion** (13): 2 or 3
+6 or more flux and to fusions. **Shotgun Wedding** needs at least one fusion splice from your field. **Underdog** (14.9): a few cheap
+creatures deal 2 more combat damage to fusions. **The Flock is now The Feeble Fusion** (13): 2 or 3
 creatures of any flux cost whose flux adds up to 7 or more, 6/16, with **Execute** (14.9). All saved decks, the starter decks included, were removed (the old ones are in
 `saves/versions/`).
 
@@ -529,8 +529,8 @@ you play them early.
 - **Community College of Magic:** whoever plays their 3rd spell in a turn gains 1 flux for that turn (both players).
 
 ### 14.9 Underdog & Execute (2026-11-27)
-- **Underdog:** "this creature deals 2 more combat damage to fusions." Every creature that costs 1–3 flux has it, so
-  small creatures can chip big fusions down. It counts when it attacks and when it hits back.
+- **Underdog:** "this creature deals 2 more combat damage to fusions." One or two cheap creatures per faction have it:
+  Acolyte Adam, Vein Ripper, Penny Stock Goblin, Velociraptor, Apprentice, Wild Magic Wizard and Plush Goblin. It counts when it attacks and when it hits back.
 - **Execute:** "when this creature deals combat damage to a creature, if that creature has half its max HP or less
   left, destroy it." Half rounds down: a 16 HP creature left at 8 or less is destroyed. Chapel Guard and Seraphim Wall
   can still save it. On The Feeble Fusion.

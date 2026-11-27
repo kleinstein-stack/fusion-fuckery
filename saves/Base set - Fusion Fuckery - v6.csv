@@ -14,9 +14,7 @@ Nuclear Waste,Continuous Spell,N/A,N/A,N/A,,"At the end of your turn: Roll a d6 
 4–6: It gains +2 ATK and +2 HP permanently.
 
 It's glowing. That's probably fine.",,,
-Cherub,Creature,1,2,1,6,"Underdog (this creature deals 2 more combat damage to fusions).
-
-Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
+Cherub,Creature,1,2,1,6,"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn't hit back).
 
 Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).
 
@@ -68,9 +66,7 @@ Blood Priest,Creature,4,8,5,4,"Pay 3 PHP: Reduce this creature's flux cost by 1.
 
 Whenever you sacrifice a creature: Gain 2 PHP.
 ",Blood Demon,Unholy / Humanoid,
-Blood Imp,Creature,1,2,1,7,"Underdog (this creature deals 2 more combat damage to fusions).
-
-Pay 3 PHP: Reduce this creature's flux cost by 1. You can only use this effect of Blood Imp once per turn.
+Blood Imp,Creature,1,2,1,7,"Pay 3 PHP: Reduce this creature's flux cost by 1. You can only use this effect of Blood Imp once per turn.
 
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.
 ",Blood Demon,Unholy / Beast / Winged,
@@ -124,9 +120,7 @@ Fossil 2 (you may materialize this creature from your Waste Repository by banish
 Dino egg,Creature,1,2,1,,"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including 'T-Rex'). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.",Dino,Prehistoric / Beast,yes
 Galorpian,Creature,4,7,3,,"Why are you blue?
 Once per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.",Galorpian,Amorphous,yes
-Goblin,Creature,1+d4,3,2,4,"Underdog (this creature deals 2 more combat damage to fusions).
-
-You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently. You can only use this effect of Goblin once per turn.
+Goblin,Creature,1+d4,3,2,4,"You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently. You can only use this effect of Goblin once per turn.
 
 
 
@@ -395,22 +389,14 @@ Shotgun Wedding,Spell,N/A,N/A,N/A,,"Materialize a fusion from your Fusion Deck, 
 
 You can only play 1 Shotgun Wedding per turn.",,,
 Claw Machine,Field Spell,N/A,N/A,N/A,,"Roll a d6: On a 6, you may materialize a 'Fluffy' creature from your Waste Repository. You can only use this effect of Claw Machine once per turn.",Plushy,,
-Arcade Kid,Creature,1,3,1,5,"Underdog (this creature deals 2 more combat damage to fusions).
-
-When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.",Plushy,Humanoid,
-Plush Collector,Creature,2,6,3,3,"Underdog (this creature deals 2 more combat damage to fusions).
-
-You may materialize a 'Fluffy' creature in a lane next to this creature, even if you don't control a Claw Machine. You can only use this effect of Plush Collector once per turn.",Plushy,Humanoid,
+Arcade Kid,Creature,1,3,1,5,"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.",Plushy,Humanoid,
+Plush Collector,Creature,2,6,3,3,"You may materialize a 'Fluffy' creature in a lane next to this creature, even if you don't control a Claw Machine. You can only use this effect of Plush Collector once per turn.",Plushy,Humanoid,
 Plush Catalogue,Spell,N/A,N/A,N/A,,"Search your deck for a card with 'Plush' in its name, except Plush Catalogue, show it to your opponent and put it into your hand.",Plushy,,
 Needle and Thread,Spell,N/A,N/A,N/A,,Return up to 2 'Fluffy' creatures from your Waste Repository to your hand.,Plushy,,
 Plush Cherub,Creature,1,2,1,6,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
 
-Underdog (this creature deals 2 more combat damage to fusions).
-
 Whenever another 'Fluffy' creature you control dies: Draw 1 card.",Plushy,Holy / Humanoid / Winged / Fluffy,
 Plush Blood Imp,Creature,1,2,1,7,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
-
-Underdog (this creature deals 2 more combat damage to fusions).
 
 When this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.",Plushy,Unholy / Beast / Winged / Fluffy,
 Plush Goblin,Creature,1+d4,3,2,4,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
@@ -419,8 +405,6 @@ Underdog (this creature deals 2 more combat damage to fusions).
 
 When materialized: Gain 1 gold.",Plushy,Greedy / Humanoid / Fluffy,
 Plush Spell Slinger,Creature,4,6,3,6,"(If this creature is materialized without a Claw Machine on the field, it's destroyed.)
-
-Underdog (this creature deals 2 more combat damage to fusions).
 
 Sacrifice this creature: Destroy a spell on the field.
 
@@ -449,9 +433,7 @@ Mega Plush,Fusion,8,24,,2,"{any 2 'Fluffy' creatures}
 
 Your other 'Fluffy' creatures have +1 ATK for each fusion splice under this creature.
 If your Claw Machine would leave the field: You may banish a fusion splice from under this creature instead. ",Plushy,Fluffy / Heavy,
-Compsognathus,Creature,1,2,1,7,"Underdog (this creature deals 2 more combat damage to fusions).
-
-When this creature dies: Put the top 2 cards of your deck into your Waste Repository.
+Compsognathus,Creature,1,2,1,7,"When this creature dies: Put the top 2 cards of your deck into your Waste Repository.
 
 
 
@@ -515,17 +497,13 @@ Until then: Whenever an enemy creature with a Complaint attacks, its controller 
 Apprentice,Creature,1,3,1,5,"Underdog (this creature deals 2 more combat damage to fusions).
 
 This creature has +1 ATK for each spell you've played this turn.",Wizard,Arcane / Humanoid,
-Frog Familiar,Creature,1,4,2,3,"Underdog (this creature deals 2 more combat damage to fusions).
-
-When this creature dies: Return a spell from your Waste Repository to your hand.",Wizard,Arcane / Beast,
+Frog Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,
 Wild Magic Wizard,Creature,2,4,2,4,"Underdog (this creature deals 2 more combat damage to fusions).
 
 When materialized: Draw 1 card, then discard 1 card.
 
 Certified (pending).",Wizard,Arcane / Humanoid,
-Spell Slinger,Creature,3,5,3,6,"Underdog (this creature deals 2 more combat damage to fusions).
-
-Whenever you play a spell: Deal 1 damage to your opponent.",Wizard,Arcane / Humanoid,
+Spell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,
 Night School Professor,Creature,3,8,4,3,"Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played. You can only use this effect of Night School Professor once per turn.
 
 
