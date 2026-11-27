@@ -451,7 +451,7 @@ Fossil 3 (you may materialize this creature from your Waste Repository by banish
 Necrosaurus,Fusion,9,22,N/A,4,"{any Prehistoric creature + any Unholy creature}
 This creature has +1 ATK for each 'Prehistoric' creature in your Waste Repository.",Dino / Blood Demon,Prehistoric / Unholy / Heavy,
 Chimera,Fusion,5,14,N/A,5,"{any 3 Beast creatures}
-Triple fusion: made from three Beasts, one in each of your lanes, of any flux cost. It takes the middle lane.",,Beast / Heavy / Winged,
+Triple fusion: any 3 Beast creatures of any flux cost (they don't need to cost 5 or more), one in each of your lanes. It takes the middle lane.",,Beast / Heavy / Winged,
 Blood Mage,Fusion,8,20,N/A,5,"{any Arcane creature + any Unholy creature}
 Choose one (you can only use this effect of Blood Mage once per turn):
 - Pay 4 PHP: Search your deck for a spell, show it to your opponent and put it into your hand.

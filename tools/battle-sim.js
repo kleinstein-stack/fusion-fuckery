@@ -1835,7 +1835,7 @@ const FX_TEXT = {
   "Fossil Fuel Baron": "12v3y6m",
   "The Flock": "rw239n",
   "Blood Mage": "xf6vpr",
-  "Chimera": "1hqqcjr",
+  "Chimera": "18xm1xy",
   "Crack a pack": "1ggj4lf",
   "Thiefling Sleight of Hand": "1y85wt2",
   "Nuclear Waste": "ml7cd9",
