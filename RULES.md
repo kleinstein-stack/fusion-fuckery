@@ -530,7 +530,7 @@ you play them early.
 
 ### 14.9 Underdog & Execute (2026-11-27)
 - **Underdog:** "this creature deals 2 more combat damage to fusions." One or two cheap creatures per faction have it:
-  Acolyte Adam, Vein Ripper, Penny Stock Goblin, Velociraptor, Apprentice, Wild Magic Wizard and Plush Goblin. It counts when it attacks and when it hits back.
+  Acolyte Adam, Vein Ripper, Penny Stock Goblin, Velociraptor, Wild Magic Wizard and Plush Goblin. It counts when it attacks and when it hits back.
 - **Execute:** "when this creature deals combat damage to a creature, if that creature has half its max HP or less
   left, destroy it." Half rounds down: a 16 HP creature left at 8 or less is destroyed. Chapel Guard and Seraphim Wall
   can still save it. On The Feeble Fusion.
