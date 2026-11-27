@@ -5,6 +5,12 @@ card frames, build decks, print A4 proxy sheets, and check balance.
 
 **Open it online:** https://kleinstein-stack.github.io/fusion-fuckery/
 
+**Play it:** https://kleinstein-stack.github.io/fusion-fuckery/play.html is a tabletop for two players on one
+computer (also the **▶ Play** button in the editor, and the art board's Play tab). It keeps the zones, PHP, flux, gold
+and damage, works out who strikes first and checks fusion recipes; the players do the card effects. Built by
+`tools/build.ps1` from `tools/play-template.html`, with the same built-in card list, and the card pictures from
+`art/cards/` (run `tools/art-previews.ps1 -Finished` after card changes).
+
 The game rules the editor uses are in [RULES.md](RULES.md).
 
 ## What it does

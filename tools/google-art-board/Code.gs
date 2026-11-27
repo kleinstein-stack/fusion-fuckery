@@ -1,6 +1,6 @@
 /**
- * Fusion Fuckery Art Board, served as a Google Apps Script web app. Four pages: the art board, a deck builder, the
- * players' decks and the rules.
+ * Fusion Fuckery Art Board, served as a Google Apps Script web app. Five pages: the art board, a deck builder, the
+ * players' decks, the rules and the tabletop (play.html on the GitHub Pages site, in a frame).
  *
  * The cards (names, stats, card text), the art briefs, the placeholder art, the card previews, the starter decks and
  * the rulebook come from the public GitHub repo, so the board follows the card editor. Submissions come from the art

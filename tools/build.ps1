@@ -19,4 +19,7 @@ $engine = [IO.File]::ReadAllText("$tools\battle-sim.js", $utf8).Replace("</scrip
 $t = $t.Replace("__BATTLE_ENGINE__", $engine)
 [IO.File]::WriteAllText("$root\card-editor.html", $t, $utf8)
 [IO.File]::WriteAllText("$root\index.html", $t, $utf8)
-"Built card-editor.html and index.html"
+# The tabletop (two players on one PC): tools\play-template.html with the same built-in card list and decks
+$play = [IO.File]::ReadAllText("$tools\play-template.html", $utf8).Replace("__CSV_DATA__", $json).Replace("__DECKS_DATA__", $decks)
+[IO.File]::WriteAllText("$root\play.html", $play, $utf8)
+"Built card-editor.html, index.html and play.html"

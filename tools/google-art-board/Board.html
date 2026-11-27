@@ -218,6 +218,7 @@ select { font: inherit; color: inherit; border: 1px solid var(--line); backgroun
       <button type="button" role="tab" data-v="build" aria-selected="false">Deck builder</button>
       <button type="button" role="tab" data-v="decks" aria-selected="false">Decks</button>
       <button type="button" role="tab" data-v="rules" aria-selected="false">Rules</button>
+      <button type="button" role="tab" data-v="play" aria-selected="false">Play</button>
     </div>
   </div>
 </nav>
@@ -305,6 +306,18 @@ select { font: inherit; color: inherit; border: 1px solid var(--line); backgroun
   <p class="state" id="decksState">Loading the decks…</p>
   <section class="decks-sec" id="secCommunity" hidden><h2>Player decks</h2><p class="lede">Added to the board by hand.</p><div class="deck-grid" id="gridCommunity"></div></section>
   <section class="decks-sec" id="secStarters" hidden><h2>Starter decks</h2><div class="deck-grid" id="gridStarters"></div></section>
+</div>
+
+<div class="wrap view" id="v-play" role="tabpanel" hidden>
+  <header class="vhead">
+    <p class="eyebrow">Fusion Fuckery</p>
+    <h1>Play</h1>
+    <p class="lede">A tabletop for two players on one computer. It keeps track of the zones, PHP, flux, gold and damage,
+      works out who strikes first and checks fusion recipes; you do the card effects, like at a real table. The deck
+      you're building in the Deck builder is ready to pick for Player 1. <a id="playOpen" href="#" target="_blank" rel="noopener">Open it in its own tab</a>
+      for more room.</p>
+  </header>
+  <iframe id="playFrame" title="Fusion Fuckery tabletop" style="width:100%;height:86vh;border:0;border-radius:12px;background:#13161c"></iframe>
 </div>
 
 <div class="wrap view" id="v-rules" role="tabpanel" hidden>
@@ -599,7 +612,16 @@ function showView(v) {
   if (v === "build" && B) openBuilder();
   if (v === "decks" && B) openDecks();
   if (v === "rules") openRules();
+  if (v === "play") openPlay();
   window.scrollTo(0, 0);
+}
+// The tabletop lives on the GitHub Pages site (play.html, built from tools/play-template.html). The deck builder's deck
+// goes along in the address, so it can be picked for Player 1. The frame only loads once, so a game in progress stays.
+const PLAY_URL = "https://kleinstein-stack.github.io/fusion-fuckery/play.html";
+function openPlay() {
+  const url = PLAY_URL + (Object.keys(DK.cards).length ? "#deck1=" + encodeURIComponent(JSON.stringify({ name: DK.name || "My deck", cards: DK.cards })) : "");
+  $("playOpen").href = url;
+  if (!$("playFrame").getAttribute("src")) $("playFrame").src = url;
 }
 $("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showView(b.dataset.v); });
 
@@ -875,7 +897,7 @@ function showRules(text) {
 
 /* ---------- start ---------- */
 api("getBoard").then(render, fail);
-{ const last = store.get("ff-board-tab"); if (["build", "decks", "rules"].includes(last)) showView(last); }
+{ const last = store.get("ff-board-tab"); if (["build", "decks", "rules", "play"].includes(last)) showView(last); }
 </script>
 </body>
 </html>

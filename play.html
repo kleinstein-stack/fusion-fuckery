@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fusion Fuckery Tabletop</title>
+<!-- Built by tools/build.ps1 from tools/play-template.html: two players on one PC. The page keeps the bookkeeping
+     (zones, PHP, flux, gold, damage, winded, who strikes first, fusing) and the players do the card effects. -->
+<style>
+:root {
+  --bg: #13161c; --felt: #1b2a24; --felt2: #16231e; --line: #2f4a3f; --ink: #eef2ee; --mute: #9fb0a7;
+  --gold: #f2cf5b; --red: #e0574f; --blue: #6aa8ff; --panel: #1d2128; --panel2: #262b33;
+  --cw: 96px; --ch: 134px; --sw: 70px; --sh: 98px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 14px/1.35 system-ui, "Segoe UI", sans-serif; }
+button { font: inherit; color: inherit; background: var(--panel2); border: 1px solid #3a414c; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--gold); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: #6b5317; border-color: var(--gold); color: #fff6d6; font-weight: 600; }
+input, select, textarea { font: inherit; color: var(--ink); background: #11141a; border: 1px solid #3a414c; border-radius: 6px; padding: 5px 8px; }
+h1, h2, h3 { margin: 0 0 8px; }
+.hidden { display: none !important; }
+
+/* ---------- setup ---------- */
+#setup { max-width: 980px; margin: 0 auto; padding: 24px 16px; }
+#setup h1 { color: var(--gold); font-size: 28px; }
+.setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.pcol { background: var(--panel); border: 1px solid #333a44; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.pcol textarea { min-height: 150px; resize: vertical; }
+.pcol .info { color: var(--mute); font-size: 13px; white-space: pre-line; }
+.pcol .info b.bad { color: var(--red); } .pcol .info b.ok { color: #7fd18b; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.note { color: var(--mute); font-size: 13px; }
+
+/* ---------- game layout ---------- */
+#game { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
+#table { background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt2) 100%); overflow: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+#side { background: var(--panel); border-left: 1px solid #333a44; display: flex; flex-direction: column; min-height: 0; }
+.side-block { padding: 10px 12px; border-bottom: 1px solid #333a44; }
+#inspect { min-height: 120px; }
+#inspect img { width: 100%; border-radius: 8px; display: block; }
+#inspect .txt { font-size: 12.5px; white-space: pre-wrap; margin-top: 6px; color: #d8e0da; }
+#inspect .st { font-size: 12.5px; color: var(--gold); margin-top: 4px; }
+#log { flex: 1; overflow: auto; padding: 8px 12px; font-size: 12.5px; color: #cdd6d0; }
+#log div { padding: 2px 0; border-bottom: 1px solid #262b33; }
+#log div.t { color: var(--gold); font-weight: 600; border-bottom-color: #4a3f1c; }
+.dice { display: flex; flex-wrap: wrap; gap: 4px; }
+.dice button { padding: 3px 7px; font-size: 12px; }
+
+.pbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0,0,0,.28); border-radius: 8px; padding: 5px 10px; }
+.pbar .nm { font-weight: 700; font-size: 15px; }
+.pbar.active .nm::after { content: " ● turn"; color: var(--gold); font-size: 12px; }
+.stat { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.06); border-radius: 6px; padding: 2px 4px 2px 8px; }
+.stat b { min-width: 22px; text-align: center; }
+.stat button { padding: 0 6px; line-height: 18px; font-size: 13px; }
+.piles { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.piles button { font-size: 12.5px; padding: 3px 8px; }
+
+.zone-row { display: flex; gap: 8px; justify-content: center; align-items: flex-end; }
+.lanes { display: flex; gap: 22px; justify-content: center; }
+.slot { position: relative; width: var(--cw); height: var(--ch); border: 2px dashed var(--line); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #4f6f61; font-size: 11px; text-align: center; }
+.slot.small { width: var(--sw); height: var(--sh); }
+.slot.field { border-color: #5a4f2c; }
+.slot.target { border-color: var(--gold); border-style: solid; box-shadow: 0 0 0 3px rgba(242,207,91,.35); cursor: pointer; }
+.lane-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.lane-stats { font-size: 12px; min-height: 17px; color: #e8efe9; white-space: nowrap; }
+.lane-stats .hp { color: #ff9b94; } .lane-stats .sp { color: var(--blue); } .lane-stats .at { color: var(--gold); }
+.mid { height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 2px 40px; opacity: .5; }
+
+.card { position: relative; width: 100%; height: 100%; border-radius: 7px; overflow: hidden; cursor: pointer; background: #222; box-shadow: 0 2px 6px rgba(0,0,0,.5); transition: transform .12s; }
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card.winded { transform: rotate(90deg) scale(.86); }
+.card.sel { outline: 3px solid var(--gold); }
+.card.target { outline: 3px solid var(--red); }
+.card .badge { position: absolute; right: 3px; top: 3px; background: rgba(0,0,0,.8); color: #fff; font-size: 11px; border-radius: 4px; padding: 0 4px; }
+.card .dmg { position: absolute; left: 3px; top: 3px; background: var(--red); color: #fff; font-weight: 700; font-size: 12px; border-radius: 10px; padding: 0 6px; }
+.card .fd { position: absolute; inset: auto 0 0 0; background: rgba(0,0,0,.75); font-size: 10px; text-align: center; color: var(--gold); }
+.fallback { width: 100%; height: 100%; padding: 6px; background: linear-gradient(#2c3340, #1c2028); font-size: 9.5px; overflow: hidden; }
+.fallback b { display: block; font-size: 11px; color: var(--gold); margin-bottom: 2px; }
+.fallback i { display: block; color: var(--mute); margin-bottom: 3px; }
+
+#hand { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; padding: 6px; background: rgba(0,0,0,.25); border-radius: 10px; min-height: calc(var(--ch) + 14px); }
+#hand .slot { border: none; }
+#hand .hidden-hand { color: var(--mute); align-self: center; }
+.phasebar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.phase { padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.06); font-size: 12px; color: var(--mute); }
+.phase.on { background: var(--gold); color: #222; font-weight: 700; }
+.banner { text-align: center; background: #6b5317; color: #fff6d6; border-radius: 8px; padding: 6px; font-weight: 600; }
+
+/* ---------- menus & dialogs ---------- */
+#menu { position: fixed; z-index: 50; background: #222831; border: 1px solid #4a5260; border-radius: 8px; padding: 6px; min-width: 210px; box-shadow: 0 8px 24px rgba(0,0,0,.6); max-height: 80vh; overflow: auto; }
+#menu .mt { font-weight: 700; color: var(--gold); padding: 2px 6px 6px; border-bottom: 1px solid #3a414c; margin-bottom: 4px; }
+#menu button { display: block; width: 100%; text-align: left; border: none; background: none; padding: 5px 8px; border-radius: 5px; }
+#menu button:hover:not(:disabled) { background: #333b47; }
+#menu .adj { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px; gap: 6px; }
+#menu .adj span { flex: 1; } #menu .adj button { width: auto; display: inline-block; background: #333b47; padding: 1px 9px; }
+#menu hr { border: none; border-top: 1px solid #3a414c; margin: 4px 0; }
+.dlg { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dlg-in { background: var(--panel); border: 1px solid #4a5260; border-radius: 12px; padding: 16px; max-width: min(900px, 96vw); max-height: 90vh; overflow: auto; }
+.pick { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.pick .it { width: 110px; display: flex; flex-direction: column; gap: 4px; align-items: stretch; font-size: 12px; }
+.pick .it .slot { width: 110px; height: 154px; border: none; }
+.pick .it.no { opacity: .45; }
+.seq { margin: 8px 0; padding-left: 18px; } .seq li { margin: 3px 0; }
+#pass { position: fixed; inset: 0; z-index: 80; background: #0b0d11; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+#pass h2 { color: var(--gold); font-size: 30px; }
+#prompt { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); z-index: 40; background: #6b5317; color: #fff6d6; padding: 6px 14px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+#toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 90; background: #222831; border: 1px solid var(--gold); padding: 8px 14px; border-radius: 8px; }
+@media (max-width: 1100px) { #game { grid-template-columns: 1fr; height: auto; } #side { max-height: 60vh; } :root { --cw: 80px; --ch: 112px; --sw: 60px; --sh: 84px; } }
+</style>
+</head>
+<body>
+
+<!-- ================= setup ================= -->
+<div id="setup">
+  <h1>Fusion Fuckery Tabletop</h1>
+  <p class="note">Two players, one screen. The table keeps track of zones, PHP, flux, gold, damage and winded creatures, works out
+    who strikes first, and checks fusion recipes. <b>Card effects are up to you</b>, like at a real table: use the card menus to
+    move cards, deal damage and change stats. Ctrl+Z undoes. Rules: see the rulebook.</p>
+  <div class="setup-grid">
+    <div class="pcol" data-p="0">
+      <h2>Player 1</h2>
+      <input class="pname" value="Player 1" maxlength="24" aria-label="Player 1 name">
+      <select class="pdeck" aria-label="Player 1 deck"></select>
+      <textarea class="plist" placeholder="Paste a deck list: one card per line, like &quot;3 Chapel Guard&quot; or &quot;3x Chapel Guard&quot;" aria-label="Player 1 deck list"></textarea>
+      <div class="info"></div>
+    </div>
+    <div class="pcol" data-p="1">
+      <h2>Player 2</h2>
+      <input class="pname" value="Player 2" maxlength="24" aria-label="Player 2 name">
+      <select class="pdeck" aria-label="Player 2 deck"></select>
+      <textarea class="plist" placeholder="Paste a deck list: one card per line, like &quot;3 Chapel Guard&quot; or &quot;3x Chapel Guard&quot;" aria-label="Player 2 deck list"></textarea>
+      <div class="info"></div>
+    </div>
+  </div>
+  <div class="row">
+    <label>Who goes first? <select id="firstSel"><option value="coin">Flip a coin</option><option value="0">Player 1</option><option value="1">Player 2</option></select></label>
+    <button class="primary" id="startBtn">Start game</button>
+    <button id="resumeBtn" class="hidden">Resume the last game</button>
+  </div>
+</div>
+
+<!-- ================= game ================= -->
+<div id="game" class="hidden">
+  <div id="table">
+    <div class="pbar" id="bar1"></div>
+    <div class="zone-row" id="spells1"></div>
+    <div class="lanes" id="lanes1"></div>
+    <div class="mid"></div>
+    <div class="lanes" id="lanes0"></div>
+    <div class="zone-row" id="spells0"></div>
+    <div class="pbar" id="bar0"></div>
+    <div id="hand"></div>
+  </div>
+  <div id="side">
+    <div class="side-block">
+      <div class="phasebar" id="phases"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="nextPhase">Next phase</button>
+        <button id="respondBtn" title="Let the other player look at their hand to play an Instant, Descend or flip a face-down spell">Let opponent respond</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="undoBtn" title="Ctrl+Z">Undo</button>
+        <button id="redrawBtn" class="hidden">Free redraw</button>
+        <button id="menuBtn">Game menu</button>
+      </div>
+    </div>
+    <div class="side-block">
+      <div class="dice" id="dice"></div>
+    </div>
+    <div class="side-block" id="inspect"><span class="note">Hover a card to see it here.</span></div>
+    <div id="log" aria-live="polite"></div>
+  </div>
+</div>
+
+<div id="menu" class="hidden" role="menu"></div>
+<div id="prompt" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+<div id="pass" class="hidden"><h2></h2><p class="note"></p><button class="primary"></button></div>
+
+<script>
+"use strict";
+/* ============================== data ============================== */
+const CSV_TEXT = "Name,Type,ATK,HP,Flux Cost,Speed,Description,Faction,Attribute,Cold Storage\r\nRitual Pit,Continuous Spell,N/A,N/A,N/A,,Once per turn: Banish an \u0027Unholy\u0027 creature from your Waste Repository. Your next fusion this turn may use an \u0027Unholy\u0027 creature that costs 3 or 4 flux as one of its fusion splices.,Blood Demon,,yes\r\nThe bodega,Continuous Spell,N/A,N/A,N/A,,\"At the end of your turn: You may discard 1 card, then draw 1 card. If you discarded an \u0027Ordinary\u0027 creature, put a Complaint on an enemy creature.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,,yes\r\nPrimordial Soup,Continuous Spell,N/A,N/A,N/A,,\"At the end of your turn: Put the top card of your deck into your Waste Repository.\n\nAt the start of your turn: Roll a d20. On a 1, destroy every creature on the field.\",Dino,,\r\nBull Run,Continuous Spell,N/A,N/A,N/A,,\"While you have 5 or more gold in your pool, the first time you gain gold each turn: Gain 2 more gold.\",Goblin,,\r\nGoblin Bank,Continuous Spell,N/A,N/A,N/A,,\"At the start of your turn: Gain 1 gold, unless you have 5 or more gold in your pool.\",Goblin,,\r\nNuclear Waste,Continuous Spell,N/A,N/A,N/A,,\"At the end of your turn: Roll a d6 for a random creature you control.\n1: Destroy it.\n2–3: Nothing happens.\n4–6: It gains +2 ATK and +2 HP permanently.\n\nIt\u0027s glowing. That\u0027s probably fine.\",,,\r\nCherub,Creature,1,2,1,6,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nRadiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nWhen materialized: Restore 2 HP to another creature.\",Angel,Holy / Humanoid / Winged,\r\nAcolyte Adam,Creature,1,5,2,2,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nRadiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nYou may restore 2 HP to another creature. You can only use this effect of Acolyte Adam once per turn.\n\",Angel,Holy / Humanoid,\r\nSanctified Knight,Creature,3,8,5,4,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nYour creatures in the lanes next to this creature take 1 less combat damage.\",Angel,Holy / Humanoid / Noble,\r\nJudicator Angel,Creature,6,12,7,7,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nWhen this creature Descends: The attacking creature gets -3 ATK until end of turn.\",Angel,Holy / Humanoid / Winged / Noble,\r\nChapel Guard,Creature,4,12,6,1,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nThe first time this creature would be destroyed, it survives with 1 HP instead.\n\nHalberd polished, posture perfect.\",Angel,Holy / Humanoid,\r\nPurifier Nun,Creature,2,10,4,3,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nWhen materialized: Restore 3 HP to any creature. If it\u0027s \u0027Unholy\u0027, deal 3 damage to it instead.\",Angel,Holy / Humanoid,\r\nBellkeeper Monk,Creature,3,10,6,2,\"Radiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nAt the start of your turn: Restore 1 HP to each of your creatures.\n\nYour Descends cost 1 less flux.\",Angel,Holy / Humanoid,\r\nBeelzechud,Creature,5,6,5,5,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1. You can only use this effect of Beelzechud once per turn.\n\nWhenever you lose PHP: This creature gains +1 ATK until end of turn.\n\",Blood Demon,Unholy / Humanoid / Winged,\r\nCarrion The Dark Duchess,Creature,3,10,5,3,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1. You can only use this effect of Carrion The Dark Duchess once per turn.\n\nAt the end of your turn: You may pay 2 PHP to return an \u0027Unholy\u0027 creature with 5 or less max HP from your Waste Repository to the field.\n\",Blood Demon,Unholy / Humanoid / Noble / Winged,\r\nNomed The Dark Viscount,Creature,6,11,7,5,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 2. You can only use this effect of Nomed The Dark Viscount once per turn.\n\nWhenever this creature deals combat damage: Gain 1 PHP.\n\",Blood Demon,Unholy / Humanoid / Noble / Winged,\r\nRenroc The Dark Marquis,Creature,5,8,7,6,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 2. You can only use this effect of Renroc The Dark Marquis once per turn.\n\nPay 3 PHP: Destroy a creature with 4 or less HP. You can only use this effect of Renroc The Dark Marquis once per turn.\n\",Blood Demon,Unholy / Humanoid / Noble,\r\nBlood Priest,Creature,4,8,5,4,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1. You can only use this effect of Blood Priest once per turn.\n\nWhenever you sacrifice a creature: Gain 2 PHP.\n\",Blood Demon,Unholy / Humanoid,\r\nBlood Imp,Creature,1,2,1,7,\"Pay 3 PHP: Reduce this creature\u0027s flux cost by 1. You can only use this effect of Blood Imp once per turn.\n\nWhen this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.\n\",Blood Demon,Unholy / Beast / Winged,\r\nVein Ripper,Creature,4,4,3,6,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 2. You can only use this effect of Vein Ripper once per turn.\n\",Blood Demon,Unholy / Beast,\r\nSalem,Creature,7,12,9,2,\"Pay 3 PHP per flux: Reduce this creature\u0027s flux cost by up to 3. You may banish 2 cards from your Waste Repository in place of each 3 PHP. You can only use this effect of Salem once per turn.\n\nSacrifice another creature you control: Draw 1 card, and this creature gains +2 ATK and +2 HP permanently. You can only use this effect of Salem once per turn.\n\",Blood Demon,Unholy / Amorphous,\r\nHemogoblin,Creature,1+d8,8,6,5,\"Pay 2 PHP: Gain 2 gold. You can only use this effect of Hemogoblin once per turn.\n\nPay 2 gold: This creature gains +2 Speed until end of turn. You can only use this effect of Hemogoblin once per turn.\n\",Goblin,Greedy / Unholy / Humanoid,\r\nAnkylosaurus,Creature,3,9,4,2,\"The first time each turn this creature would take damage, reduce that damage by 2.\n\n\n\n\n\nFossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Ankylosaurus once per turn.\",Dino,Prehistoric / Beast,\r\nBrontosaurus,Creature,4,15,7,1,\"When this creature destroys a creature in combat, the leftover damage hits your opponent.\n\nThis Late Jurassic giant could live up to 100 years, similar to a modern tortoise!\n\n\nFossil 4 (you may materialize this creature from your Waste Repository by banishing 4 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Brontosaurus once per turn.\",Dino,Prehistoric / Beast,\r\nTriceratops,Creature,4,9,5,3,\"When this creature destroys a creature in combat, the leftover damage hits your opponent.\n\n\n\n\n\nFossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Triceratops once per turn.\",Dino,Prehistoric / Beast,\r\nT-Rex,Creature,7,12,9,4,\"When this creature destroys a creature in combat, the leftover damage hits your opponent.\n\nWhen materialized from your Waste Repository: Deal 3 damage to the enemy creature in front of this creature.\n\n\nFossil 5 (you may materialize this creature from your Waste Repository by banishing 5 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil T-Rex once per turn.\",Dino,Prehistoric / Beast,\r\nVelociraptor,Creature,2,3,2,7,\"When this creature attacks: Deal 1 damage to a creature in a lane next to its target.\n\n\n\n\n\nFossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Velociraptor once per turn.\",Dino,Prehistoric / Beast,\r\nDino egg,Creature,1,2,1,,\"After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including \u0027T-Rex\u0027). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.\",Dino,Prehistoric / Beast,yes\r\nGalorpian,Creature,4,7,3,,\"Why are you blue?\nOnce per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.\",Galorpian,Amorphous,yes\r\nGoblin,Creature,1+d4,3,2,4,\"You may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently. You can only use this effect of Goblin once per turn.\n\n\n\n\n\n\nMr. Money Bags, self-proclaimed.\",Goblin,Greedy / Humanoid,\r\nPenny Stock Goblin,Creature,1+d2,2,1,5,\"Whenever you gain gold: This creature gains +1 ATK until end of turn.\n\nOn your turn: You may banish this creature to gain 1 gold.\n\n\n\n\n\nPenny stocks today. A yacht tomorrow.\",Goblin,Greedy / Humanoid,\r\nJohnny \u00275 inches\u0027,Creature,4,10,4,5,\"Whenever your opponent pays a fine: Gain 1 PHP and 1 gold.\n\nHe\u0027s walking here! Legend says he\u0027s Gregg\u0027s cousin from New York.\",Mundane,Ordinary / Humanoid / Greedy,yes\r\nGregg,Creature,5,8,3,4,\"Gregg has no effect, he\u0027s just a dude.\",Mundane,Ordinary / Humanoid,yes\r\nGregg\u0027s Friend Joe,Creature,4,9,4,5,\"When this creature attacks: Put a Complaint on the creature it attacks.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,Ordinary / Humanoid,yes\r\nGregg\u0027s Dawg,Creature,4,12,5,3,Your other \u0027Ordinary\u0027 creatures take 1 less combat damage.,Mundane,Ordinary / Beast / Guardian,yes\r\nBunny,Creature,2,3,1,,\"Your opponent can only attack creatures with the name \u0027Bunny\u0027 or fusions which have splices named \u0027bunny\u0027 while this card is on the field.\n\",Mundane,Beast,yes\r\nCat,Creature,3,7,2,6,\"At the end of your turn, if this creature didn\u0027t attack: Put a Complaint on an enemy creature.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,Ordinary / Beast,yes\r\nSpine Crawler,Creature,4,4,2,,Whenever this creature mutates: it gains +1 ATK.,Mutant,Fractured / Amorphous,yes\r\nFailed Clone,Creature,2,3,1,,When materialized: Mutate (D6).,Mutant,Fractured / Humanoid,yes\r\nMutation Host,Creature,4,5,3,,Once per turn: You may force another creature to mutate.,Mutant,Fractured / Amorphous,yes\r\nAdaptive Horror,Creature,7,8,5,,\"Whenever this creature mutates, it gains +1 ATK and +1 HP permanently.\n\",Mutant,Fractured / Humanoid,yes\r\nFlesh Lump,Creature,2,8,2,,Whenever this creature survives damage: Mutate (D6).,Mutant,Fractured / Amorphous,yes\r\nRadiation Hound,Creature,4,5,3,,Whenever another creature on the field mutates this creature mutates as well. (doesn\u0027t affect other radiation hounds),Mutant,Fractured / Beast,yes\r\nLab Escapee,Creature,3,5,2,,\"When materialized: Mutate (D6).\nWhen this creature mutates, you may restore 1hp to another \u0027Mutant\u0027 creature you control.\",Mutant,Fractured / Humanoid,yes\r\nBrain Sucker,Creature,3,5,3,,\"While attached, this creature gains +1 ATK for each card effect the host has.\",Parasite,Insect / Psychic,yes\r\nMind Worm,Creature,2,4,2,,\"When this card Infests a creature, the host\u0027s effects are negated until this card leaves the field.\",Parasite,Insect / Psychic,yes\r\nBone Leech,Creature,3,5,2,,\"While attached, the host\u0027s maximum HP is reduced by 2 HP. \",Parasite,Insect,yes\r\nCyst Spreader,Creature,4,4,3,,\"When the host this card is attached to is destroyed, you may Infest another enemy creature a ‘Parasite’ creature from your Waste Repository.\",Parasite,Insect,yes\r\nFlesh Tick,Creature,2,5,2,,\"When attached to a creature, the host cannot gain HP.\",Parasite,Insect,yes\r\nParasite Larva,Creature,1,3,1,,\"While attached, the host\u0027s damage get\u0027s reduced by -1 ATK. At the end of each turn, the host takes 1 damage.\n\",Parasite,Insect,yes\r\nEgg incubator,Equipment,N/A,N/A,N/A,,\"Equip this \u0027Egg incubator\u0027 to any \u0027egg\u0027 creature. The first time this equiped \u0027egg\u0027 were to take damage from a creature in combat, negate this damage.\",,,yes\r\nGregg\u0027s Vape,Spell,N/A,N/A,N/A,,\"Choose a creature you control with \u0027Gregg\u0027 in its name: It gains +4 ATK until end of turn. At the end of your turn, put a Complaint on it (no vaping indoors).\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,,yes\r\nSanctuary Bells,Field Spell,N/A,N/A,N/A,,\"At the end of your turn: Restore 1 HP to each \u0027Holy\u0027 creature on the field, yours and your opponent\u0027s.\n\nYour Descends cost 1 less flux.\",Angel,,\r\nGreggs,Field Spell,N/A,N/A,N/A,,At the end of each turn: Restore 1 HP to each creature with \u0027Gregg\u0027 in its name.,Mundane,,yes\r\nBrood Fog,Field Spell,N/A,N/A,N/A,,\"At the end of your turn, each Infested creature takes 1 damage.\nIf an Infested creature dies, the player controlling that creature draws 1 card.\",Parasite,,yes\r\nSeraphim Wall,Fusion,7,30,,1,\"{Chapel Guard + any Holy creature}\nYour creatures in the lanes next to this creature take 1 less combat damage.\n\nWhen one of your creatures would be destroyed: You may banish a fusion splice from under this creature. That creature survives with 1 HP instead.\n\",Angel,Holy / Guardian / Heavy,\r\nCrimson Cherub,Fusion,4,8,,,{Cherub + Blood Imp},Angel / Blood Demon,Abomination / (Un)Holy / Winged,yes\r\nAlexandru,Creature/Thiefling,3,5,3,,\"Once per turn, flip all coins you control. For each heads: steal a random card from your opponent’s hand, reveal it and put it on top of their deck.\",,,yes\r\nAlexanduex,Creature/Thiefling,7,15,N/A,,\"{2 \u0027Thiefling\u0027 creatures with \u0027Alex\u0027 in their name}\nOnce per turn, flip all coins you control. For each heads, choose one:\n• Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck.\n• Steal a card from your opponent’s field and shuffle it into their hand.\nTails do nothing.\",,,yes\r\nAlexandre,Creature/Thiefling,4,8,5,,\"Whenever you steal a card, coin, or Flux, this creature gains +1 ATK permanently.\",,,yes\r\nFallen Angel,Fusion,11,24,,6,\"{any Holy creature + any Unholy creature}\n\",Angel / Blood Demon,Holy / Unholy / Winged,\r\nLord Lazarus,Fusion,3,12,,2,\"{any 2 Noble creatures}\nThis creature has +3 ATK, +5 HP and +1 Speed for each fusion splice under it.\n\nPut a \u0027Noble\u0027 creature from your Waste Repository under this creature as a fusion splice. You can only use this effect of Lord Lazarus once per turn.\n\",Angel / Blood Demon,Noble,\r\nArch Cleric,Fusion,7,26,,3,\"{Bellkeeper Monk + any Holy creature}\nRadiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nAt the start of your turn: Restore 2 HP to a creature you control.\n\nBanish a fusion splice from under this creature: Restore 5 HP to a creature you control. You can only use this effect of Arch Cleric once per turn.\",Angel,Holy / Cleric,\r\nBeelzechad,Fusion,14,18,N/A,4,\"{Beelzechud + any Unholy creature}\nAt the end of your turn: Lose 2 PHP, unless you banish a fusion splice from under this creature.\n\nWhenever you lose PHP: This creature gains +1 ATK until end of turn.\n\nWhenever this creature destroys a creature in combat: Deal 2 damage to each enemy creature.\n\",Blood Demon,Unholy / Heavy,\r\nThe Meat Cathedral,Fusion,7,20,N/A,1,\"{Blood Priest + any Unholy creature}\nBanish 2 cards from your Waste Repository, or 1 fusion splice from under this creature: Restore 3 HP to a creature or gain 3 PHP. You can only use this effect of The Meat Cathedral once per turn.\n\nWhenever you banish creature(s) this way: This creature gains +1 ATK permanently.\n\",Blood Demon,Unholy / Guardian / Heavy,\r\nErgof The Dark Emperor,Fusion,9,20,N/A,6,\"{Nomed The Dark Viscount + Renroc The Dark Marquis}\nPay 4 PHP to destroy a creature with 5 or less HP, or banish a fusion splice from under this creature to destroy a creature with 8 or less HP. You can only use this effect of Ergof The Dark Emperor once per turn.\n\",Blood Demon,Unholy / Humanoid / Noble / Winged,\r\nTT-rex,Fusion,11,22,N/A,3,\"{T-Rex + any Prehistoric creature}\nWhen this creature destroys a creature in combat, the leftover damage hits your opponent.\n\nBanish a fusion splice from under this creature: Materialize a \u0027Prehistoric\u0027 creature from your Waste Repository without paying its Fossil cost. You can only use this effect of TT-rex once per turn.\n\nLife... uh, finds a way\",Dino,Prehistoric / Beast / Heavy,\r\nHop Goblin,Fusion,5+d12,20,N/A,3,\"{any 2 Greedy creatures}\nThis creature rolls its die once for each fusion splice under it and keeps the highest result. (If it has no fusion splices, it rolls once.)\n\nYou may invest any amount of gold from your pool onto this creature. For each gold invested, choose +2 ATK or +2 HP permanently. You can only use this effect of Hop Goblin once per turn.\n\",Goblin,Greedy / Small / Heavy,\r\nPurrramid,Fusion,6,18,N/A,2,\"{Cat + Cat}\nThis fusion can be made from creatures of any flux cost.\n\nAt the end of your turn, if this creature didn\u0027t attack: Restore 3 HP to it.\n\nThis furry purrramid is just so cute! :3\",Mundane,Ordinary / Beast / Heavy,yes\r\nCabbit,Fusion,4,8,N/A,,\"{Cat + Bunny}\nIf this creature doesn’t attack: Restore 1 HP to it at end phase.\nYour opponent can only attack creatures with the name \u0027Bunny\u0027 or fusions which have splices named \u0027bunny\u0027 while this card is on the field.\n\",Mundane,,yes\r\nHOA President,Fusion,11,26,N/A,2,\"{The Local Legend + any Ordinary creature}\nFines cost your opponent 1 more flux.\n\nOnce per turn, choose one:\n- Put a Complaint on an enemy creature.\n- Your \u0027Ordinary\u0027 creatures gain +2 ATK until end of turn.\n- Restore 3 HP to each of your \u0027Ordinary\u0027 creatures.\",Mundane,Ordinary / Humanoid / Noble,yes\r\nShort Change,Instant Spell/Thiefling,,,,,\"Target opponent loses 1 Flux. You gain 1 Flux this turn. If they had no Flux, draw 1 card.\",,,yes\r\nThe Local Legend,Fusion,9,22,N/A,4,\"{any 2 Ordinary creatures with different names}\nOnce per turn: Banish a fusion splice from under this creature to put a Complaint on each enemy creature.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,Ordinary / Humanoid,yes\r\nPatient Zero,Fusion,6,13,N/A,,\"{Mutation Host + any \u0027Mutant\u0027 creature}\nOnce per turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.\",Mutant,Abomination / Humanoid,yes\r\nThe Aberration,Fusion,7,12,N/A,,\"{2 Mutants}\nAt the start of your turn, you may place 1 Mutant from your Waste Repository under this card as a Fusion Splice. Max 3 Fusion Splices. Once per turn, you may banish 1 Fusion Splice and Horrifically Mutate (D12) this creature.\",Mutant,Abomination / Heavy,yes\r\nBrood Core,Fusion,5,18,N/A,,\"{Parasite Larva + Mind Worm}\nAttached enemy creatures have their effects negated. At the end of your turn, restore 2 HP to this card for each Infested creature on the field.\",Parasite,Insect / Psychic,yes\r\nThe Swarm Mind,Fusion,9,14,N/A,,\"{Queen Parasite + any Parasite}\nOnce per turn, you may move one attached Parasite from one host to another enemy creature. Whenever a Parasite is moved this way, the new host takes 2 damage.\",Parasite,Insect / Psychic,yes\r\nDivine Silence,Instant Spell,N/A,N/A,N/A,,Choose a creature: Negate its effects until end of turn.,Angel,,\r\nDivine Shelter,Instant Spell,N/A,N/A,N/A,,When an enemy creature attacks a creature you control: Prevent all damage that would be dealt to your creature in that fight.,Angel,,\r\nOpen Vein,Instant Spell,N/A,N/A,N/A,,\"Pay 3 PHP: Deal 3 damage to a creature. If that creature was already damaged, deal 5 damage instead.\",Blood Demon,,\r\nDetroit,Field Spell/Thiefling,N/A,N/A,N/A,,\"Can\u0027t have shit...\nAnytime a player steals an amount of cards, double that amount. Only one \u0027Detroit\u0027 field spell can be active at the same time.\n\n(Field Spell)\",,,yes\r\nSacrificial Lamb,Instant Spell,N/A,N/A,N/A,,Banish 2 \u0027Unholy\u0027 creatures from your Waste Repository to gain 6 PHP.,Blood Demon,,\r\nMarket Crash,Instant Spell,N/A,N/A,N/A,,Pay 5 gold: All \u0027Greedy\u0027 creatures you control gain +3 ATK until end of turn.,Goblin,,\r\nHOA Complaint,Instant Spell,N/A,N/A,N/A,,\"Put a Complaint on an enemy creature. If it already had one, it also loses its effects until end of turn.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,,yes\r\nTax Evasion,Instant Spell,N/A,N/A,N/A,,\"When an enemy creature attacks an \u0027Ordinary\u0027 creature you control: Prevent up to 5 combat damage to your creature in that fight, then put a Complaint on the attacker.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,,yes\r\n\"RS PRO 115mm Stainless Steel Curved Tweezers\n\",Instant Spell,N/A,N/A,N/A,,\"Remove one attached \u0027Parasite\u0027 creature from an infested creature (that \u0027Parasite\u0027 creature goes to your hand). If you do, deal 2 damage to that infested creature.\",Parasite,,yes\r\nThiefling Sleight of Hand,Instant Spell,N/A,N/A,N/A,,When your opponent plays a spell: It does nothing. Shuffle it into your deck instead of their Waste Repository; you can play it as if it were yours. (Give it back after the game.),,,yes\r\nLoaded Dice,Instant Spell,N/A,N/A,N/A,,\"Choose a coin flip or die roll, yours or your opponent\u0027s: You choose its result. That result doesn\u0027t trigger any side effects (like a Natural 20, or rolling the highest number on a die).\",,,\r\nBlood Demon Cigarettes,Spell,N/A,N/A,N/A,,Choose an \u0027Unholy\u0027 creature you control: It gains +4 ATK and +2 Speed until end of turn. Sacrifice it at the end of your turn.,Blood Demon,,\r\nBlood Pact Summoning Circle,Spell,N/A,N/A,N/A,,Pay 4 PHP: The next \u0027Unholy\u0027 creature you materialize this turn costs 2 less flux.,Blood Demon,,\r\nArchaeologist,Spell,N/A,N/A,N/A,,Put the top 2 cards of your deck into your Waste Repository. Then you may materialize a \u0027Prehistoric\u0027 creature from your Waste Repository by paying its Fossil cost.,Dino,,\r\nFossil Record,Spell,N/A,N/A,N/A,,Search your deck for up to 2 \u0027Prehistoric\u0027 creatures and put them into your Waste Repository.,Dino,,\r\nGoblin Shuffle,Spell,N/A,N/A,N/A,,\"Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards.\n\nFor each \u0027Greedy\u0027 creature you put on the bottom of your deck this way, gain 1 gold.\",Goblin,,\r\nGoblin Stock Broker,Spell,N/A,N/A,N/A,,\"Pay 3 gold: Choose a real stock, ETF or cryptocurrency ticker and write down its price now.\n\nAt the start of your next turn, look up the same asset again:\n- If it rose, double the invested gold and add it to your pool.\n- If it fell, lose the invested gold.\n- If it didn\u0027t change, flip a coin. Heads counts as rose, tails as fell.\nAfter that this card resolves.\",Goblin,,\r\nBad Bunny Concert tickets,Spell,N/A,N/A,N/A,,\"Turn any creature on the field into a creature named \u0027Bunny\u0027, it keeps it\u0027s ATK \u0026 HP but looses any effects and original atribute(s).\",Mundane,,yes\r\nCostco Hot Dog and Soda Comb for $1.5,Spell,N/A,N/A,N/A,,Restore 4 HP to an \u0027Ordinary\u0027 creature. Draw 1 card.,Mundane,,yes\r\nGenetic Collapse,Spell,,,,,\"Destroy a ‘Mutant’ creature you control. Deal damage equal to its ATK, to any creature on the field.\",Mutant,,yes\r\nForced Evolution,Spell,,,,,\"Choose a creature. It restores +2 HP, then mutates.\",Mutant,,yes\r\nHost Collapse,Spell,N/A,N/A,N/A,,Choose one Infested creature. It loses 3 ATK and 3 HP permanently.,Parasite,,yes\r\nInfection Burst,Spell,N/A,N/A,N/A,,Infest a target creature with a \u0027Parasite\u0027 creature from your hand or Waste Repository.,Parasite,,yes\r\nAnd for my next trick...,Spell,N/A,N/A,N/A,,\"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don\u0027t have any coins left. After stealing their coin, add this card to their deck and shuffel.\",,,yes\r\nCrack a pack,Spell,N/A,N/A,N/A,,\"Open a new, sealed booster pack. Add 1 card from it to your hand and banish the rest of the pack.\",,,\r\nEnergy Drink,Spell,N/A,N/A,N/A,,Choose a creature you control: Restore half its max HP (rounded down). It gains +2 Speed until end of turn. This doesn\u0027t trigger Radiance.,,,\r\nJar of Materialism,Spell,N/A,N/A,N/A,,\"Draw 1 card. Your opponent gains 4 PHP.\n\nJust different enough not to get sued...\",,,\r\nMicrowave,Spell,N/A,N/A,N/A,,\"Reheat a creature (not a fusion) from any Waste Repository and materialize it on your side of the field.\n\nYou can only play 1 Microwave per turn.\",,,\r\nPipebomb,Instant Spell,N/A,N/A,N/A,,Target 1 spell card: Negate it and destroy it!,,,\r\nSpace Squid,Spell,N/A,N/A,N/A,,\"Pay PHP equal to an enemy creature\u0027s flux cost (10 for a fusion): Take control of it until the start of your next turn. Move it to an empty lane on your side; if it was winded, it isn\u0027t any more. Then return it to its owner. If it\u0027s a fusion, you also control its fusion splices.\n\nYou can\u0027t play this card if you have no empty lane.\",,,\r\nUnfuse,Spell,N/A,N/A,N/A,,\"Break a fusion back down into its fusion splices and materialize them on the field. If there isn\u0027t room for all of them, the fusion\u0027s owner chooses which go to the Waste Repository.\",,,\r\nGoblin General,Creature,1+d6,6,5,4,\"When materialized: Choose another \u0027Greedy\u0027 creature you control and flip a coin. It gains +1 ATK (tails) or +2 ATK (heads).\n\nYou may invest any amount of gold from your pool onto this creature. For each gold invested, restore 1 HP to this creature. You can only use this effect of Goblin General once per turn.\n\",Goblin,Greedy / Humanoid,\r\nGob-omber,Creature,1+d6,6,5,6,\"On your turn, or when this creature dies: You may pay any amount of gold. If you do, banish this creature and deal that much damage to every creature on the field.\n\n\n\n\n\n\nZero trigger discipline. Plenty of triggers.\",Goblin,Greedy / Humanoid,\r\nGoblin Miner,Creature,d6,8,4,3,\"When materialized and at the start of your turn: Gain 1 gold.\n\nPay 2 gold: At the start of your next turn, gain 1 flux for that turn instead of 1 gold. You can only use this effect of Goblin Miner once per turn.\n\",Goblin,Greedy / Humanoid,\r\nScrooger,Fusion,4+d8,26,,3,\"{any Unholy creature + any Greedy creature}\nThis creature has +1 ATK for each fusion splice under it.\n\nWhenever another creature dies: Gain 1 gold or 1 PHP. If it was a creature you controlled (not a fusion), you may put it under this creature as a fusion splice instead.\n\",Blood Demon / Goblin,Unholy / Greedy,\r\nGabe,Creature,8,16,10,6,\"Descend (when an enemy creature attacks, you may materialize this creature from your hand by paying half its flux cost, rounded up; the attack hits this creature instead, and it doesn\u0027t hit back).\n\nWhen this creature Descends: Destroy the attacking creature if it has 6 HP or less.\n\nYou may restore 2 HP to a creature you control. You can only use this effect of Gabe once per turn.\",Angel,Holy / Humanoid / Winged,\r\nGoblin Pit Boss,Creature,2+d10,10,7,3,\"Whenever a \u0027Greedy\u0027 creature you control rolls the highest number on its die: Gain 2 gold.\n\nWhen a \u0027Greedy\u0027 creature you control rolls its die: You may pay 1 gold to roll it again and use the new result. You can only use this effect of Goblin Pit Boss once per turn.\n\n\n\n\nThe house always wins. He just works for the house.\",Goblin,Greedy / Humanoid,\r\nMountain Orc,Creature,5+d20,12,9,2,\"If you roll a: \n\nNatural 20: This attack also hits the creatures in the lanes next to its target. \n\nNatural 1: This attack deals 4 damage.\n\",Goblin,Greedy / Humanoid,\r\nIt\u0027s Free Fuse-Estate,Spell,N/A,N/A,N/A,,\"Fuse without paying the 2 flux.\n\n(Fusing: once per turn, 2 creatures you control in lanes next to each other that each cost 5 or more flux become the fusion splices of a fusion from your Fusion Deck whose recipe they meet. The fusion takes one of their lanes.)\",,,\r\nCrimson Altar,Field Spell,N/A,N/A,N/A,,When you fuse: You may sacrifice an \u0027Unholy\u0027 creature you control that isn\u0027t one of the fusion splices instead of paying the 2 flux.,Blood Demon,,\r\nSeraph of Judgment,Fusion,9,18,,8,\"{Judicator Angel + any Holy creature}\nRadiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nWhen this creature attacks: Restore 2 HP to each creature you control for each fusion splice under this creature.\n\",Angel,Holy / Winged,\r\nGoblin King,Fusion,3+d10,24,,3,\"{Goblin General + any Greedy creature}\nYour \u0027Greedy\u0027 creatures roll their dice twice and keep the higher result.\n\",Goblin,Greedy / Humanoid,\r\nGoblin Bombardier,Fusion,4+d8,22,,5,\"{Gob-omber + any Greedy creature}\nBanish a fusion splice from under this creature: Deal 6 damage to an enemy creature and 2 to the creatures in the lanes next to it. You can only use this effect of Goblin Bombardier once per turn.\",Goblin,Greedy / Humanoid,\r\nIndulgence Seller,Fusion,8,24,,3,\"{any Holy creature + any Greedy creature}\nRadiance (the first time each turn this creature is restored past its max HP, it gains your choice of +ATK or +HP equal to the extra, until your next turn).\n\nPay any amount of gold: Restore that much HP to a creature you control. Each fusion splice you banish from under this creature counts as 2 gold. You can only use this effect of Indulgence Seller once per turn.\n\",Angel / Goblin,Holy / Greedy,\r\nMarket Research,Spell,N/A,N/A,N/A,,\"Pay 2 gold: Search your deck for any \u0027Greedy\u0027 creature, show it to your opponent and put it into your hand.\",Goblin,,\r\nOverclock,Spell,N/A,N/A,N/A,,\"Feed the reactor: Send a card other than Overclock from your field to Oblivion. Gain 2 flux this turn.\n\n\n\n\n\n\n\n\n\nThe warning lights are mostly decorative.\",,,\r\nBlood Ledger,Continuous Spell,N/A,N/A,N/A,,\"Pay 2 PHP: Search your deck for an \u0027Unholy\u0027 creature, show it to your opponent and put it into your hand. You can only use this effect of Blood Ledger once per turn.\",Blood Demon,,\r\nYou\u0027re FIRED!,Spell,N/A,N/A,N/A,,Deal 1 damage to a creature. It loses 2 Speed.,,,\r\nMelting Pot,Field Spell,N/A,N/A,N/A,,Banish a creature from your Waste Repository: Your next fusion this turn may use a creature that costs 3 or 4 flux as one of its fusion splices. You can only use this effect of Melting Pot once per turn.,,,\r\nTwisted Dimensions,Field Spell,N/A,N/A,N/A,,\"Speed is reversed: the slower creature strikes first, and a tie still goes to the attacker. (This affects both players.)\",,,\r\nShotgun Wedding,Spell,N/A,N/A,N/A,,\"Materialize a fusion from your Fusion Deck, using creatures from your hand or your field that meet its recipe as its fusion splices. It isn\u0027t winded and can attack this turn, but not your opponent directly. Destroy it at the end of your turn.\n\nYou can only play 1 Shotgun Wedding per turn.\",,,\r\nClaw Machine,Field Spell,N/A,N/A,N/A,,\"Roll a d6: On a 6, you may materialize a \u0027Fluffy\u0027 creature from your Waste Repository. You can only use this effect of Claw Machine once per turn.\",Plushy,,\r\nArcade Kid,Creature,1,3,1,5,\"When materialized: You may search your deck for a Claw Machine, show it to your opponent and put it into your hand.\",Plushy,Humanoid,\r\nPlush Collector,Creature,2,6,3,3,\"You may materialize a \u0027Fluffy\u0027 creature in a lane next to this creature, even if you don\u0027t control a Claw Machine. You can only use this effect of Plush Collector once per turn.\",Plushy,Humanoid,\r\nPlush Catalogue,Spell,N/A,N/A,N/A,,\"Search your deck for a card with \u0027Plush\u0027 in its name, except Plush Catalogue, show it to your opponent and put it into your hand.\",Plushy,,\r\nNeedle and Thread,Spell,N/A,N/A,N/A,,Return up to 2 \u0027Fluffy\u0027 creatures from your Waste Repository to your hand.,Plushy,,\r\nPlush Cherub,Creature,1,2,1,6,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\n\nWhenever another \u0027Fluffy\u0027 creature you control dies: Draw 1 card.\",Plushy,Holy / Humanoid / Winged / Fluffy,\r\nPlush Blood Imp,Creature,1,2,1,7,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\n\nWhen this creature dies: Deal 2 damage to any creature, or to your opponent if they control no creatures.\",Plushy,Unholy / Beast / Winged / Fluffy,\r\nPlush Goblin,Creature,1+d4,3,2,4,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\n\nWhen materialized: Gain 1 gold.\",Plushy,Greedy / Humanoid / Fluffy,\r\nPlush Spell Slinger,Creature,4,6,3,6,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\n\nSacrifice this creature: Destroy a spell on the field.\n\n\n\n\nIt squeaks when it casts.\",Plushy,Arcane / Humanoid / Fluffy,\r\nPlush Salem,Creature,3,9,5,4,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\nWhen this creature is destroyed: Draw 1 card, then discard 1 card.\",Plushy,Unholy / Amorphous / Fluffy,\r\nPlush T-Rex,Creature,4,10,6,7,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\nWhen this creature dies: Deal 3 damage to the enemy creature in front of it.\",Plushy,Prehistoric / Beast / Fluffy,\r\nPlush Sanctified Knight,Creature,3,10,5,3,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\nWhen this creature dies: Deal 1 damage to the creatures in the lanes next to it.\",Plushy,Holy / Humanoid / Noble / Fluffy,\r\nPatchwork Plush,Creature,3,14,10,1,\"(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\n\nThis creature has +2 ATK and +2 HP for each \u0027Fluffy\u0027 creature on the field and in your Waste Repository.\n\nThis creature costs 1 less flux for each \u0027Fluffy\u0027 creature in your Waste Repository (not below 0).\n\n\n\",Plushy,Fluffy / Amorphous,\r\nMega Plush,Fusion,8,24,,2,\"{any 2 \u0027Fluffy\u0027 creatures}\n(If this creature is materialized without a Claw Machine on the field, it\u0027s destroyed.)\n\nYour other \u0027Fluffy\u0027 creatures have +1 ATK for each fusion splice under this creature.\nIf your Claw Machine would leave the field: You may banish a fusion splice from under this creature instead. \",Plushy,Fluffy / Heavy,\r\nCompsognathus,Creature,1,2,1,7,\"When this creature dies: Put the top 2 cards of your deck into your Waste Repository.\n\n\n\n\n\nFossil 1 (you may materialize this creature from your Waste Repository by banishing 1 other card from your Waste Repository instead of paying its flux cost). You can only Fossil Compsognathus once per turn.\",Dino,Prehistoric / Beast,\r\nDilophosaurus,Creature,3,5,4,5,\"When materialized: Deal 2 damage to the enemy creature in front of this creature.\n\n\n\n\n\nFossil 2 (you may materialize this creature from your Waste Repository by banishing 2 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Dilophosaurus once per turn.\",Dino,Prehistoric / Beast,\r\nPteranodon,Creature,4,7,6,7,\"When materialized from your Waste Repository: Return another \u0027Prehistoric\u0027 creature from your Waste Repository to your hand.\n\n\n\n\nFossil 3 (you may materialize this creature from your Waste Repository by banishing 3 other cards from your Waste Repository instead of paying its flux cost). You can only Fossil Pteranodon once per turn.\",Dino,Prehistoric / Beast / Winged,\r\nNecrosaurus,Fusion,9,22,N/A,4,\"{any Prehistoric creature + any Unholy creature}\nThis creature has +1 ATK for each \u0027Prehistoric\u0027 creature in your Waste Repository.\",Dino / Blood Demon,Prehistoric / Unholy / Heavy,\r\nChimera,Fusion,5,14,N/A,5,\"{any 3 Beast creatures}\nTriple fusion: any 3 Beast creatures of any flux cost (they don\u0027t need to cost 5 or more), one in each of your lanes. It takes the middle lane.\",,Beast / Heavy / Winged,\r\nBlood Mage,Fusion,8,20,N/A,5,\"{any Arcane creature + any Unholy creature}\nChoose one (you can only use this effect of Blood Mage once per turn):\n- Pay 4 PHP: Search your deck for a spell, show it to your opponent and put it into your hand.\n- Banish a fusion splice from under this creature: It gains +2 ATK until end of turn.\n\",Wizard / Blood Demon,Arcane / Unholy / Humanoid,\r\nThe Flock,Fusion,8,18,N/A,7,\"{any 2 Winged creatures}\nBanish a fusion splice from under this creature: Materialize a \u0027Winged\u0027 creature from your Waste Repository. You can only use this effect of The Flock once per turn.\",,Winged,\r\nFossil Fuel Baron,Fusion,7,22,N/A,3,\"{any Prehistoric creature + any Greedy creature}\nWhenever a card is banished from your Waste Repository: Gain 1 gold.\n\nYou may invest any amount of gold from your pool onto this creature. For each gold invested, choose +1 ATK or +1 HP permanently. You can only use this effect of Fossil Fuel Baron once per turn.\n\n\nTurns out dinosaurs are worth a fortune. Just not alive.\",Dino / Goblin,Prehistoric / Greedy / Beast,\r\nAbsolute Unit,Fusion,12,34,N/A,1,\"{any 2 Heavy fusions}\nThis creature has +1 ATK for each fusion splice under it.\n\n\n\n\n\n\n\nIn awe at the size of this lad.\",,Heavy,\r\nNosy Neighbor,Creature,5,11,6,3,\"When materialized: Put a Complaint on up to 2 enemy creatures.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,Ordinary / Humanoid,yes\r\nMall Cop Gary,Creature,7,16,9,2,\"Enemy creatures with a Complaint can\u0027t attack.\n\nOnce per turn: Put a Complaint on an enemy creature.\n\n(Complaint: the creature has -2 ATK for each one and its \u0027once per turn\u0027 effects don\u0027t work. Its controller may pay a 3 flux fine in their Main Phase to remove one.)\",Mundane,Ordinary / Humanoid,yes\r\nNeighborhood Watch,Spell,N/A,N/A,N/A,,\"This card stays in its spell zone for your opponent\u0027s next 2 turns, then goes to your Waste Repository. \n\nUntil then: Whenever an enemy creature with a Complaint attacks, its controller loses 2 PHP.\",Mundane,,yes\r\nApprentice,Creature,1,3,1,5,This creature has +1 ATK for each spell you\u0027ve played this turn.,Wizard,Arcane / Humanoid,\r\nFrog Familiar,Creature,1,4,2,3,When this creature dies: Return a spell from your Waste Repository to your hand.,Wizard,Arcane / Beast,\r\nWild Magic Wizard,Creature,2,4,2,4,\"When materialized: Draw 1 card, then discard 1 card.\n\nCertified (pending).\",Wizard,Arcane / Humanoid,\r\nSpell Slinger,Creature,3,5,3,6,Whenever you play a spell: Deal 1 damage to your opponent.,Wizard,Arcane / Humanoid,\r\nNight School Professor,Creature,3,8,4,3,\"Destroy a Frog on the field to cast Frog Bolt: Deal 5 damage to an enemy creature. Frog Bolt counts as a spell you played. You can only use this effect of Night School Professor once per turn.\n\n\n\n\n\n\nTonight\u0027s lesson: practical dissection.\",Wizard,Arcane / Humanoid,\r\nHead Librarian,Creature,3,9,5,3,\"The first time you play a spell each turn: You may draw 1 card.\n\nShhh.\",Wizard,Arcane / Humanoid,\r\nBattlemage,Creature,5,10,6,5,This creature has +1 ATK for each spell you\u0027ve played this turn.,Wizard,Arcane / Humanoid,\r\nThe Archmage,Creature,6,15,9,4,\"The first Spell or Instant Spell you play each turn resolves twice.\n\n\n\n\n\n\n\nHe learned it all from a 14 hour video essay.\",Wizard,Arcane / Humanoid / Noble,\r\nWizard Tower,Fusion,7,24,N/A,1,\"{any 2 Arcane creatures}\nBanish a fusion splice from under this creature: Return a Spell or Instant Spell from your Waste Repository to your hand.\",Wizard,Arcane / Heavy,\r\nSpellsword,Fusion,10,20,N/A,6,\"{Battlemage + any Arcane creature}\nWhenever you play a spell: This creature gains +2 ATK until end of turn.\",Wizard,Arcane / Humanoid,\r\nAbracadabra,Spell,N/A,N/A,N/A,,\"You can only play this if your Spellcount is 3 or more. Choose a creature that isn\u0027t a fusion: Return it to its owner\u0027s hand.\n\n(Spellcount: the number of spells you\u0027ve played this turn. A spell counts itself.)\n\n...and it\u0027s gone!\",Wizard,,\r\nCard Trick,Spell,N/A,N/A,N/A,,\"Choose a random card from your opponent\u0027s hand: They shuffle it into their deck, then draw 1 card.\n\nYou can only play 1 Card Trick per turn.\n\nIs this your card?\",Wizard,,\r\nPocket Fireball,Instant Spell,N/A,N/A,N/A,,\"Deal 2 damage to a creature or a player. If your Spellcount is 3 or higher: Deal 4 damage instead.\n\n(Spellcount: the number of spells you\u0027ve played this turn. A spell counts itself.)\",Wizard,,\r\nBig Fireball,Spell,N/A,N/A,N/A,,Pay any amount of flux: Deal that much damage to a creature.,Wizard,,\r\nDéjà Vu,Spell,N/A,N/A,N/A,,\"Play a one-shot spell (Spell or Instant Spell, not Déjà Vu) from your Waste Repository as if it were in your hand. Then banish it. You can only use this effect of Déjà Vu once per game.\",Wizard,,\r\nPolymorph,Spell,N/A,N/A,N/A,,\"Choose an enemy creature (not a fusion): Until the end of your next turn, it\u0027s a Frog with 1 ATK and no effects. Its HP doesn\u0027t change. Then it turns back, with the HP it had before this spell.\",Wizard,,\r\nSpelling Mistake,Instant Spell,N/A,N/A,N/A,,\"Swap a creature\u0027s ATK and HP, using the numbers it has right now. It stays swapped until it leaves the field. If its HP becomes 0, it\u0027s destroyed.\n\nIt was supposed to be a healing spell...\",Wizard,,\r\nExtra Credit,Spell,N/A,N/A,N/A,,\"You can only play this if your Spellcount is 3 or more. Choose a creature you control: It can attack twice this turn.\n\n(Spellcount: the number of spells you\u0027ve played this turn. A spell counts itself.)\n\nTeacher\u0027s pet.\",Wizard,,\r\nSpellbook,Continuous Spell,N/A,N/A,N/A,,\"At the end of your turn: If your Spellcount is 3 or more, you may draw 1 card.\n\n(Spellcount: the number of spells you\u0027ve played this turn. A spell counts itself.)\",Wizard,,\r\nCommunity College of Magic,Field Spell,N/A,N/A,N/A,,\"Whenever a player plays their 3rd spell in a turn: They gain 1 flux this turn.\n\nTHIS CARD NEEDS TO REWORKED, IF THIS IS BEING READ ON CARDBOARD I FUCKED UP!\",Wizard,,\r\n";
+const EMBEDDED_DECKS = {"decks":[],"current":0,"epoch":"2026-11-27"};
+const IMG = "art/cards/", BACK = "art/card-back.jpg";
+
+function parseCSV(text) {
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; continue; }
+    if (ch === '"') q = true; else if (ch === ",") { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+    else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+const slug = n => n.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const DB = new Map();
+(function loadCards() {
+  const rows = parseCSV(CSV_TEXT), head = rows.shift(), H = {}; head.forEach((h, i) => H[h.trim()] = i);
+  for (const r of rows) {
+    const name = (r[H["Name"]] || "").trim(); if (!name || (r[H["Cold Storage"]] || "").trim()) continue;
+    const type = (r[H["Type"]] || "").trim(), text = (r[H["Description"]] || "").trim();
+    const kind = /fusion/i.test(type) || (/^\{/.test(text) && /creature/i.test(type)) ? "fusion" : /creature/i.test(type) ? "creature" : "spell";
+    const atkS = (r[H["ATK"]] || "").trim(), m = atkS.match(/^(?:(\d+)\s*\+\s*)?d(\d+)$/i);
+    DB.set(name, { name, type, kind, text, atkS, atk: m ? +(m[1] || 0) : parseInt(atkS) || 0, die: m ? +m[2] : 0,
+      hp: parseInt(r[H["HP"]]) || 0, flux: parseInt(r[H["Flux Cost"]]), spd: parseInt(r[H["Speed"]]) || 4,
+      attrs: (r[H["Attribute"]] || "").split("/").map(s => s.trim().toLowerCase()).filter(Boolean), slug: slug(name),
+      recipe: (text.match(/^\{([^}]*)\}/) || [])[1] || null });
+  }
+})();
+const D = n => DB.get(n) || { name: n, type: "?", kind: "spell", text: "(not in the card list)", atk: 0, die: 0, hp: 0, spd: 4, attrs: [], slug: slug(n) };
+const isUnit = d => d.kind === "creature" || d.kind === "fusion";
+const fieldSpell = d => /field spell/i.test(d.type);
+const oneShot = d => d.kind === "spell" && !/continuous|field/i.test(d.type);
+
+/* ============================== decks ============================== */
+function savedDecks() {
+  const out = [];
+  try { const s = JSON.parse(localStorage.getItem("fusion-fuckery-decks")); if (s && s.decks) s.decks.forEach(d => out.push({ name: d.name, cards: d.cards, from: "Card editor" })); } catch (e) {}
+  try { const s = JSON.parse(localStorage.getItem("ff-deck")); if (s && s.cards && Object.keys(s.cards).length) out.push({ name: s.name || "Deck builder deck", cards: s.cards, from: "Art board" }); } catch (e) {}
+  (EMBEDDED_DECKS.decks || []).forEach(d => { if (!out.some(x => x.name === d.name)) out.push({ name: d.name, cards: d.cards, from: "Saved" }); });
+  for (const k of ["deck1", "deck2"]) {   // play.html#deck1=<json> from the art board's Play tab
+    const m = location.hash.match(new RegExp(k + "=([^&]+)"));
+    if (m) try { const d = JSON.parse(decodeURIComponent(m[1])); if (d && d.cards) out.unshift({ name: d.name || "Deck builder deck", cards: d.cards, from: "Art board", hashKey: k }); } catch (e) {}
+  }
+  return out;
+}
+const norm = s => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+const BYNORM = new Map([...DB.keys()].map(n => [norm(n), n]));
+function parseList(text) {
+  const cards = {}, unknown = []; let name = "";
+  for (let line of text.split(/\r?\n/)) {
+    line = line.trim(); if (!line || /^(##|\/\/)/.test(line)) continue;
+    const h = line.match(/^#\s*(.+)/); if (h) { name = h[1].trim(); continue; }
+    let m = line.match(/^(\d+)\s*x?\s+(.+)$/i) || line.match(/^(.+?)\s+x\s*(\d+)$/i), q = 1, n = line;
+    if (m) { if (/^\d/.test(m[1])) { q = +m[1]; n = m[2]; } else { n = m[1]; q = +m[2]; } }
+    const real = BYNORM.get(norm(n)); if (real) cards[real] = (cards[real] || 0) + q; else unknown.push(n);
+  }
+  return { name, cards, unknown };
+}
+function deckInfo(cards) {
+  let main = 0, fus = 0; const bad = [];
+  for (const [n, q] of Object.entries(cards)) { if (!DB.has(n)) { bad.push(n); continue; } if (DB.get(n).kind === "fusion") fus += q; else main += q; if (q > 3) bad.push(`${n} ×${q} (max 3)`); }
+  return { main, fus, bad };
+}
+
+/* ============================== state ============================== */
+let S = null, UNDO = [], uidN = 1;
+const P = i => S.players[i], OPP = i => 1 - i;
+const save = () => { try { localStorage.setItem("ff-play-game", JSON.stringify({ S, uidN })); } catch (e) {} };
+function snap() { UNDO.push(JSON.stringify({ S, uidN })); if (UNDO.length > 80) UNDO.shift(); }
+function undo() { if (!UNDO.length) return toast("Nothing to undo."); const o = JSON.parse(UNDO.pop()); S = o.S; uidN = o.uidN; closeMenu(); clearPrompt(); render(); save(); }
+function act(fn) { snap(); try { fn(); } finally { checkDeaths(); render(); save(); } }
+const inst = (n, owner) => ({ uid: uidN++, n, owner, dmg: 0, mAtk: 0, mHp: 0, mSpd: 0, winded: false, attacked: false, arrived: 0, faceDown: false, setTurn: 0, under: [] });
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function log(t, cls) { S.log.unshift({ t, cls }); if (S.log.length > 400) S.log.pop(); }
+const nm = i => P(i).name;
+
+function newGame(cfg) {
+  S = { turn: 0, active: 0, first: 0, phase: "main1", viewer: 0, fusedTurn: -1, players: [], log: [], winner: null, redraw: [false, false] };
+  cfg.forEach((c, i) => {
+    const p = { name: c.name, deck: [], hand: [], fdeck: [], waste: [], obl: [], lanes: [null, null, null], zones: [null, null, null], field: null,
+      php: 30, flux: 0, maxFlux: 3, gold: 0, sc: 0, turns: 0 };
+    for (const [n, q] of Object.entries(c.cards)) for (let k = 0; k < q; k++) (D(n).kind === "fusion" ? p.fdeck : p.deck).push(inst(n, i));
+    shuffle(p.deck); S.players.push(p);
+  });
+  S.first = cfg.first; S.active = cfg.first; S.viewer = cfg.first;
+  log(`${nm(cfg.first)} goes first.`, "t");
+  S.players.forEach((p, i) => { drawN(i, 5, true); });
+  UNDO = []; startTurn(true);
+}
+function drawN(i, n, quiet) {
+  const p = P(i);
+  for (let k = 0; k < n; k++) {
+    if (!p.deck.length) { p.php -= 5; log(`${p.name} can't draw: −5 PHP (${p.php}).`); continue; }
+    p.hand.push(p.deck.pop());
+  }
+  if (!quiet) log(`${p.name} draws ${n}.`);
+}
+function startTurn(firstEver) {
+  if (!firstEver) S.active = OPP(S.active);
+  const i = S.active, p = P(i); S.turn++; p.turns++; S.phase = "draw"; p.sc = 0; S.players.forEach(q => q.sc = 0);
+  for (const u of p.lanes) if (u) { u.winded = false; u.attacked = false; }
+  log(`Turn ${S.turn}: ${p.name}`, "t");
+  const isFirstTurnOfGame = p.turns === 1 && i === S.first;
+  if (!isFirstTurnOfGame) drawN(i, 1);
+  S.phase = "reactor"; S.viewer = i;
+  render(); save();
+  showPass(i, () => reactorDialog());
+}
+function reactorDialog() {
+  const i = S.active, p = P(i), firstTurn = p.turns === 1;
+  const finish = (skip) => {
+    snap();
+    if (!firstTurn && !skip) p.maxFlux = Math.min(10, p.maxFlux + 1);
+    if (skip) { drawN(i, 1, true); log(`${p.name} skips: no +1 max flux, draws 1 extra card.`); }
+    p.flux = p.maxFlux + (firstTurn && i !== S.first ? 1 : 0);
+    log(`${p.name} has ${p.flux} flux${firstTurn && i !== S.first ? " (+1 for going second)" : ""}.`);
+    S.phase = "main1"; render(); save();
+  };
+  if (firstTurn) return finish(false);
+  dialog(`Reactor phase: ${p.name}`, d => {
+    d.append(el("p", "note", `Max flux ${p.maxFlux} → ${Math.min(10, p.maxFlux + 1)}, then refill. Or skip: no +1 max flux, draw 1 extra card. (Feed the reactor any time from a card in your hand: +1 flux this turn.)`));
+    const r = el("div", "row");
+    r.append(btn(`Raise max flux (+1)`, () => { d.close(); finish(false); }, "primary"), btn(`Skip and draw 1`, () => { d.close(); finish(true); }));
+    d.append(r);
+  }, true);
+}
+function endTurn() {
+  const p = P(S.active);
+  if (p.hand.length > 8) { toast(`${p.name} has ${p.hand.length} cards: discard down to 8 first (card menu → Discard).`); return; }
+  log(`${p.name} ends the turn.`);
+  startTurn(false);
+}
+const PHASES = [["draw", "Draw"], ["reactor", "Reactor"], ["main1", "Main 1"], ["battle", "Battle"], ["main2", "Main 2"], ["end", "End"]];
+function nextPhase() {
+  const k = PHASES.findIndex(x => x[0] === S.phase);
+  if (S.phase === "main2" || S.phase === "end") return endTurn();
+  snap(); S.phase = PHASES[Math.min(k + 1, 4)][0];
+  if (S.phase === "battle" && S.turn === 1) log("Nobody attacks on the first turn of the game.");
+  render(); save();
+}
+
+/* ============================== locating cards ============================== */
+function find(uid) {
+  for (let i = 0; i < 2; i++) {
+    const p = P(i);
+    for (const z of ["hand", "deck", "fdeck", "waste", "obl"]) { const k = p[z].findIndex(c => c.uid === uid); if (k >= 0) return { i, z, k, c: p[z][k] }; }
+    for (let l = 0; l < 3; l++) { if (p.lanes[l] && p.lanes[l].uid === uid) return { i, z: "lanes", k: l, c: p.lanes[l] }; if (p.zones[l] && p.zones[l].uid === uid) return { i, z: "zones", k: l, c: p.zones[l] }; }
+    if (p.field && p.field.uid === uid) return { i, z: "field", k: 0, c: p.field };
+  }
+  return null;
+}
+function take(uid) {
+  const f = find(uid); if (!f) return null; const p = P(f.i);
+  if (f.z === "lanes" || f.z === "zones") p[f.z][f.k] = null; else if (f.z === "field") p.field = null; else p[f.z].splice(f.k, 1);
+  return f.c;
+}
+const reset = c => { c.dmg = 0; c.mAtk = 0; c.mHp = 0; c.mSpd = 0; c.winded = false; c.attacked = false; c.faceDown = false; return c; };
+function toPile(c, z) {   // a card (and its fusion splices) goes to its owner's pile
+  const p = P(c.owner), all = [c, ...allUnder(c)];
+  for (const x of all) { x.under = []; reset(x); const q = P(x.owner); (z === "hand" && D(x.n).kind === "fusion" ? q.fdeck : q[z]).push(x); }
+}
+function allUnder(c) { const out = []; (c.under || []).forEach(x => { out.push(x); out.push(...allUnder(x)); }); return out; }
+const spliceCount = c => allUnder(c).length;
+const maxHp = c => D(c.n).hp + c.mHp, curHp = c => maxHp(c) - c.dmg, atkOf = c => D(c.n).atk + c.mAtk, spdOf = c => D(c.n).spd + c.mSpd;
+const atkLabel = c => (atkOf(c) + (D(c.n).die ? (atkOf(c) ? "+" : "") + "d" + D(c.n).die : "")).replace(/^0\+/, "");
+function fieldHas(name) { return S.players.some(p => p.field && p.field.n === name && !p.field.faceDown); }
+function checkDeaths() {
+  if (!S) return;
+  for (let i = 0; i < 2; i++) for (let l = 0; l < 3; l++) {
+    const c = P(i).lanes[l];
+    if (c && curHp(c) <= 0) { P(i).lanes[l] = null; log(`${D(c.n).name} is destroyed.`); toPile(c, D(c.n).kind === "fusion" ? "waste" : "waste"); }
+  }
+  for (let i = 0; i < 2; i++) if (P(i).php <= 0 && S.winner == null) { S.winner = OPP(i); log(`${nm(OPP(i))} wins! (${nm(i)} is at ${P(i).php} PHP)`, "t"); }
+}
+
+/* ============================== actions ============================== */
+function materialize(uid, lane, side, opts = {}) {
+  const c = take(uid); if (!c) return; const p = P(side), d = D(c.n);
+  reset(c); c.under = c.under || []; c.arrived = S.turn; c.ctrl = side;
+  if (opts.winded) c.winded = true;
+  p.lanes[lane] = c;
+  if (opts.pay) p.flux -= opts.pay;
+  log(`${p.name} ${opts.how || "materializes"} ${d.name}${opts.pay ? ` (${opts.pay} flux)` : ""}.`);
+  if (/Fluffy/i.test(d.attrs.join(" ")) && /without a Claw Machine on the field/i.test(d.text) && !fieldHas("Claw Machine") && !opts.noClawCheck)
+    log(`No Claw Machine on the field: ${d.name} is destroyed (unless a card says otherwise — undo if so).`), p.lanes[lane] = null, toPile(c, "waste");
+}
+function playSpell(uid, faceDown) {
+  const f = find(uid), c = f.c, d = D(c.n), p = P(f.i);
+  if (fieldSpell(d)) {
+    if (faceDown) return toast("Field Spells can't be set face down.");
+    snap(); take(uid); if (p.field) { log(`${D(p.field.n).name} goes to the Waste Repository.`); toPile(p.field, "waste"); }
+    reset(c); p.field = c; p.sc++; log(`${p.name} plays ${d.name} (Spellcount ${p.sc}).`); render(); save(); return;
+  }
+  const z = p.zones.findIndex(x => !x); if (z < 0) return toast("No empty spell zone.");
+  snap(); take(uid); reset(c); p.zones[z] = c;
+  if (faceDown) { c.faceDown = true; c.setTurn = S.turn; log(`${p.name} sets a spell face down.`); }
+  else { p.sc++; log(`${p.name} plays ${d.name} (Spellcount ${p.sc}).${oneShot(d) ? " Resolve it, then send it to the Waste Repository." : ""}`); }
+  render(); save();
+}
+function chooseLane(side, empty, msg, then) {
+  const lanes = [0, 1, 2].filter(l => empty ? !P(side).lanes[l] : true);
+  if (!lanes.length) return toast("No empty lane.");
+  setPrompt(msg, { lanes: lanes.map(l => ({ side, l })) }, t => then(t.l));
+}
+
+/* ---------- combat ---------- */
+const NB = [[1], [0, 2], [1]];
+function roll(n) { return 1 + Math.floor(Math.random() * n); }
+function hitVal(c) { const d = D(c.n); if (!d.die) return { v: Math.max(0, atkOf(c)), r: null }; const r = roll(d.die); return { v: Math.max(0, atkOf(c) + r), r }; }
+function strikesFirst(att, e) {   // 2026-11-27: no attacker's +1; a tie goes to the attacker. Twisted Dimensions: slower first.
+  const a = spdOf(att), b = spdOf(e); if (a === b) return true;
+  return fieldHas("Twisted Dimensions") ? a < b : a > b;
+}
+function planFight(aUid, target) {
+  const A = find(aUid).c, steps = [], i = S.active, o = OPP(i);
+  let aHp = curHp(A);
+  const hit = (src, dst, isPlayer) => { const h = hitVal(src); steps.push({ src: src.uid, dst: isPlayer ? null : dst.uid, player: isPlayer ? o : null, n: h.v, r: h.r }); return h.v; };
+  if (target.player) {
+    const lane = find(aUid).k, near = NB[lane].map(l => P(o).lanes[l]).filter(Boolean);
+    const early = near.filter(e => !e.winded && !strikesFirst(A, e)).sort((x, y) => spdOf(y) - spdOf(x));
+    const after = near.filter(e => !e.winded && strikesFirst(A, e)), late = near.filter(e => e.winded);
+    for (const e of early) { aHp -= hit(e, A); }
+    if (aHp > 0) hit(A, null, true); else steps.push({ note: `${D(A.n).name} is destroyed before it reaches ${nm(o)}.` });
+    for (const e of after) if (aHp > 0) aHp -= hit(e, A);
+    for (const e of late) if (aHp > 0) { steps.push({ note: `${D(e.n).name} is winded, so it hits back last.` }); aHp -= hit(e, A); }
+  } else {
+    const T = find(target.uid).c; let tHp = curHp(T);
+    if (T.winded) { steps.push({ note: `${D(T.n).name} is winded and can't hit back.` }); hit(A, T); }
+    else if (strikesFirst(A, T)) { tHp -= hit(A, T); if (tHp > 0) hit(T, A); else steps.push({ note: `${D(T.n).name} is destroyed before it hits back.` }); }
+    else { aHp -= hit(T, A); if (aHp > 0) hit(A, T); else steps.push({ note: `${D(A.n).name} is destroyed before it hits.` }); }
+  }
+  return steps;
+}
+function fightDialog(aUid, target) {
+  const A = find(aUid).c, steps = planFight(aUid, target), o = OPP(S.active);
+  const tName = target.player ? nm(o) : D(find(target.uid).c.n).name;
+  dialog(`${D(A.n).name} attacks ${tName}`, d => {
+    const T = target.player ? null : find(target.uid).c;
+    d.append(el("p", "note", `Speed ${spdOf(A)} vs ${T ? spdOf(T) : "—"}${fieldHas("Twisted Dimensions") ? " (Twisted Dimensions: slower strikes first)" : ""}. A tie goes to the attacker. Card effects that change damage (Divine Shelter, Sanctified Knight, Ankylosaurus…) aren't applied: undo or adjust by hand.`));
+    const ol = el("ol", "seq");
+    for (const s of steps) {
+      if (s.note) { ol.append(el("li", "", s.note)); continue; }
+      const src = D(find(s.src).c.n).name, dst = s.player != null ? nm(s.player) : D(find(s.dst).c.n).name;
+      ol.append(el("li", "", `${src} hits ${dst} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""}.`));
+    }
+    d.append(ol);
+    const r = el("div", "row");
+    r.append(btn("Apply", () => { d.close(); act(() => {
+      A.winded = true; A.attacked = true; log(`${D(A.n).name} attacks ${tName}.`);
+      for (const s of steps) {
+        if (s.note) { log("  " + s.note); continue; }
+        const src = find(s.src); if (!src) continue;
+        if (s.player != null) { P(s.player).php -= s.n; log(`  ${D(src.c.n).name} hits ${nm(s.player)} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""} → ${P(s.player).php} PHP.`); }
+        else { const t = find(s.dst); if (!t) continue; t.c.dmg += s.n; log(`  ${D(src.c.n).name} hits ${D(t.c.n).name} for ${s.n}${s.r != null ? ` (rolled ${s.r})` : ""} → ${curHp(t.c)}/${maxHp(t.c)}.`); }
+      }
+    }); }, "primary"), btn("Roll again", () => { d.close(); fightDialog(aUid, target); }), btn("Cancel", () => d.close()));
+    d.append(r);
+  });
+}
+function startAttack(uid) {
+  const f = find(uid), A = f.c, d = D(A.n), o = OPP(S.active);
+  if (S.turn === 1) return toast("Nobody attacks on the first turn of the game.");
+  if (A.attacked) return toast(`${d.name} has already attacked this turn.`);
+  if (d.kind === "fusion" && A.arrived === S.turn) return toast("A fusion can't attack the turn it's made (it's winded).");
+  const lanes = [f.k, ...NB[f.k]].filter(l => P(o).lanes[l]).map(l => ({ side: o, l, card: true }));
+  const canFace = !P(o).lanes[f.k];
+  setPrompt(`Choose what ${d.name} attacks${canFace ? " (or the player)" : ""}`, { lanes, player: canFace ? o : null }, t => {
+    if (t.player != null) fightDialog(uid, { player: true }); else fightDialog(uid, { uid: P(o).lanes[t.l].uid });
+  });
+}
+
+/* ---------- fusing ---------- */
+function recipeParts(rec) {
+  return rec.split("+").map(s => s.trim()).filter(Boolean).map(p => {
+    const m = p.match(/^any\s+(?:(\d+)\s+)?'?([\w-]+)'?\s+(creatures?|fusions?)$/i);
+    if (m) return { n: +(m[1] || 1), attr: m[2].toLowerCase(), fusion: /^fusion/i.test(m[3]) };
+    const r = BYNORM.get(norm(p)); return r ? { n: 1, name: r } : { n: 1, unknown: p };
+  });
+}
+function recipeFits(fd, mats) {
+  if (!fd.recipe) return true;
+  const slots = []; for (const p of recipeParts(fd.recipe)) for (let k = 0; k < p.n; k++) slots.push(p);
+  if (slots.length !== mats.length) return false;
+  const ok = (s, c) => { const d = D(c.n); return s.unknown ? true : s.name ? d.name === s.name : s.fusion ? d.kind === "fusion" && d.attrs.includes(s.attr) : d.attrs.includes(s.attr); };
+  const used = Array(mats.length).fill(false);
+  const go = k => { if (k === slots.length) return true; for (let j = 0; j < mats.length; j++) if (!used[j] && ok(slots[k], mats[j])) { used[j] = true; if (go(k + 1)) return true; used[j] = false; } return false; };
+  return go(0);
+}
+const recipeSize = fd => fd.recipe ? recipeParts(fd.recipe).reduce((s, p) => s + p.n, 0) : 2;
+function fuseDialog(uid) {
+  const f = find(uid), i = f.i, p = P(i), mine = [0, 1, 2].map(l => p.lanes[l]);
+  const pairs = NB[f.k].filter(l => mine[l]).map(l => [f.c, mine[l]]);
+  if (!pairs.length && !mine.every(Boolean)) return toast("Fusing needs two of your creatures in lanes next to each other.");
+  if (S.fusedTurn === S.turn) toast("You've already fused this turn (once per turn) — go ahead only if a card allows it.");
+  dialog(`Fuse ${D(f.c.n).name}`, d => {
+    d.append(el("p", "note", `Pick the fusion. Green = the recipe fits. Fusing costs 2 flux (you have ${p.flux}) and needs creatures printed at 5+ flux unless the fusion says "any flux cost" or a card (Melting Pot) allows it.`));
+    const big = c => D(c.n).kind === "fusion" || (D(c.n).flux || 0) >= 5;
+    const pick = el("div", "pick"), seen = new Set();
+    for (const fc of p.fdeck) {
+      if (seen.has(fc.n)) continue; seen.add(fc.n); const fd = D(fc.n), size = recipeSize(fd);
+      const mats = size === 3 ? (mine.every(Boolean) ? mine : null) : pairs.find(pr => recipeFits(fd, pr));
+      const fits = !!mats && recipeFits(fd, mats), cheap = mats && !/any flux cost/i.test(fd.text) && mats.some(c => !big(c));
+      const it = el("div", "it" + (fits ? "" : " no")); it.append(cardSlot(fc, false));
+      it.append(el("div", "", fits ? (cheap ? "Fits, but a splice costs under 5" : "Recipe fits") : "Recipe doesn't fit"));
+      it.append(btn(fits ? "Fuse" : "Fuse anyway", () => {
+        const use = mats || pairs[0]; if (!use) return toast("Not enough creatures for this fusion.");
+        d.close(); act(() => {
+          const lane = size === 3 ? 1 : find(use[0].uid).k, carried = use.reduce((s, c) => s + c.dmg, 0), wasWinded = false;
+          use.forEach(c => take(c.uid)); const fu = take(fc.uid); reset(fu);
+          fu.under = use; fu.dmg = carried; fu.winded = true; fu.arrived = S.turn; p.lanes[lane] = fu; p.flux -= 2; S.fusedTurn = S.turn;
+          log(`${p.name} fuses ${use.map(c => D(c.n).name).join(" + ")} into ${fd.name} (2 flux)${carried ? `, keeping ${carried} damage` : ""}. It's winded.`);
+        });
+      }, fits ? "primary" : ""));
+      pick.append(it);
+    }
+    if (!seen.size) pick.append(el("p", "note", "Your Fusion Deck is empty."));
+    d.append(pick, btn("Close", () => d.close()));
+  });
+}
+function unfuse(uid) {
+  act(() => {
+    const f = find(uid), c = f.c, p = P(f.i), parts = c.under; if (!parts.length) return;
+    const dmg = c.dmg, wind = c.winded; p.lanes[f.k] = null; c.under = []; reset(c); P(c.owner).fdeck.push(c);
+    const lanes = [f.k, ...[0, 1, 2].filter(l => l !== f.k && !p.lanes[l])];
+    parts.sort((a, b) => (D(b.n).hp + b.mHp) - (D(a.n).hp + a.mHp));
+    parts.forEach((x, k) => {
+      const under = x.under; reset(x); x.under = under || [];
+      const share = Math.floor(dmg / parts.length) + (k < dmg % parts.length ? 1 : 0);
+      x.dmg = Math.min(share, maxHp(x) - 1); x.winded = wind; x.arrived = S.turn;
+      if (k < lanes.length) p.lanes[lanes[k]] = x; else { log(`No room: ${D(x.n).name} goes to the Waste Repository.`); toPile(x, "waste"); }
+    });
+    log(`${D(c.n).name} is unfused into ${parts.map(x => D(x.n).name).join(" + ")}. Their "when materialized" effects trigger.`);
+  });
+}
+
+/* ============================== rendering ============================== */
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const btn = (t, fn, cls) => { const b = el("button", cls || "", t); b.type = "button"; b.addEventListener("click", fn); return b; };
+function cardFace(c, hidden) {
+  const box = el("div", "card"); box.dataset.uid = c.uid;
+  if (hidden) { const im = el("img"); im.src = BACK; im.alt = "Face-down card"; box.append(im); return box; }
+  const d = D(c.n), im = el("img"); im.src = IMG + d.slug + ".jpg"; im.alt = d.name; im.loading = "lazy";
+  im.onerror = () => { im.replaceWith(fallback(d)); };
+  box.append(im);
+  return box;
+}
+function fallback(d) {
+  const f = el("div", "fallback"); f.append(el("b", "", d.name), el("i", "", d.type + (isUnit(d) ? ` · ${d.atkS || d.atk}/${d.hp} · ${d.flux >= 0 ? d.flux + " flux" : ""}` : "")), document.createTextNode(d.text));
+  return f;
+}
+function cardSlot(c, hidden, small) {
+  const s = el("div", "slot" + (small ? " small" : "")); s.append(cardFace(c, hidden)); return s;
+}
+function laneCard(c, i) {
+  const wrap = el("div", "lane-wrap"), s = el("div", "slot"), face = cardFace(c, false);
+  if (c.winded) face.classList.add("winded");
+  if (c.dmg) face.append(el("span", "dmg", "−" + c.dmg));
+  if (c.under.length) face.append(el("span", "badge", `${spliceCount(c)} splice${spliceCount(c) > 1 ? "s" : ""}`));
+  s.append(face); wrap.append(s);
+  const st = el("div", "lane-stats");
+  st.innerHTML = `<span class="at">⚔ ${atkLabel(c)}</span> · <span class="hp">♥ ${curHp(c)}/${maxHp(c)}</span> · <span class="sp">» ${spdOf(c)}</span>`;
+  wrap.append(st); return wrap;
+}
+function emptyLane(side, l) {
+  const wrap = el("div", "lane-wrap"), s = el("div", "slot", "Lane " + (l + 1)); s.dataset.side = side; s.dataset.lane = l;
+  wrap.append(s, el("div", "lane-stats", "")); return wrap;
+}
+function render() {
+  if (!S) return;
+  const v = S.viewer, sides = [v, OPP(v)];
+  // bottom = viewer (ids "0"), top = other (ids "1")
+  sides.forEach((side, pos) => {
+    const p = P(side);
+    const lanes = document.getElementById("lanes" + pos); lanes.replaceChildren();
+    for (let l = 0; l < 3; l++) {
+      const c = p.lanes[l], w = c ? laneCard(c, side) : emptyLane(side, l);
+      if (!c) w.querySelector(".slot").dataset.side = side;
+      w.querySelector(".slot").dataset.side = side; w.querySelector(".slot").dataset.lane = l;
+      lanes.append(w);
+    }
+    const sp = document.getElementById("spells" + pos); sp.replaceChildren();
+    const fz = el("div", "slot small field", "Field Spell"); if (p.field) { fz.textContent = ""; fz.append(cardFace(p.field, false)); } sp.append(fz);
+    for (let z = 0; z < 3; z++) {
+      const s = el("div", "slot small", "Spell"), c = p.zones[z];
+      if (c) { s.textContent = ""; const hid = c.faceDown && side !== v, f = cardFace(c, hid); if (c.faceDown && !hid) f.append(el("span", "fd", "face down")); s.append(f); }
+      sp.append(s);
+    }
+    const bar = document.getElementById("bar" + pos); bar.replaceChildren(); bar.className = "pbar" + (S.active === side ? " active" : "");
+    bar.append(el("span", "nm", p.name));
+    const stat = (label, key, title) => {
+      const s = el("span", "stat"); s.title = title; s.append(document.createTextNode(label), el("b", "", String(p[key])));
+      s.append(btn("−", () => act(() => { p[key]--; log(`${p.name}: ${label.trim()} ${p[key]}`); })), btn("+", () => act(() => { p[key]++; log(`${p.name}: ${label.trim()} ${p[key]}`); })));
+      return s;
+    };
+    bar.append(stat("PHP ", "php", "Player Health Points"), stat("Flux ", "flux", `Max flux ${p.maxFlux}`), el("span", "note", `/${p.maxFlux}`), stat("Gold ", "gold", "Gold in your pool"), el("span", "note", `Spellcount ${p.sc}`));
+    const piles = el("span", "piles");
+    piles.append(btn(`Hand ${p.hand.length}`, () => side === v ? null : toast(`${p.name} has ${p.hand.length} cards in hand.`)),
+      btn(`Deck ${p.deck.length}`, () => deckMenu(side)), btn(`Fusion Deck ${p.fdeck.length}`, () => pileDialog(side, "fdeck")),
+      btn(`Waste ${p.waste.length}`, () => pileDialog(side, "waste")), btn(`Oblivion ${p.obl.length}`, () => pileDialog(side, "obl")));
+    bar.append(piles);
+  });
+  const hand = document.getElementById("hand"); hand.replaceChildren();
+  const hp = P(v); hp.hand.forEach(c => hand.append(cardSlot(c, false)));
+  if (!hp.hand.length) hand.append(el("span", "hidden-hand", `${hp.name}'s hand is empty.`));
+  // side panel
+  const ph = document.getElementById("phases"); ph.replaceChildren(el("span", "note", `Turn ${S.turn} · ${nm(S.active)}: `));
+  PHASES.forEach(([k, t]) => ph.append(el("span", "phase" + (S.phase === k ? " on" : ""), t)));
+  document.getElementById("nextPhase").textContent = S.phase === "main2" ? "End turn" : "Next phase";
+  document.getElementById("respondBtn").textContent = S.viewer === S.active ? `Let ${nm(OPP(S.active))} respond` : `Back to ${nm(S.active)}`;
+  const rd = document.getElementById("redrawBtn"), me = P(S.viewer);
+  rd.classList.toggle("hidden", !(me.turns <= 1 && !S.redraw[S.viewer] && me.hand.filter(c => D(c.n).kind === "creature").length <= 1 && S.turn <= 2));
+  const lg = document.getElementById("log"); lg.replaceChildren(...S.log.slice(0, 200).map(x => el("div", x.cls || "", x.t)));
+  if (S.winner != null) { lg.prepend(el("div", "t", `🏆 ${nm(S.winner)} wins the game!`)); }
+}
+
+/* ============================== card menus ============================== */
+let MENU_UID = null;
+function closeMenu() { document.getElementById("menu").classList.add("hidden"); MENU_UID = null; }
+function openMenu(uid, x, y) {
+  const f = find(uid); if (!f) return; const c = f.c, d = D(c.n), p = P(f.i), v = S.viewer, mine = f.i === v;
+  if (f.z === "hand" && !mine) return;
+  const m = document.getElementById("menu"); m.replaceChildren(); MENU_UID = uid;
+  const secret = c.faceDown && !mine;   // the other player's face-down spell: Pipebomb can still destroy it
+  m.append(el("div", "mt", secret ? "Face-down card" : d.name + (c.faceDown ? " (face down)" : "")));
+  const item = (t, fn, dis) => { const b = btn(t, () => { closeMenu(); fn(); }); b.disabled = !!dis; m.append(b); };
+  const adj = (label, get, set) => {
+    const r = el("div", "adj"); r.append(el("span", "", `${label}: ${get()}`));
+    r.append(btn("−", () => { act(() => set(-1)); openMenu(uid, x, y); }), btn("+", () => { act(() => set(+1)); openMenu(uid, x, y); }));
+    m.append(r);
+  };
+  const hr = () => m.append(el("hr"));
+  if (f.z === "hand") {
+    if (isUnit(d) && d.kind === "creature") {
+      item(`Materialize (pay ${d.flux} flux)`, () => chooseLane(f.i, true, `Choose a lane for ${d.name}`, l => act(() => materialize(uid, l, f.i, { pay: d.flux || 0 }))));
+      item("Materialize without paying", () => chooseLane(f.i, true, `Choose a lane for ${d.name}`, l => act(() => materialize(uid, l, f.i, {}))));
+      if (/Descend \(/.test(d.text)) item(`Descend (${Math.ceil((d.flux || 0) / 2)} flux, arrives winded)`, () => chooseLane(f.i, true, `Choose a lane for ${d.name}`, l => act(() => materialize(uid, l, f.i, { pay: Math.ceil((d.flux || 0) / 2), winded: true, how: "descends with" }))));
+    }
+    if (d.kind === "spell") { item("Play", () => playSpell(uid, false)); if (!fieldSpell(d)) item("Set face down", () => playSpell(uid, true)); }
+    hr();
+    item("Feed the reactor (+1 flux this turn)", () => act(() => { take(uid); P(c.owner).obl.push(reset(c)); p.flux++; log(`${p.name} feeds a card to the reactor: +1 flux (${p.flux}).`); }));
+    item("Discard (to Waste Repository)", () => act(() => { take(uid); toPile(c, "waste"); log(`${p.name} discards ${d.name}.`); }));
+    item("Show it to your opponent", () => act(() => log(`${p.name} shows ${d.name}.`)));
+    item("Banish (Oblivion)", () => act(() => { take(uid); toPile(c, "obl"); log(`${p.name} banishes ${d.name} from the hand.`); }));
+    item("Put on top of deck", () => act(() => { take(uid); p.deck.push(reset(c)); log(`${p.name} puts a card on top of the deck.`); }));
+    item("Shuffle into deck", () => act(() => { take(uid); p.deck.push(reset(c)); shuffle(p.deck); log(`${p.name} shuffles a card into the deck.`); }));
+  } else if (f.z === "lanes") {
+    const active = f.i === S.active;
+    if (active) item("Attack", () => startAttack(uid), S.phase !== "battle");
+    if (S.phase !== "battle" && active) m.lastChild.title = "Go to the Battle phase first";
+    if (active) item(d.kind === "fusion" ? "Fuse with a neighbour (fusions fuse too)" : "Fuse with a neighbour", () => fuseDialog(uid));
+    if (d.kind === "fusion" && c.under.length) {
+      item("Banish a fusion splice", () => spliceDialog(uid));
+      item("Unfuse", () => unfuse(uid));
+    }
+    hr();
+    adj("Damage", () => c.dmg, k => { c.dmg = Math.max(0, c.dmg + k); log(`${d.name}: ${curHp(c)}/${maxHp(c)} HP.`); });
+    adj("ATK", () => atkLabel(c), k => { c.mAtk += k; log(`${d.name}: ATK ${atkLabel(c)}.`); });
+    adj("Max HP", () => maxHp(c), k => { c.mHp += k; if (k > 0) {} log(`${d.name}: ${curHp(c)}/${maxHp(c)} HP.`); });
+    adj("Speed", () => spdOf(c), k => { c.mSpd += k; log(`${d.name}: Speed ${spdOf(c)}.`); });
+    item("Restore all HP", () => act(() => { c.dmg = 0; log(`${d.name} is restored to full HP.`); }));
+    item(c.winded ? "Stand up (not winded)" : "Turn sideways (winded)", () => act(() => { c.winded = !c.winded; }));
+    hr();
+    item("Move to another lane", () => chooseLane(f.i, true, `Move ${d.name} to…`, l => act(() => { p.lanes[f.k] = null; p.lanes[l] = c; log(`${d.name} moves lanes.`); })));
+    item("Move to the other side (take / give control)", () => chooseLane(OPP(f.i), true, `Move ${d.name} to which lane on the other side?`, l => act(() => { p.lanes[f.k] = null; P(OPP(f.i)).lanes[l] = c; c.winded = false; log(`${nm(OPP(f.i))} takes control of ${d.name}.`); })));
+    item("Destroy / sacrifice (to Waste)", () => act(() => { take(uid); toPile(c, "waste"); log(`${d.name} is destroyed.`); }));
+    item("Banish (Oblivion)", () => act(() => { take(uid); toPile(c, "obl"); log(`${d.name} is banished.`); }));
+    item("Return to its owner's hand", () => act(() => { take(uid); toPile(c, d.kind === "fusion" ? "fdeck" : "hand"); log(`${d.name} goes back to ${d.kind === "fusion" ? "the Fusion Deck" : "the hand"}.`); }));
+  } else if (f.z === "zones" || f.z === "field") {
+    if (c.faceDown && !secret) item("Flip and play it", () => act(() => {
+      if (c.setTurn === S.turn) log(`(Set this turn: normally it can't be played until the opponent's next turn.)`);
+      c.faceDown = false; p.sc++; log(`${p.name} flips and plays ${d.name} (Spellcount ${p.sc}).`);
+    }));
+    item(oneShot(d) && !c.faceDown ? "Resolved: send to Waste Repository" : "Destroy (to Waste Repository)", () => act(() => { take(uid); toPile(c, "waste"); log(`${d.name} goes to the Waste Repository${c.faceDown ? " (it was face down)" : ""}.`); }));
+    item("Banish (Oblivion)", () => act(() => { take(uid); toPile(c, "obl"); log(`${d.name} is banished.`); }));
+    if (!secret) item("Return to hand", () => act(() => { take(uid); toPile(c, "hand"); log(`${d.name} goes back to the hand.`); }));
+  }
+  m.classList.remove("hidden");
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 8)) + "px"; m.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 8)) + "px";
+}
+function spliceDialog(uid) {
+  const c = find(uid).c;
+  dialog(`Banish a fusion splice from ${D(c.n).name}`, d => {
+    const pick = el("div", "pick");
+    const leaves = []; const walk = list => list.forEach(x => x.under && x.under.length ? walk(x.under) : leaves.push({ x, list }));
+    walk(c.under);
+    leaves.forEach(({ x, list }) => { const it = el("div", "it"); it.append(cardSlot(x, false), btn("Banish", () => { d.close(); act(() => { list.splice(list.indexOf(x), 1); reset(x); P(x.owner).obl.push(x); log(`${D(c.n).name} banishes its fusion splice ${D(x.n).name}.`); }); })); pick.append(it); });
+    d.append(pick, btn("Close", () => d.close()));
+  });
+}
+function deckMenu(side) {
+  const p = P(side);
+  dialog(`${p.name}'s deck (${p.deck.length})`, d => {
+    const r = el("div", "row");
+    r.append(btn("Draw 1", () => { d.close(); act(() => drawN(side, 1)); }),
+      btn("Mill 1 (top card to Waste)", () => { d.close(); act(() => { const c = p.deck.pop(); if (c) { p.waste.push(c); log(`${p.name} mills ${D(c.n).name}.`); } }); }),
+      btn("Search the deck", () => { d.close(); pileDialog(side, "deck"); }),
+      btn("Shuffle", () => { d.close(); act(() => { shuffle(p.deck); log(`${p.name} shuffles.`); }); }),
+      btn("Close", () => d.close()));
+    d.append(r);
+  });
+}
+function pileDialog(side, z) {
+  const p = P(side), names = { fdeck: "Fusion Deck", waste: "Waste Repository", obl: "Oblivion", deck: "deck (searching)" };
+  if (z === "deck" && side !== S.viewer) return toast("Only its owner searches a deck.");
+  dialog(`${p.name}'s ${names[z]} (${p[z].length})`, d => {
+    const pick = el("div", "pick"), list = z === "deck" ? p[z].slice().sort((a, b) => a.n.localeCompare(b.n)) : p[z].slice().reverse();
+    for (const c of list) {
+      const it = el("div", "it"), dd = D(c.n); it.append(cardSlot(c, false));
+      const sel = el("select"); sel.setAttribute("aria-label", "Move " + dd.name);
+      sel.append(new Option("Move to…", ""));
+      if (z !== "hand") sel.append(new Option("Hand", "hand"));
+      if (isUnit(dd)) sel.append(new Option("A lane (materialize)", "lane"));
+      if (z !== "waste") sel.append(new Option("Waste Repository", "waste"));
+      if (z !== "obl") sel.append(new Option("Oblivion (banish)", "obl"));
+      if (dd.kind !== "fusion" && z !== "deck") { sel.append(new Option("Top of deck", "top")); sel.append(new Option("Shuffle into deck", "shuf")); }
+      if (dd.kind === "fusion" && z !== "fdeck") sel.append(new Option("Fusion Deck", "fdeck"));
+      sel.addEventListener("change", () => {
+        const to = sel.value; if (!to) return; d.close();
+        if (to === "lane") return chooseLane(side, true, `Choose a lane for ${dd.name}`, l => act(() => { materialize(c.uid, l, side, { how: `materializes (from the ${names[z]})` }); if (z === "deck") shuffle(p.deck); }));
+        act(() => {
+          take(c.uid);
+          if (to === "top") p.deck.push(reset(c)); else if (to === "shuf") { p.deck.push(reset(c)); shuffle(p.deck); }
+          else toPile(c, to);
+          if (z === "deck") shuffle(p.deck);
+          log(`${p.name}: ${dd.name} from the ${names[z]} to ${sel.selectedOptions[0].text}.`);
+        });
+      });
+      it.append(sel); pick.append(it);
+    }
+    if (!list.length) pick.append(el("p", "note", "Empty."));
+    d.append(pick, btn("Close", () => { if (z === "deck") act(() => { shuffle(p.deck); log(`${p.name} shuffles after searching.`); }); d.close(); }));
+  });
+}
+
+/* ============================== prompts, dialogs, pass screen ============================== */
+let PROMPT = null;
+function setPrompt(msg, targets, then) {
+  PROMPT = { targets, then }; const pr = document.getElementById("prompt"); pr.textContent = msg + " — Esc to cancel"; pr.classList.remove("hidden");
+  render(); markTargets();
+}
+function markTargets() {
+  if (!PROMPT) return; const v = S.viewer;
+  document.querySelectorAll(".slot[data-lane]").forEach(s => {
+    const side = +s.dataset.side, l = +s.dataset.lane;
+    if (PROMPT.targets.lanes.some(t => t.side === side && t.l === l)) { s.classList.add("target"); const c = s.querySelector(".card"); if (c) c.classList.add("target"); }
+  });
+  if (PROMPT.targets.player != null) document.getElementById(PROMPT.targets.player === v ? "bar0" : "bar1").style.outline = "3px solid var(--red)";
+}
+function clearPrompt() { PROMPT = null; document.getElementById("prompt").classList.add("hidden"); document.getElementById("bar0").style.outline = document.getElementById("bar1").style.outline = ""; render(); }
+function dialog(title, build, noClose) {
+  const d = el("div", "dlg"), inner = el("div", "dlg-in"); d.setAttribute("role", "dialog"); d.setAttribute("aria-label", title);
+  inner.append(el("h2", "", title)); d.append(inner); document.body.append(d);
+  const api = { append: (...x) => inner.append(...x), close: () => d.remove() };
+  if (!noClose) d.addEventListener("click", e => { if (e.target === d) d.remove(); });
+  build(api); return api;
+}
+function showPass(i, then) {
+  const ps = document.getElementById("pass"); ps.classList.remove("hidden");
+  ps.querySelector("h2").textContent = `Pass to ${nm(i)}`;
+  ps.querySelector("p").textContent = `${nm(OPP(i))}, look away: ${nm(i)}'s hand is about to show.`;
+  const b = ps.querySelector("button"); b.textContent = `I'm ${nm(i)}: show my side`;
+  b.onclick = () => { ps.classList.add("hidden"); S.viewer = i; render(); save(); if (then) then(); };
+}
+let toastT = null;
+function toast(t) { const e = document.getElementById("toast"); e.textContent = t; e.classList.remove("hidden"); clearTimeout(toastT); toastT = setTimeout(() => e.classList.add("hidden"), 3800); }
+
+/* ============================== events ============================== */
+document.addEventListener("click", e => {
+  if (!S || document.getElementById("game").classList.contains("hidden")) return;
+  const menu = document.getElementById("menu");
+  if (menu.contains(e.target)) return;
+  if (PROMPT) {
+    const slot = e.target.closest(".slot[data-lane]");
+    if (slot) { const t = PROMPT.targets.lanes.find(t => t.side === +slot.dataset.side && t.l === +slot.dataset.lane); if (t) { const p = PROMPT; clearPrompt(); p.then(t); return; } }
+    const bar = e.target.closest(".pbar");
+    if (bar && PROMPT.targets.player != null && bar.id === (PROMPT.targets.player === S.viewer ? "bar0" : "bar1") && !e.target.closest("button")) { const p = PROMPT; clearPrompt(); p.then({ player: p.targets.player }); return; }
+    return;
+  }
+  const card = e.target.closest("#table .card");
+  if (card) { openMenu(+card.dataset.uid, e.clientX, e.clientY); return; }
+  closeMenu();
+});
+document.addEventListener("mouseover", e => {
+  const card = e.target.closest(".card"); if (!card || !S) return;
+  const f = find(+card.dataset.uid); if (!f) return;
+  const c = f.c, hidden = (f.z === "hand" && f.i !== S.viewer) || (c.faceDown && f.i !== S.viewer); if (hidden) return;
+  const d = D(c.n), box = document.getElementById("inspect"); box.replaceChildren();
+  const im = el("img"); im.src = IMG + d.slug + ".jpg"; im.alt = d.name; im.onerror = () => im.remove(); box.append(im);
+  if (isUnit(d) && f.z === "lanes") box.append(el("div", "st", `Now: ATK ${atkLabel(c)} · HP ${curHp(c)}/${maxHp(c)} · Speed ${spdOf(c)}${c.winded ? " · winded" : ""}${c.under.length ? ` · ${spliceCount(c)} fusion splices` : ""}`));
+  box.append(el("div", "txt", `${d.name} — ${d.type}${isUnit(d) ? ` · ${d.atkS}/${d.hp} · Speed ${d.spd}${d.kind === "creature" ? ` · ${d.flux} flux` : ""}` : ""}\n${d.text}`));
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { if (PROMPT) clearPrompt(); closeMenu(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && S && !/input|textarea/i.test(e.target.tagName)) { e.preventDefault(); undo(); }
+});
+document.getElementById("nextPhase").onclick = () => nextPhase();
+document.getElementById("undoBtn").onclick = () => undo();
+document.getElementById("respondBtn").onclick = () => {
+  const to = S.viewer === S.active ? OPP(S.active) : S.active;
+  if (to !== S.active) log(`${nm(to)} gets a chance to respond.`);
+  showPass(to);
+};
+document.getElementById("redrawBtn").onclick = () => act(() => {
+  const i = S.viewer, p = P(i); p.deck.push(...p.hand.splice(0)); shuffle(p.deck); drawN(i, 5, true); S.redraw[i] = true; log(`${p.name} takes the free redraw.`);
+});
+document.getElementById("menuBtn").onclick = () => dialog("Game menu", d => {
+  const r = el("div", "row");
+  r.append(btn("New game (back to setup)", () => { if (confirm("End this game and go back to setup?")) { d.close(); localStorage.removeItem("ff-play-game"); location.reload(); } }),
+    btn("Close", () => d.close()));
+  d.append(el("p", "note", "The game saves itself in this browser after every move, so you can close the page and resume."), r);
+});
+const dice = document.getElementById("dice");
+[["Coin", 2], ["d4", 4], ["d6", 6], ["d8", 8], ["d10", 10], ["d12", 12], ["d20", 20]].forEach(([t, n]) =>
+  dice.append(btn(t, () => act(() => { const r = roll(n); log(`${nm(S.viewer)} ${n === 2 ? `flips a coin: ${r === 1 ? "heads" : "tails"}` : `rolls a ${t}: ${r}`}.`); }))));
+
+/* ============================== setup ============================== */
+const DECKS = savedDecks();
+document.querySelectorAll(".pcol").forEach((col, i) => {
+  const sel = col.querySelector(".pdeck"), ta = col.querySelector(".plist"), info = col.querySelector(".info");
+  sel.append(new Option("— Paste a list below —", ""));
+  DECKS.forEach((d, k) => sel.append(new Option(`${d.name} (${d.from})`, k)));
+  const hashK = DECKS.findIndex(d => d.hashKey === "deck" + (i + 1)); if (hashK >= 0) sel.value = hashK;
+  const show = () => {
+    let cards;
+    if (sel.value !== "") cards = DECKS[+sel.value].cards; else { const p = parseList(ta.value); cards = p.cards; if (p.unknown.length) { info.innerHTML = ""; } col.dataset.unknown = p.unknown.join(", "); }
+    col._cards = cards; const k = deckInfo(cards);
+    info.innerHTML = `Main Deck: <b class="${k.main === 30 ? "ok" : "bad"}">${k.main}</b> / 30 · Fusion Deck: <b class="${k.fus <= 10 ? "ok" : "bad"}">${k.fus}</b> / 10` +
+      (k.bad.length ? `\n<b class="bad">Check:</b> ${k.bad.join(", ")}` : "") + (sel.value === "" && col.dataset.unknown ? `\n<b class="bad">Not cards in play:</b> ${col.dataset.unknown}` : "");
+    ta.classList.toggle("hidden", sel.value !== "");
+  };
+  sel.onchange = show; ta.oninput = show; if (!DECKS.length) ta.placeholder += "\n(No saved decks found in this browser.)"; show();
+});
+document.getElementById("startBtn").onclick = () => {
+  const cols = [...document.querySelectorAll(".pcol")], cfg = cols.map(c => ({ name: c.querySelector(".pname").value.trim() || "Player", cards: c._cards || {} }));
+  for (const [k, c] of cfg.entries()) { const n = deckInfo(c.cards).main; if (!n) return toast(`${c.name} has no cards.`); if (n !== 30 && !confirm(`${c.name}'s Main Deck has ${n} cards (should be 30). Play anyway?`)) return; }
+  const fs = document.getElementById("firstSel").value, first = fs === "coin" ? Math.floor(Math.random() * 2) : +fs;
+  cfg.first = first;
+  document.getElementById("setup").classList.add("hidden"); document.getElementById("game").classList.remove("hidden");
+  newGame(cfg);
+};
+try {
+  const g = JSON.parse(localStorage.getItem("ff-play-game"));
+  if (g && g.S && g.S.players) {
+    const rb = document.getElementById("resumeBtn"); rb.classList.remove("hidden"); rb.textContent = `Resume: ${g.S.players[0].name} vs ${g.S.players[1].name}, turn ${g.S.turn}`;
+    rb.onclick = () => { S = g.S; uidN = g.uidN; document.getElementById("setup").classList.add("hidden"); document.getElementById("game").classList.remove("hidden"); render(); showPass(S.viewer); };
+  }
+} catch (e) {}
+</script>
+</body>
+</html>
