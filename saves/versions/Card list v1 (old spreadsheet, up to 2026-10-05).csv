@@ -1,0 +1,76 @@
+Name,Type,ATK,HP,Flux Cost,Description,Faction,Attribute,Cold Storage
+Greg's Vape,Spell,,,,Greg hits his vape! Select a 'Greg' creature and doubles it's ATK points for that turn.,Mundane,,
+Bad Bunny Concert tickets,Spell,,,,"Turn any creature on the field into a mundane bunny, it keeps it's ATK but it's HP is halfed
+(take the lower halve) and looses any effects and original atribute(s).",Mundane,,
+Space Squid,Spell,,,,Take control of one your opponent's creature cards for a turn.,Sci-Fi,,
+Goblin Bank,Spell,,,,"At the beginning of your turn gain +1 Gold for every 'Goblin' card on the field.
+(Continuous spell)",Fantasy,,
+Goblin Stock Broker,Spell,,,,"Flip a coin, call heads or tails. If you win, the amount of gold
+ in the golbin bank is doubled, if you loose it is halfed.",Fantasy,,
+Unfuse,Spell,,,,Break any fused creature down into it's base components.,N/A,,
+Microwave,Spell,,,,Reheat a creature from any graveyard and summon it on your side of the field.,N/A,,
+Jar of materialism,Spell,,,,"Just different enough not to get sued...
+
+Draw 1 card and then draw another card.",N/A,,
+Primordial soup,Spell,,,,"Every turn roll a 20 sided dice, if this dice hits 1 the whole field is cleared and this card
+is destroyed
+
+(field spell)",Fantasy,,
+Egg incubator,Spell,,,,Egg cards incubate after one turn and there's no summon limit on eggs.,Fantasy,,
+Crack a pack,Spell,,,,"Open a pack (if you don't have one Lil_KleinStein will provide one), add any cards you like
+to your hand and put the rest in the graveyard.",N/A,,
+Raboorbu,Spell,,,,This strange fruit gives a 'Galorpian' card the ability to attack twice for one turn.,Sci-Fi,,
+Thiefling Slight of Hand,Spell,,,,"When your opponent casts a spell, grab that spell card from your opponent and shuffle it in your deck.
+
+(Instant Spell)",Thiefling,,
+Detroid,Spell,,,,"Can't have shit...
+Anytime a player steals an amount of cards, double that amount.
+
+(Field Spell)",Thiefling,,
+And for my next trick...,Spell,,,,"Steal your opponents coin, they may not do any coin flips anymore.
+After stealing their coin, add this card to their deck and shuffel.",Thiefling,,
+Gregg's,Spell,,,,"All 'Greg' cards on the field heal +1 hp every turn (no overhealth)
+
+(field spell)",Mundane,,
+Galorpian Encampment,Creature,0,10,,Heals adjacent 'Galorpian' cards by +2 HP at the end of every turn (no overheal).,Sci-Fi,,
+Galorpian rail cannon,Creature,15,5,,"That's one biiiiig cannon.
+Requires a 'Galorpian' non 'Building' card adjacent to it in order to attack",Sci-Fi,,
+Bad Bunny,Fusion,5,7,,Bunny+Bunny | Your opponent can only target bunny creatures while this card is on the field.,Mundane,,
+Bunny,Creature,2,3,,Your opponent can only target bunny creatures while this card is on the field.,Mundane,,
+Cat,Creature,3,5,,If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.,Mundane,,
+Purrramid,Fusion,10,20,,"Cat+Cat+Cat | This furry purrramid is just so cute! :3 
+If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.",Mundane,,
+Cunny,Fusion,4,5,,"Cat+Bunny | If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+Your opponent can only target bunny creatures while this card is on the field.",Mundane,,
+Brontosaurus,Creature,3,15,,"This card can only be summoned if the 'Primortial soup' field spell is active.
+
+Can only be summoned by hatching a 'Dino Egg'.",Fantasy,,
+T-Rex,Fusion,10,10,,"2 Dino cards, excluding 'Dino Egg'
+This card can only be summoned if the 'Primortial soup' field spell is active.
+
+Now this is epic.",Fantasy,,
+Triceratops,Creature,5,7,,,Fantasy,,
+TT-rex,Fusion,20,25,,"T-Rex + T-Rex
+This card can only be summoned if the 'Primortial soup' field spell is active.
+
+Life... uh, finds a way",Fantasy,,
+Dino egg,Creature,1,2,,"This card can only be summoned if the 'Primortial soup' field spell is active.
+
+After 2 turns on the field this hatches into a  'Dino' card that you grab from your deck.",Fantasy,,
+Goblin,Creature,4,2,,A greedy filthy no good goblin. They also LOVE gold...,Fantasy,,
+Hop Goblin,Fusion,4,7,,"Goblin+GoblinThis Hop Goblin loves gold so much they gain + 1 ATK & +1 HP per gold
+ in the 'Goblin Bank'.
+
+In order to attack this goblin requires you pay him 2 gold.",Fantasy,,
+Ggrreegg,Fusion,6,10,,"Greg+Greg
+_x0003_Ggrreegg has no effect, he's just a big dude.",Mundane,,
+Greg,Creature,5,7,,"Greg has no effect, he's just a dude.",Mundane,,
+Grunny,Fusion,4,5,,Greg+ Bunny | Your opponent can only target bunny creatures while this card is on the field.,Mundane,,
+Grat,Fusion,6,6,,Greg + Cat | If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.,Mundane,,
+Alexandru,Creature,2,4,,"Once per turn flip all the coins in your possesion, for every heads steal a card from your opponent's hand or field, shuffle it into your deck. For every tails, your opponent gets to steal a card from your hand or field and shuffel it into their deck.",Thiefling,,
+Alexanduex,Fusion,4,7,,"Alexandru + Alexandru | Once per turn flip all the coins in your possesion, for every heads steal a card
+from your opponent's hand or field shuffle it into your deck. For every tails, your opponent gets to steal
+a card from your hand or field and shuffel it into their deck.",Thiefling,,
+Galorpian,Creature,4,7,,Why are you blue?,Sci-Fi,,
+Jonnhy '5 inches',Creature,,,,He's walking here.,,,
+the bodega,Creature,,,,maaan you really CAN get everything here,,,

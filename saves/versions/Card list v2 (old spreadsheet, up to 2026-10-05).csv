@@ -1,0 +1,105 @@
+Name,Type,ATK,HP,Flux Cost,Description,Faction,Attribute,Cold Storage
+Raboorbu,Spell,,,,This strange fruit gives a 'Galorpian' creature the ability to attack twice for one turn.,,,
+And for my next trick...,Spell,,,,"Steal one of your opponents coin(s), they may not do any coin flips anymore if they don't have any coins left. After stealing their coin, add this card to their deck and shuffel.",,,
+Archaeologist,Spell,,,,Banish 3 'dino' creatures from your graveyard and specific summon a 'Triceratops' or 'Brontosaurus' from your deck or hand.,,,
+Bad Bunny Concert tickets,Spell,,,,"Turn any creature on the field into a 'Bunny' creature, it keeps it's ATK & HP but looses any effects and original atribute(s).",,,
+Blood Pact Summoning Circle,Spell,,,,"Pay half your current Life Points, gain an additional Normal Summon this turn.",,,
+Crack a pack,Spell,,,,"Open a pack (if you don't have one Lil_KleinStein will provide one), add any cards you like
+to your hand and put the rest in the graveyard.",,,
+Detroit,Spell,,,,"Can't have shit...
+Anytime a player steals an amount of cards, double that amount. Only one 'Detroit' field spell can be active at the same time.
+
+(Field Spell)",,,
+Energy drink,Spell,,,,Choose 1 creature you control and restore 3 HP to it.,,,
+Goblin Bank,Spell,,,,"This 'Goblin Bank' generates 1 gold at the start of every turn. When this 'Goblin Bank' holds 5 gold, it stops generating gold. If it were to have more than 5 gold, it will liquidate all gold over 5 after 3 turns.",,,
+Goblin Shuffle,Spell,,,,"Put up to 5 cards from your hand on the bottom of your deck, draw that many cards.",,,
+Goblin Stock Broker,Spell,,,,"Target a 'Goblin Bank' you control, then choose the amount of gold you want to bet on the stock market. After that, flip a coin. If it's heads, you double the amount of gold invested. If tails, you lose all the invested gold.",,,
+Gregg's,Spell,,,,"All 'Greg' cards on your field heal +1 hp at the end of every turn (no overhealth).
+(field spell)",,,
+Jar of materialism,Spell,,,,"Just different enough not to get sued...
+
+Draw 1 card and then draw another card.",,,
+Microwave,Spell,,,,Reheat a creature from any graveyard and summon it on your side of the field.,,,
+Pipebomb,Spell,,,,"Target 1 Continuous Spell or Field Spell on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.",,,
+Primordial soup,Spell,,,,"At the start of every turn roll a 20 sided dice, if this dice hits 1 the whole field is cleared including this card.
+At the end of every turn every 'dino' card on the field gains +1HP (no overheal). 
+
+(field spell)",,,
+Sacraficial lamb,Spell,,,,Sacrifice 2 creatures you control to gain 5 PHP.,,,
+Space Squid,Spell,,,,Take control of one your opponent's creature cards for a turn.,,,
+the bodega,Spell,,,,Maaan you really CAN get everything here,,,
+Thiefling Slight of Hand,Spell,,,,"When your opponent casts a spell, grab that spell card from your opponent and shuffle it in your deck.
+
+(Instant Spell)",,,
+Unfuse,Spell,,,,Break any fused creature down into it's base components.,,,
+Galorpian armour,Equipment,,,,Equip this 'Galorpian armour' to any 'Galorpian' creature. That card now needs to be attacked once before taking damage.,,,
+Galorpian rail cannon,Equipment,,,,"Equip this 'Galorpian rail cannon' to any 'Galorpian' creature. After a turn of being equiped, that card gains +7 ATK.",,,
+Egg incubator,Equipment,,,,"Equip this 'Egg incubator' to any 'egg' creature. The equiped 'egg' takes one turn to hatch, and needs to be hit once before it can take damage.",,,
+Greg's Vape,Equipment,,,,Select a 'Greg' creature and equip this vape to that creature. The creature doubles it's ATK for one turn.,,,
+Alexandru,Creature,3,5,,"Once per turn, flip all coins in your possession. For each heads: Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck. Tails do nothing.",,,
+Alexanduex,Fusion,4,10,,"{Alexandru + Alexandru}
+Once per turn, flip all coins in your possession.
+For each heads, choose one:
+• Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck.
+• Steal a card from your opponent’s field and shuffle it into their hand.
+Tails do nothing.",,,
+Grat,Fusion,6,12,,Greg + Cat | If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.,,,
+Grunny,Fusion,6,13,,Greg+ Bunny | Your opponent can only target bunny creatures while this card is on the field.,,,
+Ggrreegg,Fusion,6,14,,"Greg+Greg
+_x0003_Ggrreegg has no effect, he's just a big dude.",,,
+Greg,Creature,4,6,,"Greg has no effect, he's just a dude.",,,
+Goblin,Creature,3,5,,A greedy filthy no good goblin. Once per game you can invest gold into this Goblin's stats. 1 gold = +1 ATK or HP. In order for this goblin to engage in battle after having it's stats increased you need to pay it 2 gold.,,,
+Hop Goblin,Fusion,7,14,,"{Goblin+Goblin}
+Once per game you can invest gold into this Hop Goblin's stats. 1 gold = +1 ATK or HP. In order for this goblin to engage in battle after having it's stats increased you need to pay it 2 gold.",,,
+Galorpian,Creature,4,7,,Why are you blue?,,,
+Galorpian Queen,Fusion,8,15,,"{Galorpian + Galorpian} 
+Why are you purple?",,,
+Dino egg,Creature,1,2,,After 2 turns on the field this card hatches into a 'T-Rex' that you summon from your hand.,,,
+Brontosaurus,Creature,2,10,,"This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!",,,
+T-Rex,Creature,5,9,,Can only be summoned by hatching from a 'Dino Egg'.,,,
+Triceratops,Creature,4,6,,This late Cretaceous herbivore could grow up to 800 teeth during its life time!,,,
+TT-rex,Fusion,15,30,,"{T-Rex + T-Rex}
+
+Life... uh, finds a way",,,
+Cunny,Fusion,4,8,,"Cat+Bunny | If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+Your opponent can only target bunny creatures while this card is on the field.",,,
+Cat,Creature,3,6,,If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.,,,
+Purrramid,Fusion,7,15,,"Cat+Cat| This furry purrramid is just so cute! :3 
+If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.",,,
+Bad Bunny,Fusion,5,7,,"{Bunny+Bunny}
+Your opponent can only target 'bunny' creatures while this card is on the field.",,,
+Bunny,Creature,2,3,,Your opponent can only target 'bunny' creatures while this card is on the field.,,,
+Nomed The Dark Viscount,Creature,5,8,,"To summon this creature, perform a blood sacrifice: Pay 4 PHP.",,,
+Renroc The Dark Marquis,Creature,3,5,,"To summon this creature, perform a blood sacrifice: Pay 4 PHP. Once per turn: Target 1 creature with 4 or less HP. Pay 2 PHP to destroy that creature.",,,
+Jonnhy '5 inches',Creature,,,,He's walking here! Legend says he's a cousin of gregg.,,,
+Ergof The Dark Emperor,Fusion,8,20,,Once per turn: Target 1 creature with 10 or less HP. Pay 5 PHP to destroy that creature.,,,
+Loaded Dice,Spell,,,,"Instant Spell
+Choose 1 coin flip. You may flip again and use the second result.",,,
+Blood Imp,Creature,2,2,,When this card dies: Deal 2 damage to any creature on the field. If there are no creatures on your oppents side you may choose to deal damage to them instead.,,,
+Flesh Collector,Creature,4,6,,"To summon this creature, perform a blood sacrifice: Pay 4 PHP. Once per turn you may destroy 1 creature you control. If you do, draw 1 card.",,,
+Hemogoblin,Creature,3,4,,"Once per turn: You may banish up to 3 'Blood Demon' creatures from your graveyard: This card gains +2 ATK for each card banished this way. At end phase, lose 1 PHP for each card banished this turn.",,,
+Skinless Titan,Creature,14,8,,"{2 Blood Demons with different names] 
+While this card is on the field, at the end of every turn: Lose 2 PHP.",,,
+Ritual Pit,Spell,,,,"Once per turn: You may destroy one friendly creature. If you do, your next fusion this turn may use one creature from your graveyard.",,,
+Blood Frenzy,Spell,,,,"Target a 'Blood Demon' creature you control, it gains +4 atk but dies at the end of this turn.",,,
+The Meat Cathedral,Fusion,8,18,,"{Blood Priest + Flesh Collector}
+Once per turn: Banish one creature you control then draw a card. If you do so at end phase you may Revive one creature that got destroyed this turn.",,,
+Blood Priest,Creature,2,7,,"At end phase: You may pay 1 PHP. If you do, revive a Blood Demon with 2 or less HP from your graveyard.",,,
+Failed Clone,Creature,2,3,,When summoned: Mutate (D6).,,,
+Flesh Lump,Creature,1,8,,Whenever this creature survives damage: Mutate (D6).,,,
+Spine Crawler,Creature,4,3,,Whenever this creature mutates: Gain +1 ATK.,,,
+Mutation Host,Creature,3,4,,Once per turn: You may force another creature to mutate.,,,
+Radiation Hound,Creature,4,5,,Whenever another creature on the field mutates this creature mutates as well.,,,
+Forced Evolution,Spell,,,,"Choose a creature. It heals +2 HP (no overheal), then mutates.",,,
+Nuclear Waste,Field Spell,,,,At the end of your turn: a random 'Mutant' creature mutates.,,,
+Genetic Collapse,Spell,,,,Destroy a Mutant.Deal damage equal to its half it's ATK (rounded up) to all creatures adjacent to it.,,,
+The Aberration,Fusion,6,10,,"{2 Mutants}
+At the start of every turn you may place one more 'mutant' creature underneath this card as fusion metarial. Once per turn you may discard one fusion metarial and 'Horrificly Mutate' this 'The Aberration'' creature.",,,
+Patient Zero,Fusion,5,12,,"{Mutation Host + any 'Mutant' creature}
+Once pert turn choose up to 2 other creatures.Those creatures mutate. if a mutation roll is 1 this creature also loses 2HP.",,,
+Holy Acolyte,Creature,2,5,,Once per turn: Restore 2 HP to another creature on the field.,,,
+Chapel Guard,Creature,3,8,,"If this creature would be destroyed in combat, it survives with 1 HP instead. This effect can only happen once for this 'Chapel Guard' after summoning this card.",,,
+Purifier Nun,Creature,2,6,,When summoned: Cleanse (remove) up to 2 Bleed from any creature. This card cannot gain bleed.,,,
+Divine Shelter,Instant Spell,,,,When a creature you control would be attacked: prevent all combat damage that would be dealt to it this battle.,,,
+Sanctuary Bells,Field Spell,,,,At the end of each turn: All players restore 1 PHP.  'Angels' creatures on the side this field spell is on restore an additional 1 HP per turn (no overhealth),,,
+Cathedral Guardian,Creature,6,18,,At the end of your turn: Restore 2 HP to all 'angel' creatures you control,,,

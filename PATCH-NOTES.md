@@ -2,8 +2,9 @@
 
 Every change to the rules and the cards, newest first, from the first ruleset to now. The rules notes are written by
 hand; the **card changes** under each version are worked out from the saved card list, so every new, removed,
-renamed or reworded card is in there (open "cards reworded" to see the old and new text). Card lists were only saved
-from 2026-10-06 on, so the six early rulesets only have their rule changes.
+renamed or reworded card is in there (open "cards reworded" to see the old and new text). Before the card editor
+(2026-10-06) the cards lived in a spreadsheet with its own versions, card lists v1 to v6; those are at the end, after
+the rulesets, because their numbers don't line up with the ruleset numbers.
 
 ## 2026-11-27: removal, small creatures, plush rework
 
@@ -1451,3 +1452,554 @@ The first ruleset.
 - **Fusion:** creatures on your field only, materials go under the fusion card; it takes one slot; max 2 fusions; **fusion sickness** (can't attack the turn it's made); an unfused fusion's materials come back if there's room; when a fusion dies, its materials go to the graveyard.
 - **Spells:** Normal, Instant, Infinite/Field. Chains resolve last in, first out.
 - Hand limit 8; can't draw → 5 damage. A fusion never grants more than two "once per turn" effects. Players need a coin for coin flips. **The card wins** if it contradicts the rules.
+
+## Card list v6 → the card editor (2026-10-06)
+
+The last spreadsheet version against the card list the card editor started with. Card lists v1 to v6 come from the old
+spreadsheet (last opened on 2026-10-05); their numbers are their own and don't match the ruleset or rulebook numbers.
+
+**Card changes**
+
+- **New:** Goblin General, Gob-omber, Bobblin Miner, Soul Sucker
+- **Into cold storage:** The bodega, Primordial Soup, Ankylosaurus, Brontosaurus, Triceratops, T-Rex, Velociraptor, Dino egg, Galorpian, Jonnhy '5 inches', Gregg, Gregg's Friend Joe, Gregg's Dawg, Bunny, Cat, Brain Sucker, Mind Worm, Bone Leech, Cyst Spreader, Flesh Tick, Parasite Larva, Egg incubator, Gregg's Vape, Greggs, Brood Fog, Alexandru, Alexanduex, Alexandre, TT-rex, Purrramid, Cabbit, HOA President, Short Change, The Local Legend, Brood Core, The Swarm Mind, Detroit, HOA Complaint, Tax Evasion, RS PRO 115mm Stainless Steel Curved Tweezers, Thiefling Sleight of Hand, Archaeologist, Fossil Record, Bad Bunny Concert tickets, Costco Hot Dog and Soda Comb for $1.5, Host Collapse, Infection Burst
+- **Attributes:**
+  - Holy Acolyte: Humanoid / Holy / Warrior / Noble → Humanoid / Holy / Winged
+  - Sanctified Knight: Humanoid / Holy / Warrior / Noble → Humanoid / Holy / Winged
+  - Chapel Guard: Humanoid / Holy / Gaurdian → Heavy / Holy / Winged
+  - Hemogoblin: Humanoid / Greedy / Unholy → Smalll / Greedy / Unholy
+  - Goblin: Humanoid / Greedy → Small / Greedy
+  - Penny Stock Goblin: Humanoid / Greedy → Small / Greedy
+  - Hop Goblin: Humanoid / Greedy / Heavy → Small  / Greedy / Heavy
+
+<details>
+<summary>4 cards reworded (old and new text)</summary>
+
+- **Goblin Bank**
+  - Before: At the start of your turn, gain 1 gold. If you control 5 or more gold, this effect does not activate. / You can choose to invest 4 gold in this bank. If you do it enters Liquidation for 3 turns. When Liquidation resolves, you gain 7 gold. / If this 'Goblin Bank' is destroyed you loose anything invested in it
+  - After: At the start of your turn, gain 1 gold. If you control 5 or more gold, this effect does not activate.
+- **Skinless Titan**
+  - Before: {2 Blood Demons with different names} / While this card is on the field, at the end of every turn: Lose 2 PHP. Whenever this creature destroys another creature: Apply 1 bleeding to all enemy creatures.
+  - After: {Heavy + Unholy} / While this card is on the field, at the end of every turn: Lose 2 PHP. Whenever this creature destroys another creature: Apply 1 bleeding to all enemy creatures.
+- **The Meat Cathedral**
+  - Before: {Flesh Collector + 'Blood Demon' creature} / Once per turn: Banish one creature (with 3 or more flux cost) from your hand then draw a card. If you do, at end phase you may return one 'Blood Demon' creature that got destroyed this turn to the field.
+  - After: {Flesh Collector + unholy} / Once per turn: Banish one creature (with 3 or more flux cost) from your hand then draw a card. If you do, at end phase you may return one 'Blood Demon' creature that got destroyed this turn to the field.
+- **Market Crash**
+  - Before: If you control 10 or more gold, lose half your gold, rounded down. Then all Goblin creatures you control gain +3 ATK until end of turn.
+  - After: Pay 5 gold, if you do all Goblin creatures you control gain +3 ATK until end of turn.
+
+</details>
+
+## Card list v6 (old spreadsheet)
+
+Most of the cards marked "will most likely be cut" in v5 are gone; Galorpian stays, marked "will most likely be cut or turned into a different faction".
+
+**Card changes**
+
+- **Removed:** Cathedral Guardian, Reactor Ghoul, Galorpian Heavy Frame, Galorpian War Machine, Galorpian Mechanic, Galorpian Technician, Galorpian Test Pilot, Galorpian Queen, Supreme Galorpian Queen, Galorpian Armory, Galorpian Combat Armor, Galorpian Reactor Harness, Galorpian Scrap Cloak, Galorpian Shield Generator, Galorpian Thrusters, Galorpian Pulse Blade, Galorpian Rail Cannon, Galorpian Workshop, Emergency Retrofit, Overclock Sequence, Raboorbu, Salvage Protocol, Ggrreegg, Gregg's Dad, Gregg's Mom, Intern, Bad Bunny, Grat, Gregg's step Mom, Grunny, Suburbia, Queen Parasite
+
+<details>
+<summary>1 card reworded (old and new text)</summary>
+
+- **Crimson Cherub**
+  - Before: {Lantern Cherub + Blood Imp}
+  - After: {Cherub + Blood Imp}
+
+</details>
+
+## Card list v5 (old spreadsheet)
+
+33 cards are marked "will most likely be cut": the Galorpian faction (Galorpian, Galorpian Queen, Supreme Galorpian Queen, Galorpian Heavy Frame, War Machine, Mechanic, Technician, Test Pilot, Armory, Workshop, Combat Armor, Reactor Harness, Scrap Cloak, Shield Generator, Thrusters, Pulse Blade, Rail Cannon, Emergency Retrofit, Overclock Sequence, Raboorbu, Salvage Protocol), Cathedral Guardian, Reactor Ghoul, Ggrreegg, Gregg's Dad, Gregg's Mom, Gregg's step Mom, Intern, Bad Bunny, Grat, Grunny, Suburbia and Queen Parasite.
+
+**Card changes**
+
+- **New:** Crimson Cherub, Fallen Angel, Lord Lazarus, Arch Cleric
+- **Renamed:** Lantern Cherub → Cherub
+- **Stats:**
+  - Seraphim Wall: ATK 5 → 6, HP 17 → 18
+  - Skinless Titan: ATK 15 → 10
+  - Pain Drinker: ATK 7 → 6(bleed1)
+  - Nomed The Dark Viscount: ATK 6 → 5(bleed1)
+  - Renroc The Dark Marquis: ATK 5 → 4(bleed1)
+  - Flesh Collector: ATK 5 → 5(bleed1), Flux 4 → 3
+
+<details>
+<summary>28 cards reworded (old and new text)</summary>
+
+- **Sanctified Knight**
+  - Before: Once per turn, the first time another Angel creature you control would take combat damage, reduce that damage by 2.
+  - After: Once per turn, the first time another Noble creature you control would take combat damage, reduce that damage by 2.
+- **Judicator Angel**
+  - Before: This creature gains +1 ATK for every other Angel creature you control.
+  - After: This creature gains +2 ATK for every other Winged creature you control.
+- **Chapel Guard**
+  - Before: If this creature would be destroyed in combat, it survives with 1 HP instead. This effect can only happen once for this 'Chapel Guard' after summoning this card.
+  - After: If this creature would be destroyed in combat, it survives with 1 HP instead. This effect can only happen once for this 'Chapel Guard' after materializing this card.
+- **Purifier Nun**
+  - Before: When summoned: Remove up to 2 Bleeding from any creature. This card cannot gain bleeding.
+  - After: When materialized: Remove up to 2 Bleeding from any creature. This card cannot gain bleeding.
+- **Seraphim Wall**
+  - Before: {Chapel Guard + Holy Acolyte} / Once per turn: Target a creature you control, prevent all damage that would be dealt to that creature.
+  - After: {Chapel Guard + 2 Holy creatures} / Once per turn: Target a creature you control, prevent all damage that would be dealt to that creature.
+- **Skinless Titan**
+  - Before: {2 Blood Demons with different names} / While this card is on the field, at the end of every turn: Lose 2 PHP. Whenever this creature destroys another creature: Apply 2 bleeding to all enemy creatures.
+  - After: {2 Blood Demons with different names} / While this card is on the field, at the end of every turn: Lose 2 PHP. Whenever this creature destroys another creature: Apply 1 bleeding to all enemy creatures.
+- **The Meat Cathedral**
+  - Before: {Flesh Collector + 'Blood Demon' creature} / Once per turn: Banish one creature you control then draw a card. If you do so, at end phase you may return one 'Blood Demon' creature that got destroyed this turn to the field.
+  - After: {Flesh Collector + 'Blood Demon' creature} / Once per turn: Banish one creature (with 3 or more flux cost) from your hand then draw a card. If you do, at end phase you may return one 'Blood Demon' creature that got destroyed this turn to the field.
+- **Ergof The Dark Emperor**
+  - Before: {Nomed The Dark Viscount + Renroc The Dark Marquis} / Once per turn: Target 1 creature with 10 or less HP. Pay 5 PHP to destroy that creature. Whenever a creature that's bleeding dies: Restore 2 PHP.
+  - After: {Nomed The Dark Viscount + Renroc The Dark Marquis} / The effect of Renroc The Dark Marquis can be used on creatures upto 10 hp but you pay 5 php instead.
+- **Carrion Duchess**
+  - Before: Creatures that are bleeding lose 1 additional HP during end phase.
+  - After: At end phase: You may pay 2 PHP. If you do, return one 'Blood Demon' with 5 or less HP from your Waste Repository to the field.
+- **Renroc The Dark Marquis**
+  - Before: To Materialize this creature: perform a blood sacrifice: Pay 4 PHP. Once per turn: Target 1 creature with 5 or less HP. Pay 2 PHP to destroy that creature.
+  - After: To Materialize this creature: perform a blood sacrifice: Pay 4 PHP. Once per turn: Target 1 creature with 4 or less HP. Pay 2 PHP to destroy that creature.
+- **Blood Priest**
+  - Before: At end phase: You may pay 1 PHP. If you do, return one 'Blood Demon' with 5 or less HP from your Waste Repository to the field.
+  - After: Once per turn: Inflict 2 Bleeding on this card. If you do, you may inflict 2 Bleeding on another creature on the field.
+- **Blood Imp**
+  - Before: When this card dies: Deal 2 damage to any creature on the field. If there are no creatures on your oppents side you may choose to deal damage to them instead.
+  - After: Pay 1 PHP when naturally materilizing this creature. / When this card dies: Deal 2 damage to any creature on the field. If there are no creatures on your oppents side you may choose to deal damage to them instead.
+- **Vein Ripper**
+  - Before: While 'Sanctuary Bells' is active: This creature gains +2 ATK.
+  - After: Pay 3 PHP when naturally materilizing this creature.
+- **Flesh Collector**
+  - Before: To Materialize this creature: perform a blood sacrifice: Pay 4 PHP. Once per turn: Destroy another creature you control. Draw 1 card.
+  - After: Pay 4 PHP when naturally materilizing this creature. Once per turn: Destroy another creature you control. Draw 1 card.
+- **Ritual Pit**
+  - Before: Once per turn you may: Destroy 1 creature you control. Your next fusion this turn may use one Blood Demon creature from your Waste Repository as Fusion Material.
+  - After: Once per turn you may: banish 1 creature you control with 3 or more flux cost. Your next fusion this turn may use one less fusion splice.
+- **Sacrificial Lamb**
+  - Before: Sacrifice 2 'Blood Demon' creatures you control to gain 5 PHP.
+  - After: Banish 2 'Blood Demon' creatures from your waste repository to gain 10 PHP.
+- **T-Rex**
+  - Before: Can only be summoned by hatching from a Dino Egg.
+  - After: Can only be materialized by hatching from a Dino Egg.
+- **Primordial Soup**
+  - Before: At the end of each turn, all Dino creatures you control gain +1 HP. Once per turn, the first Dino creature you Materialize costs 1 less Flux.
+  - After: At the end of each turn, all Dino creatures you control gain +1 HP. Once per turn, the first Dino creature you Materialize costs 1 less Flux. / Once per game you may banish 3 'Dino' cards from your waste repository, then as long as this card is on the field at the start of every turn roll a d20 if it lands on 1 all cards on either side of the field get destroyed.
+- **Failed Clone**
+  - Before: When summoned: Mutate (D6).
+  - After: When materialized: Mutate (D6).
+- **Patient Zero**
+  - Before: {Mutation Host + any 'Mutant' creature} / Once pert turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.
+  - After: {Mutation Host + any 'Mutant' creature} / Once per turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.
+- **The Aberration**
+  - Before: {2 Mutants} / At the start of your turn, you may place 1 Mutant from your Waste Repository under this card as a Fusion Splice. Max 3 Fusion Splices. Once per turn, you may discard 1 Fusion Splice and Horrifically Mutate (D12) this creature.
+  - After: {2 Mutants} / At the start of your turn, you may place 1 Mutant from your Waste Repository under this card as a Fusion Splice. Max 3 Fusion Splices. Once per turn, you may banish 1 Fusion Splice and Horrifically Mutate (D12) this creature.
+- **Radiation Hound**
+  - Before: Whenever another creature on the field mutates this creature mutates as well.
+  - After: Whenever another creature on the field mutates this creature mutates as well. (doesn't affect other radiation hounds)
+- **Lab Escapee**
+  - Before: When summoned: Mutate (D6). If this creature mutates, you may give another Mutant you control +1 HP.
+  - After: When materialized: Mutate (D6). / When this creature mutates, you may restore 1hp to another 'Mutant' creature you control.
+- **Genetic Collapse**
+  - Before: Destroy a ‘Mutant’ creature you control. Deal damage equal to half its ATK, rounded up, to all adjacent creatures.
+  - After: Destroy a ‘Mutant’ creature you control. Deal damage equal to its ATK, to any creature on the field.
+- **Loaded Dice**
+  - Before: Choose 1 coin flip or dice roll. You may flip/roll again and use the second result.
+  - After: Choose 1 coin flip or dice roll. Flip/roll again and use the second result.
+- **Energy drink**
+  - Before: Choose 1 creature you control and restore half (rounded down) of it’s max hp to it.
+  - After: Choose 1 creature you control and restore half (rounded down) of it’s max hp.
+- **Microwave**
+  - Before: Reheat a creature from any Waste Repository and summon it on your side of the field.
+  - After: Reheat a creature from any Waste Repository and materialized it on your side of the field.
+- **Cherub**
+  - Before: When this creature is summoned: Restore 1 HP to another creature.
+  - After: When this creature is materialized: Restore 1 HP to another creature.
+
+</details>
+
+## Card list v4 (old spreadsheet)
+
+**Card changes**
+
+- **Renamed:** Greg → Gregg, Greg's Vape → Gregg's Vape, Sacraficial lamb → Sacrificial Lamb
+
+<details>
+<summary>22 cards reworded (old and new text)</summary>
+
+- **Bellkeeper Monk**
+  - Before: While "Sanctuary Bells" is active: This creature gains +2 ATK.
+  - After: While 'Sanctuary Bells' is active: This creature gains +2 ATK.
+- **Sanctuary Bells**
+  - Before: At the end of each turn: All players restore 1 PHP.  'Angels' creatures on the side this field spell is on restore an additional 1 HP per turn (no overhealth)
+  - After: At the end of each turn: All players restore 1 PHP.  'Angels' creatures on the side this field spell is on restore an additional 1 HP at the start of your turn.
+- **Blood Priest**
+  - Before: At end phase: You may pay 1 PHP. If you do, revive a Blood Demon with 5 or less HP from your Waste Repository.
+  - After: At end phase: You may pay 1 PHP. If you do, return one 'Blood Demon' with 5 or less HP from your Waste Repository to the field.
+- **The Meat Cathedral**
+  - Before: {Blood Priest + Flesh Collector} / Once per turn: Banish one creature you control then draw a card. If you do so at end phase you may Revive one 'Blood Demon' creature that got destroyed this turn.
+  - After: {Flesh Collector + 'Blood Demon' creature} / Once per turn: Banish one creature you control then draw a card. If you do so, at end phase you may return one 'Blood Demon' creature that got destroyed this turn to the field.
+- **Vein Ripper**
+  - Before: To Materialize this creature: perform a blood sacrifice: Pay 3 PHP.
+  - After: While 'Sanctuary Bells' is active: This creature gains +2 ATK.
+- **Dino egg**
+  - Before: After 2 turns on the field, this card hatches into a T-Rex from your hand. If this card is equipped with Egg Incubator, it hatches 1 turn sooner.
+  - After: After surviving 2 turns of enemy combat on the field, this card may hatch into any dino from your hand (including 'T-Rex'). If this card is equipped with Egg Incubator, it hatches 1 turn sooner.
+- **Triceratops**
+  - Before: When this creature attacks, you may deal 1 damage to one adjacent enemy creature.
+  - After: When this creature attacks, you may deal 2 damage to a creature adjacent to the one targeted.
+- **Velociraptor**
+  - Before: When this creature attacks, it may deal 1 damage (no bleed) to one adjacent enemy creature.
+  - After: When this creature attacks, it may deal 1 damage (no bleed) to a creature adjacent to the one targeted.
+- **Goblin Stock Broker**
+  - Before: Target a Goblin Bank you control. Choose a real stock, ETF, or cryptocurrency ticker and record its price now. Put up to 3 gold from your pool in that 'gobling bank'. At the start of your next turn, look up the same asset again: / - If it rose, double the invested gold and add it to your pool. / - If it fell, lose the invested gold.
+  - After: Choose a real stock, ETF, or cryptocurrency ticker and record its price now. Invest up to 3 gold from your pool. At the start of your next turn, look up the same asset again: / - If it rose, double the invested gold and add it to your pool. / - If it fell, lose the invested gold. / After that this card resolves.
+- **Bad Bunny**
+  - Before: {Bunny+Bunny} / Your opponent can only target 'bunny' creatures while this card is on the field.
+  - After: {Bunny+Bunny} / Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
+- **Bad Bunny Concert tickets**
+  - Before: Turn any creature on the field into a 'Bunny' creature, it keeps it's ATK & HP but looses any effects and original atribute(s).
+  - After: Turn any creature on the field into a creature named 'Bunny', it keeps it's ATK & HP but looses any effects and original atribute(s).
+- **Bunny**
+  - Before: Your opponent can only target Bunny creatures while this card is on the field.
+  - After: Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
+- **Cabbit**
+  - Before: {Cat + Bunny} / If this creature doesn’t attack: Restore 1 HP to it at end phase. / Your opponent can only target Bunny creatures while this card is on the field.
+  - After: {Cat + Bunny} / If this creature doesn’t attack: Restore 1 HP to it at end phase. / Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
+- **Ggrreegg**
+  - Before: {2 Greg cards} / Other Mundane creatures you control take 1 less damage from combat.
+  - After: {2 Gregg cards} / Other Mundane creatures you control take 1 less damage from combat.
+- **Grat**
+  - Before: {Any Greg + Cat} | If this creature doesn’t attack: Restore 2 HP to it at end phase.
+  - After: {Any Gregg + Cat} | If this creature doesn’t attack: Restore 2 HP to it at end phase.
+- **Greggs**
+  - Before: All 'Greg' cards on your field heal +1 hp at the end of every turn (no overhealth). / (field spell)
+  - After: All 'Gregg' cards on your field restore +1 hp at the end of every turn.
+- **Grunny**
+  - Before: {Any Greg + Bunny} / Your opponent can only target Bunny creatures while this card is on the field.
+  - After: {Any Gregg + Bunny} / Your opponent can only attack creatures with the name 'Bunny' or fusions which have splices named 'bunny' while this card is on the field.
+- **Intern**
+  - Before: Whenever this creature survives combat: Gain +1 ATK permanently.
+  - After: Whenever this creature survives a combat phase : Gain +1 ATK permanently.
+- **Egg incubator**
+  - Before: Equip this 'Egg incubator' to any 'egg' creature. The equiped 'egg' takes one turn to hatch, and needs to be hit once before it can take damage.
+  - After: Equip this 'Egg incubator' to any 'egg' creature. The first time this equiped 'egg' were to take damage from a creature in combat, negate this damage.
+- **Forced Evolution**
+  - Before: Choose a creature. It heals +2 HP (no overheal), then mutates.
+  - After: Choose a creature. It restores +2 HP, then mutates.
+- **Gregg**
+  - Before: Greg has no effect, he's just a dude.
+  - After: Gregg has no effect, he's just a dude.
+- **Gregg's Vape**
+  - Before: Equip this to a card that has 'Greg' in the name (including Ggrreegg). The creature gains +4 ATK.
+  - After: Equip this to a card that has 'Gregg' in the name (including Ggrreegg). The creature gains +4 ATK.
+
+</details>
+
+## Card list v3 (old spreadsheet)
+
+**Card changes**
+
+- **New:** Galorpian Armory, Bull Run, Seraphim Wall, Sanctified Knight, Lantern Cherub, Judicator Angel, Bellkeeper Monk, Vein Ripper, Reactor Ghoul, Pain Drinker, Carrion Duchess, Velociraptor, Ankylosaurus, Supreme Galorpian Queen, Galorpian War Machine, Galorpian Test Pilot, Galorpian Technician, Galorpian Mechanic, Galorpian Heavy Frame, Penny Stock Goblin, The Local Legend, Suburbia, Intern, HOA President, Gregg's step Mom, Gregg's Mom, Gregg's Friend Joe, Gregg's Dawg, Gregg's Dad, Lab Escapee, Adaptive Horror, The Swarm Mind, Queen Parasite, Parasite Larva, Mind Worm, Flesh Tick, Cyst Spreader, Brood Core, Brain Sucker, Bone Leech, Alexandre, Galorpian Thrusters, Galorpian Shield Generator, Galorpian Scrap Cloak, Galorpian Reactor Harness, Galorpian Combat Armor, Galorpian Pulse Blade, Galorpian Workshop, Brood Fog, Open Vein, Emergency Retrofit, HOA Complaint, Short Change, Divine Silence, Market Crash, Tax Evasion, RS PRO 115mm Stainless Steel Curved Tweezers, Thiefling Sleight of Hand, Fossil Record, Salvage Protocol, Overclock Sequence, Costco Hot Dog and Soda Comb for $1.5, Infection Burst, Host Collapse
+- **Removed:** Thiefling Slight of Hand, Galorpian armour
+- **Renamed:** Gregg's → Greggs, Jar of materialism → Jar of Materialism, Primordial soup → Primordial Soup, the bodega → The bodega, Galorpian rail cannon → Galorpian Rail Cannon, Cunny → Cabbit
+- **Stats:**
+  - Purifier Nun: Flux – → 2
+  - Holy Acolyte: Flux – → 2
+  - Chapel Guard: Flux – → 3
+  - The Meat Cathedral: HP 18 → 20
+  - Skinless Titan: ATK 14 → 15, HP 8 → 10
+  - Renroc The Dark Marquis: ATK 3 → 5, HP 5 → 7, Flux – → 3
+  - Nomed The Dark Viscount: ATK 5 → 6, HP 8 → 9, Flux – → 3
+  - Flesh Collector: ATK 4 → 5, HP 6 → 8, Flux – → 4
+  - Ergof The Dark Emperor: ATK 8 → 10, HP 20 → 22
+  - Blood Priest: ATK 2 → 3, HP 7 → 8, Flux – → 3
+  - Blood Imp: ATK 2 → 3, Flux – → 1
+  - Hemogoblin: ATK 3 → 4, HP 4 → 5, Flux – → 3
+  - TT-rex: ATK 15 → 15(bleed5)
+  - Triceratops: Flux – → 3
+  - T-Rex: ATK 5 → 6(bleed2)
+  - Brontosaurus: Flux – → 3
+  - Dino egg: Flux – → 1
+  - Galorpian: Flux – → 3
+  - Goblin: ATK 3 → 2, HP 5 → 4, Flux – → 2
+  - Purrramid: ATK 7 → 10, HP 15 → 20
+  - Jonnhy '5 inches': ATK – → 3, HP – → 5, Flux – → 2
+  - Grunny: ATK 6 → 4, HP 13 → 14
+  - Greg: Flux – → 3
+  - Grat: ATK 6 → 7, HP 12 → 13
+  - Cat: Flux – → 2
+  - Bunny: Flux – → 1
+  - The Aberration: ATK 6 → 7, HP 10 → 12
+  - Spine Crawler: HP 3 → 4, Flux – → 2
+  - Radiation Hound: Flux – → 3
+  - Patient Zero: ATK 5 → 6, HP 12 → 13
+  - Mutation Host: ATK 3 → 4, HP 4 → 5, Flux – → 3
+  - Flesh Lump: ATK 1 → 2, Flux – → 2
+  - Failed Clone: Flux – → 1
+  - Alexandru: Flux – → 3
+  - Alexanduex: ATK 4 → 7, HP 10 → 15
+
+<details>
+<summary>50 cards reworded (old and new text)</summary>
+
+- **Ritual Pit**
+  - Before: Once per turn: You may destroy one friendly creature. If you do, your next fusion this turn may use one creature from your graveyard.
+  - After: Once per turn you may: Destroy 1 creature you control. Your next fusion this turn may use one Blood Demon creature from your Waste Repository as Fusion Material.
+- **Goblin Bank**
+  - Before: This 'Goblin Bank' generates 1 gold at the start of every turn. When this 'Goblin Bank' holds 5 gold, it stops generating gold. If it were to have more than 5 gold, it will liquidate all gold over 5 after 3 turns.
+  - After: At the start of your turn, gain 1 gold. If you control 5 or more gold, this effect does not activate. / You can choose to invest 4 gold in this bank. If you do it enters Liquidation for 3 turns. When Liquidation resolves, you gain 7 gold. / If this 'Goblin Bank' is destroyed you loose anything invested in it
+- **Purifier Nun**
+  - Before: When summoned: Cleanse (remove) up to 2 Bleed from any creature. This card cannot gain bleed.
+  - After: When summoned: Remove up to 2 Bleeding from any creature. This card cannot gain bleeding.
+- **Cathedral Guardian**
+  - Before: At the end of your turn: Restore 2 HP to all 'angel' creatures you control
+  - After: {Chapel Guard + 2 'Angel' creatures} At the end of your turn: Restore 2 HP to all 'angel' creatures you control
+- **The Meat Cathedral**
+  - Before: {Blood Priest + Flesh Collector} / Once per turn: Banish one creature you control then draw a card. If you do so at end phase you may Revive one creature that got destroyed this turn.
+  - After: {Blood Priest + Flesh Collector} / Once per turn: Banish one creature you control then draw a card. If you do so at end phase you may Revive one 'Blood Demon' creature that got destroyed this turn.
+- **Skinless Titan**
+  - Before: {2 Blood Demons with different names] / While this card is on the field, at the end of every turn: Lose 2 PHP.
+  - After: {2 Blood Demons with different names} / While this card is on the field, at the end of every turn: Lose 2 PHP. Whenever this creature destroys another creature: Apply 2 bleeding to all enemy creatures.
+- **Renroc The Dark Marquis**
+  - Before: To summon this creature, perform a blood sacrifice: Pay 4 PHP. Once per turn: Target 1 creature with 4 or less HP. Pay 2 PHP to destroy that creature.
+  - After: To Materialize this creature: perform a blood sacrifice: Pay 4 PHP. Once per turn: Target 1 creature with 5 or less HP. Pay 2 PHP to destroy that creature.
+- **Nomed The Dark Viscount**
+  - Before: To summon this creature, perform a blood sacrifice: Pay 4 PHP.
+  - After: To Materialize this creature: perform a blood sacrifice: Pay 4 PHP.
+- **Flesh Collector**
+  - Before: To summon this creature, perform a blood sacrifice: Pay 4 PHP. Once per turn you may destroy 1 creature you control. If you do, draw 1 card.
+  - After: To Materialize this creature: perform a blood sacrifice: Pay 4 PHP. Once per turn: Destroy another creature you control. Draw 1 card.
+- **Ergof The Dark Emperor**
+  - Before: Once per turn: Target 1 creature with 10 or less HP. Pay 5 PHP to destroy that creature.
+  - After: {Nomed The Dark Viscount + Renroc The Dark Marquis} / Once per turn: Target 1 creature with 10 or less HP. Pay 5 PHP to destroy that creature. Whenever a creature that's bleeding dies: Restore 2 PHP.
+- **Blood Priest**
+  - Before: At end phase: You may pay 1 PHP. If you do, revive a Blood Demon with 2 or less HP from your graveyard.
+  - After: At end phase: You may pay 1 PHP. If you do, revive a Blood Demon with 5 or less HP from your Waste Repository.
+- **Hemogoblin**
+  - Before: Once per turn: You may banish up to 3 'Blood Demon' creatures from your graveyard: This card gains +2 ATK for each card banished this way. At end phase, lose 1 PHP for each card banished this turn.
+  - After: Once per turn: Banish up to 3 Blood Demon creatures from your Waste Repository. This creature gains +2 ATK for each card banished this way until end of turn. / At end phase: Lose 1 PHP for each card banished this turn.
+- **Triceratops**
+  - Before: This late Cretaceous herbivore could grow up to 800 teeth during its life time!
+  - After: When this creature attacks, you may deal 1 damage to one adjacent enemy creature.
+- **T-Rex**
+  - Before: Can only be summoned by hatching from a 'Dino Egg'.
+  - After: Can only be summoned by hatching from a Dino Egg.
+- **Dino egg**
+  - Before: After 2 turns on the field this card hatches into a 'T-Rex' that you summon from your hand.
+  - After: After 2 turns on the field, this card hatches into a T-Rex from your hand. If this card is equipped with Egg Incubator, it hatches 1 turn sooner.
+- **Galorpian Queen**
+  - Before: {Galorpian + Galorpian} / Why are you purple?
+  - After: {Galorpian + Galorpian} / Why are you purple? / Once per turn, you may equip 1 Galorpian Equipment from your hand or Waste Repository to a Galorpian creature you control. That creature gains +1 ATK and +1 HP.
+- **Galorpian**
+  - Before: Why are you blue?
+  - After: Why are you blue? / Once per turn, you may equip 1 Galorpian Equipment from your hand to this card. If you do, this card gains +1 ATK until end of turn.
+- **Hop Goblin**
+  - Before: {Goblin+Goblin} / Once per game you can invest gold into this Hop Goblin's stats. 1 gold = +1 ATK or HP. In order for this goblin to engage in battle after having it's stats increased you need to pay it 2 gold.
+  - After: {2 'Goblin' creatures} / Once per turn, you may invest any amount of gold from your pool onto this card as invested gold. For each gold invested this way, choose +1 ATK or +1 HP permanently.
+- **Goblin**
+  - Before: A greedy filthy no good goblin. Once per game you can invest gold into this Goblin's stats. 1 gold = +1 ATK or HP. In order for this goblin to engage in battle after having it's stats increased you need to pay it 2 gold.
+  - After: Once per turn, you may invest any amount of gold from your pool onto this card as invested gold. For each gold invested this way, choose +1 ATK or +1 HP permanently.
+- **Purrramid**
+  - Before: Cat+Cat| This furry purrramid is just so cute! :3 / If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+  - After: {3 Cats} This furry purrramid is just so cute! :3 / If this creature doesn’t attack: Restore 3 HP to it at end phase.
+- **Jonnhy '5 inches'**
+  - Before: He's walking here! Legend says he's a cousin of gregg.
+  - After: He's walking here! Legend says he's Gregg’s cousing from New York. Whenever another Mundane creature is Materialized: Restore 1 HP to this creature.
+- **Grunny**
+  - Before: Greg+ Bunny | Your opponent can only target bunny creatures while this card is on the field.
+  - After: {Any Greg + Bunny} / Your opponent can only target Bunny creatures while this card is on the field.
+- **Grat**
+  - Before: Greg + Cat | If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+  - After: {Any Greg + Cat} | If this creature doesn’t attack: Restore 2 HP to it at end phase.
+- **Ggrreegg**
+  - Before: Greg+Greg / _x0003_Ggrreegg has no effect, he's just a big dude.
+  - After: {2 Greg cards} / Other Mundane creatures you control take 1 less damage from combat.
+- **Cat**
+  - Before: If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+  - After: If this creature doesn’t attack: Restore 1 HP to it at end phase.
+- **Bunny**
+  - Before: Your opponent can only target 'bunny' creatures while this card is on the field.
+  - After: Your opponent can only target Bunny creatures while this card is on the field.
+- **The Aberration**
+  - Before: {2 Mutants} / At the start of every turn you may place one more 'mutant' creature underneath this card as fusion metarial. Once per turn you may discard one fusion metarial and 'Horrificly Mutate' this 'The Aberration'' creature.
+  - After: {2 Mutants} / At the start of your turn, you may place 1 Mutant from your Waste Repository under this card as a Fusion Splice. Max 3 Fusion Splices. Once per turn, you may discard 1 Fusion Splice and Horrifically Mutate (D12) this creature.
+- **Spine Crawler**
+  - Before: Whenever this creature mutates: Gain +1 ATK.
+  - After: Whenever this creature mutates: it gains +1 ATK.
+- **Patient Zero**
+  - Before: {Mutation Host + any 'Mutant' creature} / Once pert turn choose up to 2 other creatures.Those creatures mutate. if a mutation roll is 1 this creature also loses 2HP.
+  - After: {Mutation Host + any 'Mutant' creature} / Once pert turn choose up to 2 other creatures. Those creatures mutate. If a mutation roll is 1 this creature also loses an additional 2HP.
+- **Alexandru**
+  - Before: Once per turn, flip all coins in your possession. For each heads: Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck. Tails do nothing.
+  - After: Once per turn, flip all coins you control. For each heads: steal a random card from your opponent’s hand, reveal it and put it on top of their deck.
+- **Alexanduex**
+  - Before: {Alexandru + Alexandru} / Once per turn, flip all coins in your possession. / For each heads, choose one: / • Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck. / • Steal a card from your opponent’s field and shuffle it into their hand. / Tails do nothing.
+  - After: {2 'Thiefling' creatures with 'Alex' in their name} / Once per turn, flip all coins you control. For each heads, choose one: / • Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck. / • Steal a card from your opponent’s field and shuffle it into their hand. / Tails do nothing.
+- **Greg's Vape**
+  - Before: Select a 'Greg' creature and equip this vape to that creature. The creature doubles it's ATK for one turn.
+  - After: Equip this to a card that has 'Greg' in the name (including Ggrreegg). The creature gains +4 ATK.
+- **Loaded Dice**
+  - Before: Instant Spell / Choose 1 coin flip. You may flip again and use the second result.
+  - After: Choose 1 coin flip or dice roll. You may flip/roll again and use the second result.
+- **Divine Shelter**
+  - Before: When a creature you control would be attacked: prevent all combat damage that would be dealt to it this battle.
+  - After: When a creature you control would be attacked, prevent all combat damage that would be dealt to it this battle.
+- **Pipebomb**
+  - Before: Target 1 Continuous Spell or Field Spell on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.
+  - After: Target a Continuous/Field Spell or Equipment on the field and place a 'Pipebomb' on it. After 1 turn, the 'Pipebomb' explodes and destroys that card.
+- **Microwave**
+  - Before: Reheat a creature from any graveyard and summon it on your side of the field.
+  - After: Reheat a creature from any Waste Repository and summon it on your side of the field.
+- **Energy drink**
+  - Before: Choose 1 creature you control and restore 3 HP to it.
+  - After: Choose 1 creature you control and restore half (rounded down) of it’s max hp to it.
+- **Crack a pack**
+  - Before: Open a pack (if you don't have one Lil_KleinStein will provide one), add any cards you like / to your hand and put the rest in the graveyard.
+  - After: Open a booster pack, add any cards you like to your hand and put the rest in the Waste Repository.
+- **Sacraficial lamb**
+  - Before: Sacrifice 2 creatures you control to gain 5 PHP.
+  - After: Sacrifice 2 'Blood Demon' creatures you control to gain 5 PHP.
+- **Blood Pact Summoning Circle**
+  - Before: Pay half your current Life Points, gain an additional Normal Summon this turn.
+  - After: You may pay 3 PHP. Reduce the Flux cost of the next Blood Demon creature you Materialize this turn by 2.
+- **Blood Frenzy**
+  - Before: Target a 'Blood Demon' creature you control, it gains +4 atk but dies at the end of this turn.
+  - After: Target 1 ‘Blood Demon’ creature, it gains: +4 ATK and Bleed2 this turn. Destroy it during end phase.
+- **Archaeologist**
+  - Before: Banish 3 'dino' creatures from your graveyard and specific summon a 'Triceratops' or 'Brontosaurus' from your deck or hand.
+  - After: Banish 3 'Dino' creatures from your Waste Repository. Materialize any 'Dino' creature that isn't a 'T-Rex' from your hand or deck.
+- **Raboorbu**
+  - Before: This strange fruit gives a 'Galorpian' creature the ability to attack twice for one turn.
+  - After: Choose a 'Galorpian' creature. It may attack twice this turn. / If that creature is equipped, it gains +2 ATK until end of turn.
+- **Goblin Stock Broker**
+  - Before: Target a 'Goblin Bank' you control, then choose the amount of gold you want to bet on the stock market. After that, flip a coin. If it's heads, you double the amount of gold invested. If tails, you lose all the invested gold.
+  - After: Target a Goblin Bank you control. Choose a real stock, ETF, or cryptocurrency ticker and record its price now. Put up to 3 gold from your pool in that 'gobling bank'. At the start of your next turn, look up the same asset again: / - If it rose, double the invested gold and add it to your pool. / - If it fell, lose the invested gold.
+- **Goblin Shuffle**
+  - Before: Put up to 5 cards from your hand on the bottom of your deck, draw that many cards.
+  - After: Put up to 5 cards from your hand on the bottom of your deck, then draw that many cards. / For each Goblin card you put at the bottom of your deck this way, gain 1 gold.
+- **Genetic Collapse**
+  - Before: Destroy a Mutant.Deal damage equal to its half it's ATK (rounded up) to all creatures adjacent to it.
+  - After: Destroy a ‘Mutant’ creature you control. Deal damage equal to half its ATK, rounded up, to all adjacent creatures.
+- **Primordial Soup**
+  - Before: At the start of every turn roll a 20 sided dice, if this dice hits 1 the whole field is cleared including this card. / At the end of every turn every 'dino' card on the field gains +1HP (no overheal). / (field spell)
+  - After: At the end of each turn, all Dino creatures you control gain +1 HP. Once per turn, the first Dino creature you Materialize costs 1 less Flux.
+- **The bodega**
+  - Before: Maaan you really CAN get everything here
+  - After: During your End Phase, you may discard 1 card, then draw 1 card. If the card you discarded was a Mundane Creature, choose 1 Mundane Creature on the field; it gains +2 ATK.
+- **Galorpian Rail Cannon**
+  - Before: Equip this 'Galorpian rail cannon' to any 'Galorpian' creature. After a turn of being equiped, that card gains +7 ATK.
+  - After: Equip this to a 'Galorpian' creature. If this card has been attached since your previous turn, the equipped creature gains +7 ATK.
+- **Cabbit**
+  - Before: Cat+Bunny | If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn. / Your opponent can only target bunny creatures while this card is on the field.
+  - After: {Cat + Bunny} / If this creature doesn’t attack: Restore 1 HP to it at end phase. / Your opponent can only target Bunny creatures while this card is on the field.
+
+</details>
+
+## Card list v2 (old spreadsheet)
+
+**Card changes**
+
+- **New:** Archaeologist, Blood Pact Summoning Circle, Energy drink, Goblin Shuffle, Pipebomb, Sacraficial lamb, Galorpian armour, Galorpian Queen, Nomed The Dark Viscount, Renroc The Dark Marquis, Ergof The Dark Emperor, Loaded Dice, Blood Imp, Flesh Collector, Hemogoblin, Skinless Titan, Ritual Pit, Blood Frenzy, The Meat Cathedral, Blood Priest, Failed Clone, Flesh Lump, Spine Crawler, Mutation Host, Radiation Hound, Forced Evolution, Nuclear Waste, Genetic Collapse, The Aberration, Patient Zero, Holy Acolyte, Chapel Guard, Purifier Nun, Divine Shelter, Sanctuary Bells, Cathedral Guardian
+- **Removed:** Galorpian Encampment
+- **Renamed:** Detroid → Detroit
+- **Stats:**
+  - Galorpian rail cannon: ATK 15 → –, HP 5 → –
+  - Alexandru: ATK 2 → 3, HP 4 → 5
+  - Alexanduex: HP 7 → 10
+  - Grat: HP 6 → 12
+  - Grunny: ATK 4 → 6, HP 5 → 13
+  - Ggrreegg: HP 10 → 14
+  - Greg: ATK 5 → 4, HP 7 → 6
+  - Goblin: ATK 4 → 3, HP 2 → 5
+  - Hop Goblin: ATK 4 → 7, HP 7 → 14
+  - Brontosaurus: ATK 3 → 2, HP 15 → 10
+  - T-Rex: ATK 10 → 5, HP 10 → 9
+  - Triceratops: ATK 5 → 4, HP 7 → 6
+  - TT-rex: ATK 20 → 15, HP 25 → 30
+  - Cunny: HP 5 → 8
+  - Cat: HP 5 → 6
+  - Purrramid: ATK 10 → 7, HP 20 → 15
+
+<details>
+<summary>25 cards reworded (old and new text)</summary>
+
+- **Raboorbu**
+  - Before: This strange fruit gives a 'Galorpian' card the ability to attack twice for one turn.
+  - After: This strange fruit gives a 'Galorpian' creature the ability to attack twice for one turn.
+- **And for my next trick...**
+  - Before: Steal your opponents coin, they may not do any coin flips anymore. / After stealing their coin, add this card to their deck and shuffel.
+  - After: Steal one of your opponents coin(s), they may not do any coin flips anymore if they don't have any coins left. After stealing their coin, add this card to their deck and shuffel.
+- **Bad Bunny Concert tickets**
+  - Before: Turn any creature on the field into a mundane bunny, it keeps it's ATK but it's HP is halfed / (take the lower halve) and looses any effects and original atribute(s).
+  - After: Turn any creature on the field into a 'Bunny' creature, it keeps it's ATK & HP but looses any effects and original atribute(s).
+- **Goblin Bank**
+  - Before: At the beginning of your turn gain +1 Gold for every 'Goblin' card on the field. / (Continuous spell)
+  - After: This 'Goblin Bank' generates 1 gold at the start of every turn. When this 'Goblin Bank' holds 5 gold, it stops generating gold. If it were to have more than 5 gold, it will liquidate all gold over 5 after 3 turns.
+- **Goblin Stock Broker**
+  - Before: Flip a coin, call heads or tails. If you win, the amount of gold / in the golbin bank is doubled, if you loose it is halfed.
+  - After: Target a 'Goblin Bank' you control, then choose the amount of gold you want to bet on the stock market. After that, flip a coin. If it's heads, you double the amount of gold invested. If tails, you lose all the invested gold.
+- **Gregg's**
+  - Before: All 'Greg' cards on the field heal +1 hp every turn (no overhealth) / (field spell)
+  - After: All 'Greg' cards on your field heal +1 hp at the end of every turn (no overhealth). / (field spell)
+- **Primordial soup**
+  - Before: Every turn roll a 20 sided dice, if this dice hits 1 the whole field is cleared and this card / is destroyed / (field spell)
+  - After: At the start of every turn roll a 20 sided dice, if this dice hits 1 the whole field is cleared including this card. / At the end of every turn every 'dino' card on the field gains +1HP (no overheal). / (field spell)
+- **the bodega**
+  - Before: maaan you really CAN get everything here
+  - After: Maaan you really CAN get everything here
+- **Galorpian rail cannon**
+  - Before: That's one biiiiig cannon. / Requires a 'Galorpian' non 'Building' card adjacent to it in order to attack
+  - After: Equip this 'Galorpian rail cannon' to any 'Galorpian' creature. After a turn of being equiped, that card gains +7 ATK.
+- **Egg incubator**
+  - Before: Egg cards incubate after one turn and there's no summon limit on eggs.
+  - After: Equip this 'Egg incubator' to any 'egg' creature. The equiped 'egg' takes one turn to hatch, and needs to be hit once before it can take damage.
+- **Greg's Vape**
+  - Before: Greg hits his vape! Select a 'Greg' creature and doubles it's ATK points for that turn.
+  - After: Select a 'Greg' creature and equip this vape to that creature. The creature doubles it's ATK for one turn.
+- **Alexandru**
+  - Before: Once per turn flip all the coins in your possesion, for every heads steal a card from your opponent's hand or field, shuffle it into your deck. For every tails, your opponent gets to steal a card from your hand or field and shuffel it into their deck.
+  - After: Once per turn, flip all coins in your possession. For each heads: Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck. Tails do nothing.
+- **Alexanduex**
+  - Before: Alexandru + Alexandru | Once per turn flip all the coins in your possesion, for every heads steal a card / from your opponent's hand or field shuffle it into your deck. For every tails, your opponent gets to steal / a card from your hand or field and shuffel it into their deck.
+  - After: {Alexandru + Alexandru} / Once per turn, flip all coins in your possession. / For each heads, choose one: / • Steal a random card from your opponent’s hand, reveal it, and put it on top of their deck. / • Steal a card from your opponent’s field and shuffle it into their hand. / Tails do nothing.
+- **Goblin**
+  - Before: A greedy filthy no good goblin. They also LOVE gold...
+  - After: A greedy filthy no good goblin. Once per game you can invest gold into this Goblin's stats. 1 gold = +1 ATK or HP. In order for this goblin to engage in battle after having it's stats increased you need to pay it 2 gold.
+- **Hop Goblin**
+  - Before: Goblin+GoblinThis Hop Goblin loves gold so much they gain + 1 ATK & +1 HP per gold / in the 'Goblin Bank'. / In order to attack this goblin requires you pay him 2 gold.
+  - After: {Goblin+Goblin} / Once per game you can invest gold into this Hop Goblin's stats. 1 gold = +1 ATK or HP. In order for this goblin to engage in battle after having it's stats increased you need to pay it 2 gold.
+- **Dino egg**
+  - Before: This card can only be summoned if the 'Primortial soup' field spell is active. / After 2 turns on the field this hatches into a  'Dino' card that you grab from your deck.
+  - After: After 2 turns on the field this card hatches into a 'T-Rex' that you summon from your hand.
+- **Brontosaurus**
+  - Before: This card can only be summoned if the 'Primortial soup' field spell is active. / Can only be summoned by hatching a 'Dino Egg'.
+  - After: This Late Jurassic giant could live up to 100 years, similar to a modern tortoise!
+- **T-Rex**
+  - Before: 2 Dino cards, excluding 'Dino Egg' / This card can only be summoned if the 'Primortial soup' field spell is active. / Now this is epic.
+  - After: Can only be summoned by hatching from a 'Dino Egg'.
+- **Triceratops**
+  - Before: (no text)
+  - After: This late Cretaceous herbivore could grow up to 800 teeth during its life time!
+- **TT-rex**
+  - Before: T-Rex + T-Rex / This card can only be summoned if the 'Primortial soup' field spell is active. / Life... uh, finds a way
+  - After: {T-Rex + T-Rex} / Life... uh, finds a way
+- **Purrramid**
+  - Before: Cat+Cat+Cat | This furry purrramid is just so cute! :3 / If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+  - After: Cat+Cat| This furry purrramid is just so cute! :3 / If a 'Cat' card doesn’t attack it gains +1 hp from sleeping that turn.
+- **Bad Bunny**
+  - Before: Bunny+Bunny | Your opponent can only target bunny creatures while this card is on the field.
+  - After: {Bunny+Bunny} / Your opponent can only target 'bunny' creatures while this card is on the field.
+- **Bunny**
+  - Before: Your opponent can only target bunny creatures while this card is on the field.
+  - After: Your opponent can only target 'bunny' creatures while this card is on the field.
+- **Jonnhy '5 inches'**
+  - Before: He's walking here.
+  - After: He's walking here! Legend says he's a cousin of gregg.
+- **Detroit**
+  - Before: Can't have shit... / Anytime a player steals an amount of cards, double that amount. / (Field Spell)
+  - After: Can't have shit... / Anytime a player steals an amount of cards, double that amount. Only one 'Detroit' field spell can be active at the same time. / (Field Spell)
+
+</details>
+
+## Card list v1 (old spreadsheet)
+
+The first card list.
+
+**Card changes**
+
+- **New:** Greg's Vape, Bad Bunny Concert tickets, Space Squid, Goblin Bank, Goblin Stock Broker, Unfuse, Microwave, Jar of materialism, Primordial soup, Egg incubator, Crack a pack, Raboorbu, Thiefling Slight of Hand, Detroid, And for my next trick..., Gregg's, Galorpian Encampment, Galorpian rail cannon, Bad Bunny, Bunny, Cat, Purrramid, Cunny, Brontosaurus, T-Rex, Triceratops, TT-rex, Dino egg, Goblin, Hop Goblin, Ggrreegg, Greg, Grunny, Grat, Alexandru, Alexanduex, Galorpian, Jonnhy '5 inches', the bodega

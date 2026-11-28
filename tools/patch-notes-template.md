@@ -2,8 +2,9 @@
 
 Every change to the rules and the cards, newest first, from the first ruleset to now. The rules notes are written by
 hand; the **card changes** under each version are worked out from the saved card list, so every new, removed,
-renamed or reworded card is in there (open "cards reworded" to see the old and new text). Card lists were only saved
-from 2026-10-06 on, so the six early rulesets only have their rule changes.
+renamed or reworded card is in there (open "cards reworded" to see the old and new text). Before the card editor
+(2026-10-06) the cards lived in a spreadsheet with its own versions, card lists v1 to v6; those are at the end, after
+the rulesets, because their numbers don't line up with the ruleset numbers.
 
 ## 2026-11-27: removal, small creatures, plush rework
 
@@ -239,3 +240,40 @@ The first ruleset.
 - **Fusion:** creatures on your field only, materials go under the fusion card; it takes one slot; max 2 fusions; **fusion sickness** (can't attack the turn it's made); an unfused fusion's materials come back if there's room; when a fusion dies, its materials go to the graveyard.
 - **Spells:** Normal, Instant, Infinite/Field. Chains resolve last in, first out.
 - Hand limit 8; can't draw → 5 damage. A fusion never grants more than two "once per turn" effects. Players need a coin for coin flips. **The card wins** if it contradicts the rules.
+
+## Card list v6 → the card editor (2026-10-06)
+
+The last spreadsheet version against the card list the card editor started with. Card lists v1 to v6 come from the old
+spreadsheet (last opened on 2026-10-05); their numbers are their own and don't match the ruleset or rulebook numbers.
+
+<!-- cards: file:saves/versions/Card list v6 (old spreadsheet, up to 2026-10-05).csv..a2e7977 -->
+
+## Card list v6 (old spreadsheet)
+
+Most of the cards marked "will most likely be cut" in v5 are gone; Galorpian stays, marked "will most likely be cut or turned into a different faction".
+
+<!-- cards: file:saves/versions/Card list v5 (old spreadsheet, up to 2026-10-05).csv..file:saves/versions/Card list v6 (old spreadsheet, up to 2026-10-05).csv -->
+
+## Card list v5 (old spreadsheet)
+
+33 cards are marked "will most likely be cut": the Galorpian faction (Galorpian, Galorpian Queen, Supreme Galorpian Queen, Galorpian Heavy Frame, War Machine, Mechanic, Technician, Test Pilot, Armory, Workshop, Combat Armor, Reactor Harness, Scrap Cloak, Shield Generator, Thrusters, Pulse Blade, Rail Cannon, Emergency Retrofit, Overclock Sequence, Raboorbu, Salvage Protocol), Cathedral Guardian, Reactor Ghoul, Ggrreegg, Gregg's Dad, Gregg's Mom, Gregg's step Mom, Intern, Bad Bunny, Grat, Grunny, Suburbia and Queen Parasite.
+
+<!-- cards: file:saves/versions/Card list v4 (old spreadsheet, up to 2026-10-05).csv..file:saves/versions/Card list v5 (old spreadsheet, up to 2026-10-05).csv -->
+
+## Card list v4 (old spreadsheet)
+
+<!-- cards: file:saves/versions/Card list v3 (old spreadsheet, up to 2026-10-05).csv..file:saves/versions/Card list v4 (old spreadsheet, up to 2026-10-05).csv -->
+
+## Card list v3 (old spreadsheet)
+
+<!-- cards: file:saves/versions/Card list v2 (old spreadsheet, up to 2026-10-05).csv..file:saves/versions/Card list v3 (old spreadsheet, up to 2026-10-05).csv -->
+
+## Card list v2 (old spreadsheet)
+
+<!-- cards: file:saves/versions/Card list v1 (old spreadsheet, up to 2026-10-05).csv..file:saves/versions/Card list v2 (old spreadsheet, up to 2026-10-05).csv -->
+
+## Card list v1 (old spreadsheet)
+
+The first card list.
+
+<!-- cards: EMPTY..file:saves/versions/Card list v1 (old spreadsheet, up to 2026-10-05).csv -->

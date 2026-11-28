@@ -15,7 +15,9 @@ BLANK = {"", "n/a", "/", "-", "–"}
 STATS = [("Type", "Type"), ("ATK", "ATK"), ("HP", "HP"), ("Flux Cost", "Flux"), ("Speed", "Speed")]
 
 def load(ref):
-    if ref == "WORKTREE": raw = open(os.path.join(ROOT, CSV), "rb").read()
+    if ref == "EMPTY": return {}
+    if ref.startswith("file:"): raw = open(os.path.join(ROOT, ref[5:]), "rb").read()   # an old card list in saves/versions
+    elif ref == "WORKTREE": raw = open(os.path.join(ROOT, CSV), "rb").read()
     else: raw = subprocess.run([GIT, "-C", ROOT, "show", f"{ref}:{CSV}"], capture_output=True, check=True).stdout
     out = {}
     for r in csv.DictReader(io.StringIO(raw.decode("utf-8", "replace").lstrip("\ufeff"), newline="")):
@@ -32,6 +34,8 @@ def renames(gone, new, a, b):
     pairs = []
     for o in list(gone):
         if FORCE.get(o) in new: pairs.append((o, FORCE[o])); gone.remove(o); new.remove(FORCE[o]); continue
+        same = [n for n in new if re.sub(r"\W", "", n.lower()) == re.sub(r"\W", "", o.lower())]   # only the spelling changed
+        if same: pairs.append((o, same[0])); gone.remove(o); new.remove(same[0]); continue
         best = None
         for n in new:
             if a[o].get("Type") != b[n].get("Type"): continue
@@ -44,6 +48,7 @@ def renames(gone, new, a, b):
 
 def section(span):
     old, new_ref = span.split("..")
+    sheet = old.startswith("file:") or new_ref.startswith("file:")   # the old spreadsheet used its own type names
     a, b = load(old), load(new_ref)
     added = [n for n in b if n not in a]; removed = [n for n in a if n not in b]
     ren = renames(removed, added, a, b)
@@ -61,11 +66,12 @@ def section(span):
         if not live(x) and not live(y): continue
         ch = []
         for k, label in STATS:
+            if sheet and k == "Type": continue
             if x.get(k, "") != y.get(k, "") and not (x.get(k, "").lower() in BLANK and y.get(k, "").lower() in BLANK):
                 if k == "Speed" and not x.get(k): speed_new += 1; continue
                 ch.append(f"{label} {x.get(k) or '–'} → {y.get(k) or '–'}")
         if ch: stat.append(f"{m}: " + ", ".join(ch))
-        if x.get("Attribute", "") != y.get("Attribute", ""): attr.append(f"{m}: {x.get('Attribute') or '–'} → {y.get('Attribute') or '–'}")
+        if x.get("Attribute", "") != y.get("Attribute", "") and not (sheet and not (x.get("Attribute") and y.get("Attribute"))): attr.append(f"{m}: {x.get('Attribute') or '–'} → {y.get('Attribute') or '–'}")
         if flat(x.get("Description", "")) != flat(y.get("Description", "")): text.append((m, flat(x.get("Description", "")), flat(y.get("Description", ""))))
     if speed_new: lines.append(f"- **Speed** added to {speed_new} creatures and fusions.")
     for label, items in (("Stats", stat), ("Attributes", attr)):
@@ -81,6 +87,6 @@ def section(span):
     return "\n".join(lines)
 
 tpl = open(os.path.join(ROOT, "tools", "patch-notes-template.md"), encoding="utf-8").read()
-out = re.sub(r"<!-- cards: ([^ ]+) -->", lambda m: section(m.group(1)), tpl)
+out = re.sub(r"<!-- cards: (.+?) -->", lambda m: section(m.group(1)), tpl)
 open(os.path.join(ROOT, "PATCH-NOTES.md"), "w", encoding="utf-8", newline="\n").write(out)
 print("PATCH-NOTES.md:", len(out), "characters")
