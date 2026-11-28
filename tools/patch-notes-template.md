@@ -10,6 +10,7 @@ the rulesets, because their numbers don't line up with the ruleset numbers.
 
 **Rules**
 - **Speed has no minimum or maximum.** Printed Speed still runs 1–8, but effects can take it to 0, below 0, or above 8. (You're FIRED!'s Speed loss used to stop at 1.)
+- **Why set a spell face down:** a set normal Spell can be played on your opponent's turn, which it otherwise can't. For Continuous Spells and Instant Spells it mostly just hides what you're holding (an Instant Spell can already be played from your hand on your opponent's turn).
 
 No card changes.
 
