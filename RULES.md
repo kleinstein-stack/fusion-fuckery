@@ -96,12 +96,12 @@ fusion's fusion splices are yours too, Gabe is 8/16 and Judicator Angel 6/12, an
 Duchess and Nomed The Dark Viscount are Winged. The cards, decks and rulebook from before are in `saves/versions/`
 ("SAVE before balance patch 2026-11-26").
 
-**2026-11-27:** **Face-down spells** (10.9): like Yu-Gi-Oh!, you can set a spell face down in your Main Phase and
+**2026-11-27:** **Face-down spells** (10.9): you can set a spell face down in your Main Phase and
 play it later, on your opponent's turn too. **Unfuse** now materializes the fusion splices, so their "when
 materialized" effects trigger. **Déjà Vu** works once per game. **Boss's Orders is now You're FIRED!**: 1 damage to a
 creature, and it loses 2 Speed. **Arriving:** creatures can attack the turn they're
 materialized; only fusions (winded) wait a turn. **Speed:** no more +1 Speed for the attacker; on a speed tie the attacker strikes
-first (it was a coin flip). Twisted Dimensions says the same. **Plushies reworked** (14.4): a plushy materialized with
+first (it was a coin flip). Twisted Dimensions says the same. **Speed has no cap** (2026-11-28): effects can take it below 0 or above 8. **Plushies reworked** (14.4): a plushy materialized with
 no Claw Machine on the field is destroyed (it used to be impossible to materialize one); Claw Machine now rolls a d6
 once per turn and on a 6 brings a Fluffy creature back from your Waste Repository; Arcade Kid only searches for the
 Claw Machine; new death effects on Plush Salem (draw 1, then discard 1), Plush Sanctified Knight (1 damage to the
@@ -235,7 +235,7 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
    Field Spell, or a Neighborhood Watch.
 8. **Nuclear Waste (v4.7)** rolls for one of your creatures at random at the end of your turn. A creature it destroys
    was destroyed, so its "when destroyed" effects trigger.
-9. **Face-down spells (2026-11-27, like Yu-Gi-Oh!):** in your Main Phase, instead of playing a Spell, Instant Spell or
+9. **Face-down spells (2026-11-27):** in your Main Phase, instead of playing a Spell, Instant Spell or
    Continuous Spell from your hand, you may **set** it face down in an empty spell zone (Field Spells can't be set).
    It takes up that zone, and your opponent only sees that a card is there.
    - **Not the turn you set it.** From your opponent's next turn on, you may flip it face up and play it whenever
@@ -245,7 +245,8 @@ Continuous Spells, a mountain for Field Spells. A normal Spell has no symbol.
      ("Spellcount 3+ only", "You can only play 1 … per turn") are checked then, and any cost is paid then.
    - Pipebomb can destroy a face-down spell. It goes to its owner's Waste Repository without doing anything.
    - You don't have to play it; it stays until you do or something removes it.
-10. **Losing Speed (You're FIRED!, 2026-11-27):** permanent, but Speed never goes below 1.
+10. **Losing Speed (You're FIRED!, 2026-11-27):** permanent. **Speed has no minimum or maximum (2026-11-28):** it can
+   go to 0, below 0, or above 8.
 
 ## 11. Health, damage & destruction
 
@@ -292,7 +293,8 @@ Chapel Guard and Seraphim Wall can still save it, as with any "destroy".
    lanes next to it hit it back with their ATK, unless they're winded (7).
 4. **Response window:** after the attack is declared, the defending player, then the attacking player, may play
    Instants. "When this creature attacks" effects trigger when the attack is declared.
-5. **Speed decides who hits first.** Speed runs **1–8**; 4 is normal. The faster creature deals its damage first.
+5. **Speed decides who hits first.** Printed Speed runs **1–8**; 4 is normal. Effects can push it past 8 or down to 0
+   or below; there's no cap (2026-11-28). The faster creature deals its damage first.
    **On a tie, the attacker strikes first (2026-11-27).** (From v4.6 the attacker got +1 Speed for its attack and a
    tie was a coin flip; there's no attacker's +1 any more.)
    If the first hit destroys the other creature, it doesn't hit back. On a direct attack, enemies faster than the
@@ -565,7 +567,7 @@ you play them early.
 | Flux | starts 3, +1 a turn, max 10. Second player +1 on their first turn |
 | Reactor Phase | +1 max flux and refill; or also Feed (a card to Oblivion: +1 flux this turn); or Skip (no +1, draw 1) |
 | Lanes / spell zones / field spells | 3 / 3 / 1 per player |
-| Speed | 1–8, 4 is normal. Faster strikes first; on a tie the attacker does |
+| Speed | Printed 1–8, 4 is normal, no cap on changes. Faster strikes first; on a tie the attacker does |
 | Winded | Turn it sideways. A creature that attacked, or a fusion just made, can't hit back when attacked until your next turn. On a direct attack it still hits back, last |
 | Fusing | once per turn, 2 flux, two 5+ flux creatures (or fusions) in lanes next to each other. The fusion keeps their damage and is winded |
 | Unfuse | the splices come back at full HP and split the fusion's damage, never below 1 HP |

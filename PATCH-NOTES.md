@@ -6,10 +6,17 @@ renamed or reworded card is in there (open "cards reworded" to see the old and n
 (2026-10-06) the cards lived in a spreadsheet with its own versions, card lists v1 to v6; those are at the end, after
 the rulesets, because their numbers don't line up with the ruleset numbers.
 
+## 2026-11-28
+
+**Rules**
+- **Speed has no minimum or maximum.** Printed Speed still runs 1–8, but effects can take it to 0, below 0, or above 8. (You're FIRED!'s Speed loss used to stop at 1.)
+
+No card changes.
+
 ## 2026-11-27: removal, small creatures, plush rework
 
 **Rules**
-- **Face-down spells** (like Yu-Gi-Oh!): in your Main Phase you can set a Spell, Instant Spell or Continuous Spell face down in an empty spell zone (not a Field Spell). From your opponent's next turn on, flip it and play it whenever you could play an Instant, on their turn too. It counts as played when it's flipped. Pipebomb can destroy it while it's face down.
+- **Face-down spells:** in your Main Phase you can set a Spell, Instant Spell or Continuous Spell face down in an empty spell zone (not a Field Spell). From your opponent's next turn on, flip it and play it whenever you could play an Instant, on their turn too. It counts as played when it's flipped. Pipebomb can destroy it while it's face down.
 - **No more attacker's advantage:** the attacker no longer gets +1 Speed. On a speed tie the **attacker strikes first** (it was a coin flip). Twisted Dimensions still reverses Speed, and a tie still goes to the attacker.
 - **Creatures can attack the turn they arrive.** Only fusions wait a turn (they arrive winded), and creatures that come back winded from Unfuse.
 - **Unfuse materializes** the fusion splices, so their "when materialized" effects trigger.
