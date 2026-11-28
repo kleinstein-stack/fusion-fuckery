@@ -3,7 +3,7 @@
 The art board as a Google Apps Script web app, shown on a Google Sites page. Artists submit art through the Google
 Form; the board shows each card's current look, stats, card text and art brief, and the art you approve.
 
-The site has five pages, picked from the tabs at the top:
+The site has six pages, picked from the tabs at the top:
 
 - **Art board:** the cards and their art, as above.
 - **Deck builder:** build a deck by clicking cards. It enforces the deck rules (a Main Deck of exactly 30, a Fusion
@@ -15,6 +15,9 @@ The site has five pages, picked from the tabs at the top:
   (a starter with cold-storage cards is left out). Each shows whether it's legal, its key cards, and every card on
   request, and can be loaded into the deck builder.
 - **Rules:** the rulebook, from `rules/rulebook.html`, with a link to the PDF.
+- **Patch notes:** every rules and card change, newest first, from `PATCH-NOTES.md`. To add a patch, write its rules
+  notes at the top of `tools/patch-notes-template.md` with a `<!-- cards: <last commit>..HEAD -->` line under them, run
+  `python tools/patch-notes.py` and push; the card changes are worked out from the card list.
 - **Play:** the tabletop (`play.html` on the GitHub Pages site, built from `tools/play-template.html`), for two players
   on one computer. The deck in the deck builder can be picked for Player 1.
 

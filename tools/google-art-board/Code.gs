@@ -1,6 +1,6 @@
 /**
  * Fusion Fuckery Art Board, served as a Google Apps Script web app. Five pages: the art board, a deck builder, the
- * players' decks, the rules and the tabletop (play.html on the GitHub Pages site, in a frame).
+ * players' decks, the rules, the patch notes and the tabletop (play.html on the GitHub Pages site, in a frame).
  *
  * The cards (names, stats, card text), the art briefs, the placeholder art, the card previews, the starter decks and
  * the rulebook come from the public GitHub repo, so the board follows the card editor. Submissions come from the art
@@ -82,6 +82,11 @@ function starterDecks_() {
 /** The Rules page: the rulebook as a page fragment (rules/rulebook.html, made by tools/docx-to-html.py --web). */
 function getRules() {
   return fetchText_('rules/rulebook.html');
+}
+
+/** The Patch notes page: PATCH-NOTES.md (made by tools/patch-notes.py), every rules and card change, newest first. */
+function getPatchNotes() {
+  return fetchText_('PATCH-NOTES.md');
 }
 
 // ---- cards from GitHub ----

@@ -196,6 +196,10 @@ select { font: inherit; color: inherit; border: 1px solid var(--line); backgroun
 .rb p { margin: 0 0 10px; }
 .rb ul, .rb ol { margin: 0 0 12px; padding-left: 24px; } .rb li { margin: 0 0 5px; }
 .rb .tscroll { overflow-x: auto; margin: 6px 0 16px; }
+.notes details { margin: 4px 0 18px; border: 1px solid var(--line, #ddd); border-radius: 8px; padding: 6px 12px; }
+.notes summary { cursor: pointer; font-weight: 700; }
+.notes details li { font-size: 14px; }
+.notes ul ul { margin: 4px 0 6px; }
 .rb table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; line-height: 1.45; }
 .rb th, .rb td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; vertical-align: top; background: var(--surface) !important; }
 .rb th { background: var(--slot) !important; }
@@ -218,6 +222,7 @@ select { font: inherit; color: inherit; border: 1px solid var(--line); backgroun
       <button type="button" role="tab" data-v="build" aria-selected="false">Deck builder</button>
       <button type="button" role="tab" data-v="decks" aria-selected="false">Decks</button>
       <button type="button" role="tab" data-v="rules" aria-selected="false">Rules</button>
+      <button type="button" role="tab" data-v="notes" aria-selected="false">Patch notes</button>
       <button type="button" role="tab" data-v="play" aria-selected="false">Play</button>
     </div>
   </div>
@@ -306,6 +311,19 @@ select { font: inherit; color: inherit; border: 1px solid var(--line); backgroun
   <p class="state" id="decksState">Loading the decks…</p>
   <section class="decks-sec" id="secCommunity" hidden><h2>Player decks</h2><p class="lede">Added to the board by hand.</p><div class="deck-grid" id="gridCommunity"></div></section>
   <section class="decks-sec" id="secStarters" hidden><h2>Starter decks</h2><div class="deck-grid" id="gridStarters"></div></section>
+</div>
+
+<div class="wrap view" id="v-notes" role="tabpanel" hidden>
+  <header class="vhead">
+    <p class="eyebrow">Fusion Fuckery</p>
+    <h1>Patch notes</h1>
+    <p class="lede">Every change to the rules and the cards, newest first, from the very first ruleset. Open "cards reworded" under a version to see the old and new text.</p>
+  </header>
+  <p class="state" id="notesState">Loading the patch notes…</p>
+  <div class="rules-layout" id="notesLayout" hidden>
+    <nav class="toc" id="notesToc" aria-label="Versions"></nav>
+    <div class="rb notes" id="notesBody"></div>
+  </div>
 </div>
 
 <div class="wrap view" id="v-play" role="tabpanel" hidden>
@@ -613,6 +631,7 @@ function showView(v) {
   if (v === "decks" && B) openDecks();
   if (v === "rules") openRules();
   if (v === "play") openPlay();
+  if (v === "notes") openNotes();
   window.scrollTo(0, 0);
 }
 // The tabletop lives on the GitHub Pages site (play.html, built from tools/play-template.html). The deck builder's deck
@@ -895,9 +914,47 @@ function showRules(text) {
   $("rulesState").hidden = true; $("rulesLayout").hidden = false;
 }
 
+/* =====================================================================
+   Patch notes: PATCH-NOTES.md, turned into HTML here. Everything is escaped; the only markup is what this reads:
+   #/##/### headings, "- " bullets (two spaces per level), **bold**, *italic*, `code`, and <details>/<summary> lines.
+   ===================================================================== */
+let notesState = "";
+async function openNotes() {
+  if (notesState) return; notesState = "loading";
+  try { showNotes(await api("getPatchNotes")); notesState = "done"; }
+  catch (e) { notesState = ""; $("notesState").textContent = "The patch notes couldn't load: " + ((e && e.message) || e); }
+}
+function mdInline(t) {
+  return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/&amp;(lt|gt|amp);/g, "&$1;")   // the file already escapes < and > in card text
+    .replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
+}
+function showNotes(md) {
+  const out = []; let depth = 0, para = [];
+  const flushP = () => { if (para.length) { out.push("<p>" + mdInline(para.join(" ")) + "</p>"); para = []; } };
+  const setDepth = d => { while (depth < d) { out.push("<ul>"); depth++; } while (depth > d) { out.push("</ul>"); depth--; } };
+  let open = false;
+  for (const raw of String(md).replace(/\r/g, "").split("\n")) {
+    const line = raw.replace(/\s+$/, ""), li = line.match(/^( *)- (.*)$/), h = line.match(/^(#{1,4}) (.*)$/), sm = line.match(/^<summary>(.*)<\/summary>$/);
+    if (li) { flushP(); const d = Math.floor(li[1].length / 2) + 1; setDepth(d); if (open && depth === d) out.push("</li>"); out.push("<li>" + mdInline(li[2])); open = true; continue; }
+    if (open) { out.push("</li>"); open = false; }
+    if (!line.trim()) { flushP(); setDepth(0); continue; }
+    setDepth(0);
+    if (h) { flushP(); const n = h[1].length; out.push(`<h${n}>${mdInline(h[2])}</h${n}>`); continue; }
+    if (line === "<details>" || line === "</details>") { flushP(); out.push(line); continue; }
+    if (sm) { flushP(); out.push("<summary>" + mdInline(sm[1]) + "</summary>"); continue; }
+    para.push(line);
+  }
+  if (open) out.push("</li>"); flushP(); setDepth(0);
+  const body = $("notesBody"); body.innerHTML = out.join("\n");
+  const toc = $("notesToc"); toc.replaceChildren();
+  body.querySelectorAll("h2").forEach((hh, i) => { hh.id = "notes-" + i; const b = el("button", null, hh.textContent); b.type = "button"; b.addEventListener("click", () => document.getElementById(hh.id).scrollIntoView({ behavior: "smooth" })); toc.append(b); });
+  $("notesState").hidden = true; $("notesLayout").hidden = false;
+}
+
 /* ---------- start ---------- */
 api("getBoard").then(render, fail);
-{ const last = store.get("ff-board-tab"); if (["build", "decks", "rules", "play"].includes(last)) showView(last); }
+{ const last = store.get("ff-board-tab"); if (["build", "decks", "rules", "notes", "play"].includes(last)) showView(last); }
 </script>
 </body>
 </html>
